@@ -1,0 +1,72 @@
+/* answers.wxss */
+.background{
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  position: fixed;
+}
+
+.backgroundImg{
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.content{
+  width: 100%;
+  margin: auto;
+  color: white;
+  align-items: center;
+  position: fixed;
+  text-align: center;
+  font-size: 24px;
+  top: 250rpx;
+}
+
+.subContent{
+  width: 100%;
+  margin: auto;
+  color: white;
+  position: fixed;
+  text-align: center;
+  font-size: 10px;
+  top: 420rpx;
+
+}
+
+.contentBg{
+  width: 700rpx;
+  height: 432rpx;
+  margin: auto;
+  border-radius: 16px;
+  background: #C4000C;
+  position: fixed;
+  top: 160rpx;
+  /*box-shadow:2px 2px 3px #000000; */
+  /*opacity: 1;*/
+}
+
+.exp{
+  width: 100%;
+  margin: auto;
+  color: white;
+  position: fixed;
+  text-align: center;
+  font-size: 14px;
+  bottom: 420rpx;
+}
+
+.table{
+  width: 100%;
+  margin: auto;
+  display: flex;
+  position: fixed;
+  align-items: center;
+  bottom: 80rpx;
+}
+
+.tableImg{
+  width: 128px;
+  height: 128px;
+  margin: auto;
+}
