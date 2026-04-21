@@ -14,6 +14,7 @@
     "packNpmRelationList": [],
     "minifyWXSS": true,
     "minifyWXML": true,
+    "ignoreDevUnusedFiles": true,
     "localPlugins": false,
     "disableUseStrict": false,
     "useCompilerPlugins": false,
@@ -46,7 +47,60 @@
   },
   "simulatorPluginLibVersion": {},
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "folder",
+        "value": ".github"
+      },
+      {
+        "type": "folder",
+        "value": "scripts"
+      },
+      {
+        "type": "file",
+        "value": "README.md"
+      },
+      {
+        "type": "file",
+        "value": "CONTRIBUTING.md"
+      },
+      {
+        "type": "file",
+        "value": "CODE_OF_CONDUCT.md"
+      },
+      {
+        "type": "file",
+        "value": "SECURITY.md"
+      },
+      {
+        "type": "file",
+        "value": ".editorconfig"
+      },
+      {
+        "type": "file",
+        "value": ".gitattributes"
+      },
+      {
+        "type": "file",
+        "value": ".DS_Store"
+      },
+      {
+        "type": "file",
+        "value": "project.private.config.json"
+      },
+      {
+        "type": "file",
+        "value": "assets/audio_001.mp3"
+      },
+      {
+        "type": "file",
+        "value": "assets/bg1.jpg"
+      },
+      {
+        "type": "file",
+        "value": "assets/sun_rise/save_QR_code.jpg"
+      }
+    ],
     "include": []
   },
   "editorSetting": {}

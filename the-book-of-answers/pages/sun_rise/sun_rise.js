@@ -26,7 +26,7 @@ var POSTER_QR_TOP = 1334
 var POSTER_CONTENT_Y = 299
 var POSTER_SUB_CONTENT_Y = 508
 var POSTER_BG = "../../assets/sun_rise/save_bg.png"
-var POSTER_QR = "../../assets/sun_rise/save_QR_code.jpg"
+var POSTER_QR = "../../assets/sun_rise/save_QR_code.png"
 
 Page({
 

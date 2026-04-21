@@ -3,6 +3,7 @@
     "pages/sun_rise/sun_rise",
     "pages/answers/answers"
   ],
+  "lazyCodeLoading": "requiredComponents",
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#e30b52",

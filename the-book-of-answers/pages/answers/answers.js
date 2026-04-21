@@ -3,8 +3,6 @@
 var app = getApp()
 var answerData = require("./answer_data.js")
 
-const AUDIO_START_TIME = 5
-
 Page({
   /**
    * 页面的初始数据
@@ -17,7 +15,7 @@ Page({
     contentAnimation: "",
     subContentAnimation: "",
     expAnimation: "",
-    audio_src: "../../assets/audio_001.mp3",
+    audio_src: "../../assets/audio_001.wav",
     tableStyle: "",
   },
 
@@ -57,7 +55,7 @@ Page({
     // 使用 InnerAudioContext 管理短音频，并在页面卸载时释放资源
     this.audioCtx = wx.createInnerAudioContext()
     this.audioCtx.src = this.data.audio_src
-    this.audioCtx.startTime = AUDIO_START_TIME
+    this.audioCtx.loop = true
   },
 
   /**
