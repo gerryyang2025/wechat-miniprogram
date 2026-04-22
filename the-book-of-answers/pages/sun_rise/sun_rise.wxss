@@ -344,6 +344,7 @@
   line-height: 36rpx;
   letter-spacing: 2rpx;
   text-align: center;
+  white-space: nowrap;
   text-shadow: 0 1rpx 0 rgba(255, 246, 236, 0.28), 0 3rpx 10rpx rgba(45, 15, 25, 0.16);
 }
 
@@ -401,10 +402,10 @@
 
 .repeat-hint--tutorial .repeat-hint-text{
   color: rgba(82, 24, 41, 0.98);
-  font-size: 28rpx;
+  font-size: 24rpx;
   font-weight: 600;
-  line-height: 40rpx;
-  letter-spacing: 2.6rpx;
+  line-height: 36rpx;
+  letter-spacing: 2rpx;
   text-shadow: 0 1rpx 0 rgba(255, 246, 236, 0.34), 0 4rpx 14rpx rgba(45, 15, 25, 0.22);
 }
 
