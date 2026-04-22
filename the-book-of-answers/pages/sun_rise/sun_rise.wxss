@@ -250,15 +250,21 @@
   width: 100%;
   margin: auto;
   text-align: center;
-  font-size: 40rpx;
+  font-size: 64rpx;
+  font-weight: 600;
+  letter-spacing: 5rpx;
+  text-shadow: 0 10rpx 28rpx rgba(50, 13, 20, 0.24);
 }
 
 .tutorial-txt2{
   width: 100%;
   margin-top: 80rpx;
   text-align: center;
-  font-size: 28rpx;
-  line-height: 60rpx;
+  font-size: 48rpx;
+  font-weight: 600;
+  line-height: 82rpx;
+  letter-spacing: 3rpx;
+  text-shadow: 0 8rpx 22rpx rgba(50, 13, 20, 0.2);
 }
 
 .tutorial-txt3{
@@ -272,7 +278,7 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -340,10 +346,10 @@
 
 .repeat-hint-text{
   color: rgba(96, 34, 51, 0.94);
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 500;
-  line-height: 32rpx;
-  letter-spacing: 1.6rpx;
+  line-height: 36rpx;
+  letter-spacing: 2rpx;
   text-align: center;
   text-shadow: 0 1rpx 0 rgba(255, 246, 236, 0.28), 0 3rpx 10rpx rgba(45, 15, 25, 0.16);
 }
@@ -370,6 +376,49 @@
 .repeat-hint--strong .repeat-hint-guide{
   opacity: 0.72;
   background: linear-gradient(90deg, rgba(255, 226, 197, 0), rgba(255, 241, 225, 0.7), rgba(255, 226, 197, 0));
+}
+
+.repeat-hint--tutorial .repeat-hint-note{
+  padding: 10rpx 22rpx 10rpx 14rpx;
+  background: linear-gradient(90deg, rgba(73, 29, 41, 0) 0%, rgba(73, 29, 41, 0.14) 14%, rgba(73, 29, 41, 0.28) 50%, rgba(73, 29, 41, 0.14) 86%, rgba(73, 29, 41, 0) 100%);
+}
+
+.repeat-hint--tutorial .repeat-hint-signal{
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 14rpx;
+}
+
+.repeat-hint--tutorial .repeat-hint-halo--inner{
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.repeat-hint--tutorial .repeat-hint-halo--outer{
+  width: 70rpx;
+  height: 70rpx;
+  opacity: 0.88;
+}
+
+.repeat-hint--tutorial .repeat-hint-dot{
+  width: 12rpx;
+  height: 12rpx;
+  box-shadow: 0 0 18rpx rgba(255, 217, 177, 0.68), 0 0 8rpx rgba(255, 255, 255, 0.64);
+}
+
+.repeat-hint--tutorial .repeat-hint-text{
+  color: rgba(82, 24, 41, 0.98);
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 40rpx;
+  letter-spacing: 2.6rpx;
+  text-shadow: 0 1rpx 0 rgba(255, 246, 236, 0.34), 0 4rpx 14rpx rgba(45, 15, 25, 0.22);
+}
+
+.repeat-hint--tutorial .repeat-hint-guide{
+  width: 92rpx;
+  opacity: 0.8;
+  background: linear-gradient(90deg, rgba(255, 226, 197, 0), rgba(255, 241, 225, 0.78), rgba(255, 226, 197, 0));
 }
 
 .press-cue{

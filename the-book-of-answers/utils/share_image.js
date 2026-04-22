@@ -131,11 +131,27 @@ function drawLabel(ctx, text, x, y, theme, compact) {
   }
 }
 
+function drawQrCard(ctx, x, y, cardSize, qrImage) {
+  ctx.save()
+  ctx.shadowColor = "rgba(89, 37, 52, 0.08)"
+  ctx.shadowBlur = Math.round(cardSize * 0.12)
+  ctx.shadowOffsetY = Math.round(cardSize * 0.05)
+  fillRoundedRect(ctx, x, y, cardSize, cardSize, Math.round(cardSize * 0.16), "rgba(255,255,255,0.96)")
+  ctx.restore()
+
+  ctx.save()
+  drawRoundedRectPath(ctx, x, y, cardSize, cardSize, Math.round(cardSize * 0.16))
+  ctx.clip()
+  ctx.drawImage(qrImage, x, y, cardSize, cardSize)
+  ctx.restore()
+}
+
 function drawQuoteShareImage(ctx, options) {
   var width = options.width
   var height = options.height
   var theme = options.theme
   var compact = height <= 420
+  var hasQrImage = !!options.qrImage
   var cardX = Math.round(width * 0.08)
   var cardY = Math.round(height * 0.08)
   var cardWidth = width - cardX * 2
@@ -216,16 +232,36 @@ function drawQuoteShareImage(ctx, options) {
     text: "释义：" + (options.exp || ""),
   })
 
-  fillWrappedBlock(ctx, {
-    x: innerX,
-    y: cardY + cardHeight - (compact ? 56 : 64),
-    maxWidth: innerWidth,
-    maxLines: 1,
-    lineHeight: compact ? 20 : 22,
-    font: compact ? "16px sans-serif" : "18px sans-serif",
-    fillStyle: theme.footerText,
-    text: options.footer,
-  })
+  if (hasQrImage) {
+    var qrCardSize = compact ? 60 : 74
+    var qrX = cardX + cardWidth - qrCardSize - (compact ? 14 : 18)
+    var qrY = cardY + cardHeight - qrCardSize - (compact ? 14 : 18)
+    var footerTextWidth = Math.max(qrX - innerX - (compact ? 12 : 18), 160)
+
+    fillWrappedBlock(ctx, {
+      x: innerX,
+      y: qrY + (compact ? 2 : 4),
+      maxWidth: footerTextWidth,
+      maxLines: 2,
+      lineHeight: compact ? 20 : 22,
+      font: compact ? "16px sans-serif" : "18px sans-serif",
+      fillStyle: theme.footerText,
+      text: options.footer,
+    })
+
+    drawQrCard(ctx, qrX, qrY, qrCardSize, options.qrImage)
+  } else {
+    fillWrappedBlock(ctx, {
+      x: innerX,
+      y: cardY + cardHeight - (compact ? 56 : 64),
+      maxWidth: innerWidth,
+      maxLines: 1,
+      lineHeight: compact ? 20 : 22,
+      font: compact ? "16px sans-serif" : "18px sans-serif",
+      fillStyle: theme.footerText,
+      text: options.footer,
+    })
+  }
 }
 
 module.exports = {

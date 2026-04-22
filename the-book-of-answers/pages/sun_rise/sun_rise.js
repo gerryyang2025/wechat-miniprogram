@@ -27,7 +27,9 @@ var POSTER_HEIGHT = 1334
 var POSTER_CONTENT_Y = 299
 var POSTER_SUB_CONTENT_Y = 508
 var POSTER_BG = "../../assets/sun_rise/save_bg.png"
+var MINI_PROGRAM_QR_IMAGE = "../../assets/miniprogram_qr.png"
 var POSTER_ASSET_TIMEOUT = 8000
+var OPTIONAL_ASSET_TIMEOUT = 1600
 var POSTER_CONTENT_MAX_WIDTH = 560
 var POSTER_SUB_CONTENT_MAX_WIDTH = 520
 var POSTER_CONTENT_LINE_HEIGHT = 76
@@ -171,6 +173,7 @@ Page({
   shareCanvas: null,
   shareCtx: null,
   posterAssetCache: null,
+  shareAssetCache: null,
   cloudFloatIntervals: null,
   shouldReinitializeOnShow: false,
   isPageReady: false,
@@ -185,6 +188,8 @@ Page({
   pressCueHoldDelayTimeout: null,
   pressCueResetTimeout: null,
   repeatHintResetTimeout: null,
+  tutorialRepeatHintTimeout: null,
+  repeatHintGuidePulseTimeout: null,
   pressTouchIdentifier: null,
   pressStartPoint: null,
   isTrackingMountainPress: false,
@@ -212,6 +217,7 @@ Page({
     // this.anim_exp = new anim_exp()
     this.anim_cloud_move = new anim_cloud_move()
     this.posterAssetCache = {}
+    this.shareAssetCache = {}
     this.cloudFloatIntervals = []
     this.shareImageCache = {}
     this.shareImageTask = Promise.resolve()
@@ -297,6 +303,7 @@ Page({
     this.shareCtx = null
     this.shareImageCache = null
     this.shareImageTask = null
+    this.shareAssetCache = null
   },
 
   /**
@@ -401,6 +408,8 @@ Page({
     clearTimeout(this.pressCueHoldDelayTimeout)
     clearTimeout(this.pressCueResetTimeout)
     clearTimeout(this.repeatHintResetTimeout)
+    clearTimeout(this.tutorialRepeatHintTimeout)
+    clearTimeout(this.repeatHintGuidePulseTimeout)
     clearTimeout(this.timeout_press_over)
     clearTimeout(this.tutorialEnterTimeout)
     clearTimeout(this.tutorialDoneTimeout)
@@ -419,6 +428,14 @@ Page({
 
   getDefaultRepeatHintText: function () {
     return "按住山影，再问一次"
+  },
+
+  getTutorialRepeatHintText: function () {
+    return this.data.tutorial_txt && this.data.tutorial_txt[1] ? this.data.tutorial_txt[1] : "长按山影"
+  },
+
+  getHighlightedRepeatHintClassName: function () {
+    return "repeat-hint repeat-hint--strong repeat-hint--tutorial"
   },
 
   getPressCueHoldingText: function () {
@@ -447,6 +464,48 @@ Page({
     })
   },
 
+  clearRepeatHintGuidePulse: function () {
+    clearTimeout(this.repeatHintGuidePulseTimeout)
+    this.repeatHintGuidePulseTimeout = null
+    if (!this.data.isShowTutorialTxt) {
+      clearInterval(this.circleInterval)
+      this.circleInterval = null
+    }
+  },
+
+  restartRepeatHintGuidePulse: function () {
+    if (this.data.isShowTutorialTxt) {
+      return
+    }
+
+    this.clearRepeatHintGuidePulse()
+    this.setData({
+      _anim_circle: this.anim_tutorial.circleFadeIn(Math.min(this.anim_data.circleFadeIn, 260), 0).export(),
+      _anim_circle_line: this.anim_tutorial.initialCircleLine().export(),
+    })
+
+    this.repeatHintGuidePulseTimeout = setTimeout(function () {
+      if (!this.data.showRepeatHint || this.data.isShowTutorialTxt) {
+        return
+      }
+
+      this.setData({
+        _anim_circle_line: this.anim_tutorial.circleLine(this.anim_data.circleLineDuration).export(),
+      })
+
+      this.circleInterval = setInterval(function () {
+        if (!this.data.showRepeatHint || this.data.isShowTutorialTxt) {
+          this.clearRepeatHintGuidePulse()
+          return
+        }
+
+        this.setData({
+          _anim_circle_line: this.anim_tutorial.circleLine(this.anim_data.circleLineDuration).export(),
+        })
+      }.bind(this), this.anim_data.circleLineInterval)
+    }.bind(this), 40)
+  },
+
   setRepeatHintState: function (text, strong, autoResetDuration) {
     clearTimeout(this.repeatHintResetTimeout)
     this.repeatHintResetTimeout = null
@@ -455,8 +514,14 @@ Page({
     this.setData({
       showRepeatHint: shouldShow,
       repeatHintText: text || this.getDefaultRepeatHintText(),
-      repeatHintClassName: strong ? "repeat-hint repeat-hint--strong" : "repeat-hint",
-    })
+      repeatHintClassName: this.getHighlightedRepeatHintClassName(),
+    }, function () {
+      if (shouldShow) {
+        this.restartRepeatHintGuidePulse()
+      } else {
+        this.clearRepeatHintGuidePulse()
+      }
+    }.bind(this))
 
     if (autoResetDuration) {
       this.repeatHintResetTimeout = setTimeout(function () {
@@ -466,12 +531,21 @@ Page({
   },
 
   syncRepeatHint: function () {
+    if (this.data.isShowTutorialTxt) {
+      this.setData({
+        showRepeatHint: true,
+        repeatHintText: this.getTutorialRepeatHintText(),
+        repeatHintClassName: this.getHighlightedRepeatHintClassName(),
+      })
+      return
+    }
     this.setRepeatHintState(this.getDefaultRepeatHintText(), false, 0)
   },
 
   hideRepeatHint: function () {
     clearTimeout(this.repeatHintResetTimeout)
     this.repeatHintResetTimeout = null
+    this.clearRepeatHintGuidePulse()
     this.setData({
       showRepeatHint: false,
       repeatHintText: this.getDefaultRepeatHintText(),
@@ -693,6 +767,7 @@ Page({
    * 设置默认文本、初始状态，教程动画
    */
   initial: function () {
+    var tutorialTxt = this.answer_data.getTutorialTxt()
     this.clearAnimationTimers()
     this.resetMountainTouchTracking()
     this.clearMountainTapSuppression()
@@ -706,7 +781,7 @@ Page({
       content: this.answer_data.getDefaultContent(),
       subContent: this.answer_data.getDefaultSubContent(),
       exp: this.answer_data.getDefaultExp(),
-      tutorial_txt: this.answer_data.getTutorialTxt(),
+      tutorial_txt: tutorialTxt,
       state: State.toturial,
       _anim_sun_rise: this.anim_sun_rise.initial().export(),
       _anim_tutorial_txt_1: this.anim_tutorial.initialTxt().export(),
@@ -745,6 +820,16 @@ Page({
         _anim_cloud_1: this.anim_tutorial.moveIn(this.anim_data.tutorialDuration(), 0).export(),
         _anim_cloud_2: this.anim_tutorial.moveIn(this.anim_data.tutorialDuration(), 0).export(),
       })
+
+      this.tutorialRepeatHintTimeout = setTimeout(function () {
+        if (this.data.isShowTutorialTxt) {
+          this.setData({
+            showRepeatHint: true,
+            repeatHintText: tutorialTxt && tutorialTxt[1] ? tutorialTxt[1] : "长按山影",
+            repeatHintClassName: this.getHighlightedRepeatHintClassName(),
+          })
+        }
+      }.bind(this), this.anim_data.tutorialDelay * 2)
     }.bind(this), this.anim_data.tutorialDelay / this.anim_data.tutorialPara)
 
     // 圆圈的扩大动画，需要撤销
@@ -1202,9 +1287,13 @@ Page({
     }.bind(this))
   },
 
-  loadPosterImage: function (src) {
+  loadPosterImage: function (src, options) {
+    options = options || {}
+    var optional = !!options.optional
+    var timeout = options.timeout || POSTER_ASSET_TIMEOUT
+
     return this.ensurePosterCanvas().then(function () {
-      if (this.posterAssetCache[src]) {
+      if (Object.prototype.hasOwnProperty.call(this.posterAssetCache, src)) {
         return this.posterAssetCache[src]
       }
 
@@ -1216,8 +1305,13 @@ Page({
             return
           }
           settled = true
+          if (optional) {
+            this.posterAssetCache[src] = null
+            resolve(null)
+            return
+          }
           reject(new Error("load image timeout: " + src))
-        }, POSTER_ASSET_TIMEOUT)
+        }.bind(this), timeout)
 
         image.onload = function () {
           if (settled) {
@@ -1234,15 +1328,41 @@ Page({
           }
           settled = true
           clearTimeout(timeoutId)
+          if (optional) {
+            this.posterAssetCache[src] = null
+            resolve(null)
+            return
+          }
           reject(error || new Error("load image failed: " + src))
-        }
+        }.bind(this)
         image.src = src
       }.bind(this))
     }.bind(this))
   },
 
+  drawPosterQrCode: function (ctx, qrImage) {
+    var cardWidth = 138
+    var cardHeight = 138
+    var cardX = POSTER_WIDTH - cardWidth - 38
+    var cardY = POSTER_HEIGHT - cardHeight - 52
+
+    ctx.save()
+    ctx.fillStyle = "rgba(255,255,255,0.9)"
+    ctx.fillRect(cardX, cardY, cardWidth, cardHeight)
+    ctx.drawImage(qrImage, cardX, cardY, cardWidth, cardHeight)
+    ctx.restore()
+  },
+
   drawPoster: function (answer) {
-    return this.loadPosterImage(POSTER_BG).then(function (bgImage) {
+    return Promise.all([
+      this.loadPosterImage(POSTER_BG),
+      this.loadPosterImage(MINI_PROGRAM_QR_IMAGE, {
+        optional: true,
+        timeout: OPTIONAL_ASSET_TIMEOUT,
+      }),
+    ]).then(function (assets) {
+      var bgImage = assets[0]
+      var qrImage = assets[1]
       var ctx = this.posterCtx
 
       ctx.clearRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT)
@@ -1254,6 +1374,9 @@ Page({
       this.drawPosterTextBlock(ctx, answer.content, POSTER_WIDTH / 2, POSTER_CONTENT_Y, POSTER_CONTENT_MAX_WIDTH, POSTER_CONTENT_LINE_HEIGHT, POSTER_MAX_LINES)
       ctx.font = "25px sans-serif"
       this.drawPosterTextBlock(ctx, answer.subContent, POSTER_WIDTH / 2, POSTER_SUB_CONTENT_Y, POSTER_SUB_CONTENT_MAX_WIDTH, POSTER_SUB_CONTENT_LINE_HEIGHT, POSTER_MAX_LINES)
+      if (qrImage) {
+        this.drawPosterQrCode(ctx, qrImage)
+      }
     }.bind(this))
   },
 
@@ -1693,6 +1816,65 @@ Page({
     }.bind(this))
   },
 
+  loadShareCanvasImage: function (src, options) {
+    options = options || {}
+    var optional = !!options.optional
+    var timeout = options.timeout || OPTIONAL_ASSET_TIMEOUT
+
+    return this.ensureShareCanvas().then(function () {
+      if (!this.shareAssetCache) {
+        this.shareAssetCache = {}
+      }
+
+      if (Object.prototype.hasOwnProperty.call(this.shareAssetCache, src)) {
+        return this.shareAssetCache[src]
+      }
+
+      return new Promise(function (resolve, reject) {
+        var image = this.shareCanvas.createImage()
+        var settled = false
+        var timeoutId = setTimeout(function () {
+          if (settled) {
+            return
+          }
+          settled = true
+          if (optional) {
+            this.shareAssetCache[src] = null
+            resolve(null)
+            return
+          }
+          reject(new Error("load image timeout: " + src))
+        }.bind(this), timeout)
+
+        image.onload = function () {
+          if (settled) {
+            return
+          }
+          settled = true
+          clearTimeout(timeoutId)
+          this.shareAssetCache[src] = image
+          resolve(image)
+        }.bind(this)
+
+        image.onerror = function (error) {
+          if (settled) {
+            return
+          }
+          settled = true
+          clearTimeout(timeoutId)
+          if (optional) {
+            this.shareAssetCache[src] = null
+            resolve(null)
+            return
+          }
+          reject(error || new Error("load image failed: " + src))
+        }.bind(this)
+
+        image.src = src
+      }.bind(this))
+    }.bind(this))
+  },
+
   enqueueShareImageTask: function (task) {
     var baseTask = this.shareImageTask || Promise.resolve()
     var queuedTask = baseTask
@@ -1721,6 +1903,12 @@ Page({
         .then(function () {
           this.shareCanvas.width = size.width
           this.shareCanvas.height = size.height
+          return this.loadShareCanvasImage(MINI_PROGRAM_QR_IMAGE, {
+            optional: true,
+            timeout: OPTIONAL_ASSET_TIMEOUT,
+          })
+        }.bind(this))
+        .then(function (qrImage) {
 
           shareImage.drawQuoteShareImage(this.shareCtx, {
             width: size.width,
@@ -1731,6 +1919,7 @@ Page({
             subContent: answer.subContent,
             exp: answer.exp,
             footer: "默想一个问题，等待太阳给出答案",
+            qrImage: qrImage,
             theme: {
               backgroundColors: [
                 { stop: 0, color: "#F6A45F" },

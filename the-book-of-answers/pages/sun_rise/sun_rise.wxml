@@ -50,8 +50,7 @@
   <!-- 引导界面 -->
   <view class="tutorial txtColor-white" wx:if="{{isShowTutorialTxt}}" style="{{tutorialStyle}}">
     <text class="tutorial-txt1" animation="{{_anim_tutorial_txt_1}}">{{tutorial_txt[0]}}</text>
-    <text class="tutorial-txt2" animation="{{_anim_tutorial_txt_2}}">{{tutorial_txt[1]}}</text>
-    <text class="tutorial-txt3" animation="{{_anim_tutorial_txt_3}}">{{tutorial_txt[2]}}</text>
+    <text class="tutorial-txt2" animation="{{_anim_tutorial_txt_2}}">{{tutorial_txt[2]}}</text>
     <view class="circle-container" style="{{circleContainerStyle}}">
       <view class="circle" animation="{{_anim_circle}}"></view>
     </view>
@@ -59,6 +58,14 @@
       <view class="circle-line" animation="{{_anim_circle_line}}"></view>
     </view>
   </view>
+  <block wx:if="{{showRepeatHint && !isShowTutorialTxt}}">
+    <view class="circle-container" style="{{circleContainerStyle}}">
+      <view class="circle" animation="{{_anim_circle}}"></view>
+    </view>
+    <view class="circle-line-container" style="{{circleLineContainerStyle}}">
+      <view class="circle-line" animation="{{_anim_circle_line}}"></view>
+    </view>
+  </block>
   <view class="{{repeatHintClassName}}" wx:if="{{showRepeatHint}}" style="{{repeatHintStyle}}">
     <view class="repeat-hint-note">
       <view class="repeat-hint-signal">
