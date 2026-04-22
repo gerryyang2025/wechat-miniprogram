@@ -24,22 +24,10 @@ Each mini program lives in its own subdirectory and is expected to keep its own:
 
 ## Repository Conventions
 
-- Root-level documentation is written in English.
 - Each mini program should be independently runnable and documented.
 - Shared conventions may live at the repository root, but product implementation stays inside each project folder.
 - Do not commit private configuration, secrets, or machine-specific files.
 
-## Adding a New Mini Program
+## License
 
-When adding a new project to this workspace:
-
-1. Create a dedicated subdirectory for the mini program.
-2. Add a project-level `README.md`.
-3. Add the standard WeChat Mini Program entry files.
-4. Keep assets, pages, and scripts scoped to that project.
-5. Update this root `README.md` to register the new app.
-
-## Notes
-
-- This root repository does not currently provide a single global build entry.
-- Validation, CI, and release rules may differ by mini program and should be defined inside each project directory.
+This workspace is licensed under the MIT License. See [LICENSE](./LICENSE).

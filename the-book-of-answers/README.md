@@ -95,9 +95,8 @@ The same validation is executed by GitHub Actions on pushes and pull requests.
 ## Recommended Next Steps
 
 - Add product screenshots or preview GIFs for the README
-- Decide on a public license before releasing the project broadly
 - Add device-level regression testing if the project grows further
 
 ## License
 
-No open-source license file is included yet. Choose and add one before publishing the project for broad public reuse.
+This project is covered by the repository-level MIT License. See [../LICENSE](../LICENSE).
