@@ -18,15 +18,16 @@
     <image id="cloud-img4" src="../../assets/sun_rise/cloud_4.png" mode="aspectFit" animation="{{_anim_cloud_4}}" style="{{cloudFourStyle}}"></image>
   </view>
   <!-- 山 -->
-  <view class="mountain" bindlongpress="onMountainLongPress" bindtouchend="onMountainTouchEnd" bindtap="onMountainTap">
+  <view class="mountain">
     <image id="mountain-img" src="../../assets/sun_rise/mountain.png" mode="widthFix"></image>
   </view>
+  <view class="mountain-touch-layer" style="{{mountainTouchLayerStyle}}" bindtouchstart="onMountainTouchStart" bindtouchmove="onMountainTouchMove" bindtouchend="onMountainTouchEnd" bindtouchcancel="onMountainTouchCancel" bindlongpress="onMountainLongPress" bindtap="onMountainTap"></view>
   <!-- 人 -->
   <view class="man">
     <image id="man-img" src="../../assets/sun_rise/man.png" mode="aspectFit" style="{{manStyle}}"></image>
     <image id="man-shadow" src="../../assets/sun_rise/man_shadow.png" mode="aspectFit" style="{{manShadowStyle}}"></image>
   </view>
-  <view class="man-hit-area" style="{{manHitAreaStyle}}" catchtap="onMountainTap"></view>
+  <view class="man-hit-area" style="{{manHitAreaStyle}}" bindtouchstart="onMountainTouchStart" bindtouchmove="onMountainTouchMove" bindtouchend="onMountainTouchEnd" bindtouchcancel="onMountainTouchCancel" bindlongpress="onMountainLongPress" bindtap="onMountainTap"></view>
   <!-- 鸟 -->
   <view class="bird">
     <image id="bird-img1" src="../../assets/sun_rise/bird_1.png" mode="aspectFit" style="{{birdOneStyle}}"></image>
@@ -56,6 +57,25 @@
     </view>
     <view class="circle-line-container" style="{{circleLineContainerStyle}}">
       <view class="circle-line" animation="{{_anim_circle_line}}"></view>
+    </view>
+  </view>
+  <view class="{{repeatHintClassName}}" wx:if="{{showRepeatHint}}" style="{{repeatHintStyle}}">
+    <view class="repeat-hint-note">
+      <view class="repeat-hint-signal">
+        <view class="repeat-hint-halo repeat-hint-halo--inner"></view>
+        <view class="repeat-hint-halo repeat-hint-halo--outer"></view>
+        <view class="repeat-hint-dot"></view>
+      </view>
+      <text class="repeat-hint-text">{{repeatHintText}}</text>
+    </view>
+    <view class="repeat-hint-guide"></view>
+  </view>
+  <view class="{{pressCueClassName}}" wx:if="{{pressCueVisible}}" style="{{pressCueStyle}}">
+    <view class="press-cue-pill">
+      <text class="press-cue-text">{{pressCueText}}</text>
+      <view class="press-cue-meter">
+        <view class="{{pressCueMeterFillClassName}}" style="{{pressCueMeterStyle}}"></view>
+      </view>
     </view>
   </view>
   <template is="resultActions" data="{{hasAnswer: hasAnswer, actionBarStyle: resultActionStyle, resultActionThemeClass: resultActionThemeClass, resultActionMenuThemeClass: resultActionMenuThemeClass, historyCount: historyCount, favoriteCount: favoriteCount, isCurrentFavorite: isCurrentFavorite, actionMenuVisible: actionMenuVisible, showShareAction: true, shareActionLabel: '微信分享', showSavePosterAction: canSavePoster, savePosterActionLabel: '保存海报', showAmbientAudioAction: showAmbientAudioAction, ambientAudioActionLabel: ambientAudioActionLabel, ambientAudioActionDesc: ambientAudioActionDesc, ambientAudioActionMeta: ambientAudioActionMeta}}"/>

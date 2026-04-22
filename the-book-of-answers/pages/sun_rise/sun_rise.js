@@ -44,9 +44,19 @@ var SHARE_SCENE_TIMELINE = "timeline"
 var SHARE_QUERY_FROM_SHARE = "fromShare"
 var SHARE_QUERY_MODE = "mode"
 var SHARE_QUERY_SCENE = "shareScene"
+var DESIGN_WIDTH = 750
+var MOUNTAIN_HEIGHT = 422
+var PRESS_MOVE_TOLERANCE = 16
+var PRESS_CUE_HOLD_DELAY = 120
+var SHORT_PRESS_FEEDBACK_THRESHOLD = 320
+var TAP_SUPPRESSION_DURATION = 450
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
+}
+
+function scaleByWidth(windowWidth, designSize) {
+  return windowWidth * designSize / DESIGN_WIDTH
 }
 
 function buildQueryString(params) {
@@ -106,6 +116,7 @@ Page({
     cloudTwoStyle: "",
     cloudThreeStyle: "",
     cloudFourStyle: "",
+    mountainTouchLayerStyle: "",
     manStyle: "",
     manShadowStyle: "",
     manHitAreaStyle: "",
@@ -118,6 +129,16 @@ Page({
     tutorialStyle: "",
     circleContainerStyle: "",
     circleLineContainerStyle: "",
+    repeatHintStyle: "",
+    repeatHintText: "",
+    repeatHintClassName: "repeat-hint",
+    showRepeatHint: false,
+    pressCueStyle: "",
+    pressCueVisible: false,
+    pressCueText: "",
+    pressCueClassName: "press-cue",
+    pressCueMeterFillClassName: "press-cue-meter-fill",
+    pressCueMeterStyle: "",
     recordPanelStyle: "",
     hasAnswer: false,
     canSavePoster: false,
@@ -160,6 +181,19 @@ Page({
   shareImageTask: null,
   audioCtx: null,
   shouldResumeAudioOnShow: false,
+  longPressDetectTimeout: null,
+  pressCueHoldDelayTimeout: null,
+  pressCueResetTimeout: null,
+  repeatHintResetTimeout: null,
+  pressTouchIdentifier: null,
+  pressStartPoint: null,
+  isTrackingMountainPress: false,
+  suppressNextMountainTap: false,
+  mountainTapSuppressionTimeout: null,
+  audioInterruptionBeginHandler: null,
+  audioInterruptionEndHandler: null,
+  shouldResumeAudioAfterInterruption: false,
+  isPageHidden: false,
 
   /**
    * 生命周期函数--监听页面加载
@@ -193,6 +227,7 @@ Page({
   onReady: function () {
     // 设置content默认内容
     this.isPageReady = true
+    this.isPageHidden = false
     this.initial()
     this.playBackgroundAudio()
   },
@@ -201,6 +236,7 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow: function () {
+    this.isPageHidden = false
     if (this.isPageReady && this.shouldReinitializeOnShow) {
       this.shouldReinitializeOnShow = false
       this.initial()
@@ -211,6 +247,12 @@ Page({
       this.playBackgroundAudio()
     }
     this.refreshAnswerRecords()
+    if (this.isPageReady && !this.data.isShowTutorialTxt && this.data.state == State.waiting) {
+      this.syncRepeatHint()
+    } else {
+      this.hideRepeatHint()
+      this.hidePressCue()
+    }
   },
 
   onResize: function () {
@@ -221,7 +263,12 @@ Page({
    * 生命周期函数--监听页面隐藏
    */
   onHide: function () {
+    this.isPageHidden = true
     this.clearAnimationTimers()
+    this.resetMountainTouchTracking()
+    this.clearMountainTapSuppression()
+    this.hideRepeatHint()
+    this.hidePressCue()
     this.pauseBackgroundAudio()
     this.setData({
       actionMenuVisible: false,
@@ -239,7 +286,12 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
+    this.isPageHidden = true
     this.clearAnimationTimers()
+    this.resetMountainTouchTracking()
+    this.clearMountainTapSuppression()
+    this.hideRepeatHint()
+    this.hidePressCue()
     this.destroyBackgroundAudio()
     this.shareCanvas = null
     this.shareCtx = null
@@ -270,48 +322,74 @@ Page({
     var runtimeInfo = app.refreshRuntimeInfo ? app.refreshRuntimeInfo() : app.globalData.runtimeInfo || {}
     var windowInfo = runtimeInfo.windowInfo || {}
     var topInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.top : 0
+    var leftInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.left : 0
+    var rightInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.right : 0
     var bottomInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.bottom : 0
     var windowWidth = windowInfo.windowWidth || 375
     var windowHeight = windowInfo.windowHeight || 667
+    var contentWidth = Math.max(windowWidth - leftInset - rightInset, 240)
     var compact = windowHeight < 720
     var contentTop = clamp(topInset + windowHeight * (compact ? 0.22 : 0.27), topInset + 110, topInset + 220)
     var subContentTop = clamp(contentTop + windowHeight * (compact ? 0.17 : 0.19), contentTop + 96, contentTop + 180)
     var tutorialTop = clamp(topInset + windowHeight * (compact ? 0.11 : 0.14), topInset + 64, topInset + 132)
     var bubbleBottom = bottomInset + clamp(windowHeight * (compact ? 0.18 : 0.22), 120, 188)
-    var bubbleRight = clamp(windowWidth * 0.12, 20, 56)
-    var actionWidth = clamp(windowWidth - 32, 236, 320)
+    var bubbleRight = rightInset + clamp(windowWidth * 0.12, 20, 56)
+    var actionLeft = Math.round(leftInset + clamp(windowWidth * 0.03, 12, 28))
+    var actionWidth = clamp(contentWidth - 32, 236, 360)
     var sunHeight = clamp(windowHeight * 0.54, 320, 420)
     var circleBottom = bottomInset + clamp(windowHeight * 0.1, 70, 120)
     var circleLineBottom = Math.max(circleBottom - 10, bottomInset + 60)
-    var manLeft = Math.round(windowWidth * 0.654)
-    var manBottom = Math.round(bottomInset + clamp(windowHeight * 0.11, 66, 88))
-    var manShadowLeft = Math.round(windowWidth * 0.651)
-    var manShadowBottom = Math.round(bottomInset + clamp(windowHeight * 0.097, 58, 76))
-    var manHitWidth = clamp(windowWidth * 0.14, 42, 58)
-    var manHitHeight = clamp(windowHeight * 0.12, 56, 76)
-    var manHitLeft = Math.round(manLeft - manHitWidth * 0.45)
+    var mountainTouchHeight = Math.round(scaleByWidth(windowWidth, MOUNTAIN_HEIGHT))
+    var manBaseCenterX = 491 + 13 / 2
+    var manBaseWidth = 22
+    var manBaseHeight = 52
+    var manShadowBaseCenterX = 489 + 37 / 2
+    var manShadowBaseWidth = 52
+    var manShadowBaseHeight = 36
+    var manBottom = Math.round(bottomInset + scaleByWidth(windowWidth, 150))
+    var manShadowBottom = Math.round(bottomInset + scaleByWidth(windowWidth, 133))
+    var manWidth = Math.round(clamp(scaleByWidth(windowWidth, manBaseWidth), 10, 28))
+    var manHeight = Math.round(clamp(scaleByWidth(windowWidth, manBaseHeight), 24, 66))
+    var manShadowWidth = Math.round(clamp(scaleByWidth(windowWidth, manShadowBaseWidth), 22, 72))
+    var manShadowHeight = Math.round(clamp(scaleByWidth(windowWidth, manShadowBaseHeight), 14, 50))
+    var manLeft = Math.round(scaleByWidth(windowWidth, manBaseCenterX) - manWidth / 2)
+    var manShadowLeft = Math.round(scaleByWidth(windowWidth, manShadowBaseCenterX) - manShadowWidth / 2)
+    var manHitWidth = Math.round(clamp(windowWidth * 0.14, 42, 112))
+    var manHitHeight = Math.round(clamp(mountainTouchHeight * 0.26, 56, 128))
+    var manHitLeft = Math.round(scaleByWidth(windowWidth, manBaseCenterX) - manHitWidth * 0.5)
     var manHitBottom = Math.round(manShadowBottom - manHitHeight * 0.2)
+    var contentPrimaryPaddingLeft = Math.round(leftInset + clamp(contentWidth * 0.12, 34, 60))
+    var contentPrimaryPaddingRight = Math.round(rightInset + clamp(contentWidth * 0.12, 34, 60))
+    var contentSecondaryPaddingLeft = Math.round(leftInset + clamp(contentWidth * 0.18, 54, 80))
+    var contentSecondaryPaddingRight = Math.round(rightInset + clamp(contentWidth * 0.18, 54, 80))
+    var expBubbleMaxWidth = clamp(contentWidth * 0.58, 180, 260)
+    var interactionHintWidth = Math.round(clamp(contentWidth * 0.44, 190, 260))
+    var interactionHintBottom = Math.round(bottomInset + clamp(windowHeight * 0.145, 98, 148))
+    var pressCueBottom = Math.round(bottomInset + clamp(windowHeight * 0.148, 102, 154))
 
     this.setData({
       thanksStyle: bottomInset ? "bottom: calc(10rpx + " + bottomInset + "px);" : "",
-      resultActionStyle: "bottom: " + (bottomInset + (compact ? 28 : 34)) + "px; max-width: " + actionWidth + "px;",
+      resultActionStyle: "left: " + actionLeft + "px; bottom: " + (bottomInset + (compact ? 28 : 34)) + "px; max-width: " + actionWidth + "px;",
       sunImageStyle: "max-height: " + Math.round(sunHeight) + "px;",
       cloudOneStyle: "max-width: " + clamp(windowWidth * 0.17, 52, 72) + "px; max-height: " + clamp(windowWidth * 0.095, 28, 40) + "px; top: " + Math.round(clamp(topInset + windowHeight * 0.17, topInset + 84, topInset + 128)) + "px; right: " + Math.round(clamp(windowWidth * 0.045, 14, 22)) + "px;",
       cloudTwoStyle: "max-width: " + clamp(windowWidth * 0.17, 52, 72) + "px; max-height: " + clamp(windowWidth * 0.095, 28, 40) + "px; top: " + Math.round(clamp(topInset + windowHeight * 0.29, topInset + 142, topInset + 212)) + "px; left: " + Math.round(clamp(windowWidth * 0.045, 14, 22)) + "px;",
       cloudThreeStyle: "max-width: " + clamp(windowWidth * 0.14, 44, 62) + "px; max-height: " + clamp(windowWidth * 0.07, 20, 30) + "px; right: " + Math.round(clamp(windowWidth * 0.13, 36, 60)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.31, 184, 236)) + "px;",
       cloudFourStyle: "max-width: " + clamp(windowWidth * 0.1, 30, 45) + "px; max-height: " + clamp(windowWidth * 0.04, 10, 18) + "px; left: " + Math.round(clamp(windowWidth * 0.07, 20, 32)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.26, 146, 192)) + "px;",
-      manStyle: "max-width: " + clamp(windowWidth * 0.018, 6, 9) + "px; max-height: " + clamp(windowWidth * 0.044, 14, 20) + "px; left: " + manLeft + "px; bottom: " + manBottom + "px;",
-      manShadowStyle: "max-width: " + clamp(windowWidth * 0.05, 16, 24) + "px; max-height: " + clamp(windowWidth * 0.035, 10, 16) + "px; left: " + manShadowLeft + "px; bottom: " + manShadowBottom + "px;",
-      manHitAreaStyle: "left: " + manHitLeft + "px; bottom: " + manHitBottom + "px; width: " + Math.round(manHitWidth) + "px; height: " + Math.round(manHitHeight) + "px;",
+      mountainTouchLayerStyle: "height: " + mountainTouchHeight + "px;",
+      manStyle: "width: " + manWidth + "px; height: " + manHeight + "px; left: " + manLeft + "px; bottom: " + manBottom + "px;",
+      manShadowStyle: "width: " + manShadowWidth + "px; height: " + manShadowHeight + "px; left: " + manShadowLeft + "px; bottom: " + manShadowBottom + "px;",
+      manHitAreaStyle: "left: " + manHitLeft + "px; bottom: " + manHitBottom + "px; width: " + manHitWidth + "px; height: " + manHitHeight + "px;",
       birdOneStyle: "max-width: " + clamp(windowWidth * 0.033, 10, 15) + "px; max-height: " + clamp(windowWidth * 0.017, 4, 8) + "px; right: " + Math.round(clamp(windowWidth * 0.11, 18, 28)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.145, 86, 114)) + "px;",
       birdTwoStyle: "max-width: " + clamp(windowWidth * 0.026, 8, 12) + "px; max-height: " + clamp(windowWidth * 0.013, 3, 6) + "px; left: " + Math.round(windowWidth * 0.322) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.07, 40, 58)) + "px;",
       birdThreeStyle: "max-width: " + clamp(windowWidth * 0.018, 5, 8) + "px; max-height: " + clamp(windowWidth * 0.008, 2, 4) + "px; left: " + Math.round(windowWidth * 0.262) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.06, 34, 50)) + "px;",
-      contentPrimaryStyle: "top: " + Math.round(contentTop) + "px; padding: 0 " + clamp(windowWidth * 0.12, 34, 60) + "px; font-size: " + (compact ? 28 : 32) + "px;",
-      contentSecondaryStyle: "top: " + Math.round(subContentTop) + "px; padding: 0 " + clamp(windowWidth * 0.18, 54, 80) + "px; font-size: " + (compact ? 14 : 16) + "px;",
-      expBubbleStyle: "right: " + Math.round(bubbleRight) + "px; bottom: " + Math.round(bubbleBottom) + "px; max-width: " + clamp(windowWidth * 0.58, 180, 240) + "px;",
+      contentPrimaryStyle: "top: " + Math.round(contentTop) + "px; padding: 0 " + contentPrimaryPaddingRight + "px 0 " + contentPrimaryPaddingLeft + "px; font-size: " + (compact ? 28 : 32) + "px;",
+      contentSecondaryStyle: "top: " + Math.round(subContentTop) + "px; padding: 0 " + contentSecondaryPaddingRight + "px 0 " + contentSecondaryPaddingLeft + "px; font-size: " + (compact ? 14 : 16) + "px;",
+      expBubbleStyle: "right: " + Math.round(bubbleRight) + "px; bottom: " + Math.round(bubbleBottom) + "px; max-width: " + expBubbleMaxWidth + "px;",
       tutorialStyle: "top: " + Math.round(tutorialTop) + "px;",
       circleContainerStyle: "bottom: " + Math.round(circleBottom) + "px;",
       circleLineContainerStyle: "bottom: " + Math.round(circleLineBottom) + "px;",
+      repeatHintStyle: "bottom: " + interactionHintBottom + "px; max-width: " + interactionHintWidth + "px;",
+      pressCueStyle: "bottom: " + pressCueBottom + "px; width: " + interactionHintWidth + "px;",
       recordPanelStyle: "padding-bottom: " + Math.max(bottomInset, 16) + "px;",
       detailPanelStyle: "padding-bottom: " + Math.max(bottomInset, 20) + "px;",
     })
@@ -319,12 +397,17 @@ Page({
 
   clearAnimationTimers: function () {
     clearInterval(this.circleInterval)
+    this.clearPendingLongPressDetection()
+    clearTimeout(this.pressCueHoldDelayTimeout)
+    clearTimeout(this.pressCueResetTimeout)
+    clearTimeout(this.repeatHintResetTimeout)
     clearTimeout(this.timeout_press_over)
     clearTimeout(this.tutorialEnterTimeout)
     clearTimeout(this.tutorialDoneTimeout)
     clearTimeout(this.sunRiseStartTimeout)
     clearTimeout(this.answerRevealTimeout)
     clearTimeout(this.screenshotResetTimeout)
+    this.clearMountainTapSuppression()
 
     if (this.cloudFloatIntervals) {
       this.cloudFloatIntervals.forEach(function (intervalId) {
@@ -334,9 +417,126 @@ Page({
     }
   },
 
+  getDefaultRepeatHintText: function () {
+    return "按住山影，再问一次"
+  },
+
+  getPressCueHoldingText: function () {
+    return "按住中..."
+  },
+
+  getPressCueShortHintText: function () {
+    return "再多按一会儿"
+  },
+
+  clearPendingPressCueHold: function () {
+    clearTimeout(this.pressCueHoldDelayTimeout)
+    this.pressCueHoldDelayTimeout = null
+  },
+
+  hidePressCue: function () {
+    this.clearPendingPressCueHold()
+    clearTimeout(this.pressCueResetTimeout)
+    this.pressCueResetTimeout = null
+    this.setData({
+      pressCueVisible: false,
+      pressCueText: "",
+      pressCueClassName: "press-cue",
+      pressCueMeterFillClassName: "press-cue-meter-fill",
+      pressCueMeterStyle: "",
+    })
+  },
+
+  setRepeatHintState: function (text, strong, autoResetDuration) {
+    clearTimeout(this.repeatHintResetTimeout)
+    this.repeatHintResetTimeout = null
+
+    var shouldShow = !this.data.isShowTutorialTxt && this.data.state == State.waiting && this.data.hasAnswer && !this.data.pressCueVisible
+    this.setData({
+      showRepeatHint: shouldShow,
+      repeatHintText: text || this.getDefaultRepeatHintText(),
+      repeatHintClassName: strong ? "repeat-hint repeat-hint--strong" : "repeat-hint",
+    })
+
+    if (autoResetDuration) {
+      this.repeatHintResetTimeout = setTimeout(function () {
+        this.syncRepeatHint()
+      }.bind(this), autoResetDuration)
+    }
+  },
+
+  syncRepeatHint: function () {
+    this.setRepeatHintState(this.getDefaultRepeatHintText(), false, 0)
+  },
+
+  hideRepeatHint: function () {
+    clearTimeout(this.repeatHintResetTimeout)
+    this.repeatHintResetTimeout = null
+    this.setData({
+      showRepeatHint: false,
+      repeatHintText: this.getDefaultRepeatHintText(),
+      repeatHintClassName: "repeat-hint",
+    })
+  },
+
+  showPressCue: function (mode, meterDuration, autoHideDelay) {
+    clearTimeout(this.pressCueResetTimeout)
+    this.pressCueResetTimeout = null
+
+    var cueText = this.getPressCueHoldingText()
+    var cueClassName = "press-cue"
+    var meterFillClassName = "press-cue-meter-fill"
+    var meterStyle = ""
+
+    if (mode === "warning") {
+      cueText = this.getPressCueShortHintText()
+      cueClassName += " press-cue--warning"
+      meterFillClassName += " press-cue-meter-fill--warning"
+    } else if (mode === "revealing") {
+      cueText = "正在揭晓..."
+      cueClassName += " press-cue--revealing"
+      meterFillClassName += " press-cue-meter-fill--full"
+    } else {
+      meterFillClassName += " press-cue-meter-fill--animating"
+      meterStyle = "animation-duration: " + Math.max(meterDuration || this.anim_data.pressDuration, 240) + "ms;"
+    }
+
+    this.setData({
+      showRepeatHint: false,
+      pressCueVisible: true,
+      pressCueText: cueText,
+      pressCueClassName: cueClassName,
+      pressCueMeterFillClassName: meterFillClassName,
+      pressCueMeterStyle: meterStyle,
+    })
+
+    if (autoHideDelay) {
+      this.pressCueResetTimeout = setTimeout(function () {
+        this.hidePressCue()
+        this.syncRepeatHint()
+      }.bind(this), autoHideDelay)
+    }
+  },
+
+  queuePressCueHolding: function () {
+    this.clearPendingPressCueHold()
+    this.pressCueHoldDelayTimeout = setTimeout(function () {
+      if (!this.isTrackingMountainPress || this.data.state != State.waiting) {
+        return
+      }
+      this.showPressCue("holding", Math.max(this.anim_data.pressDuration - PRESS_CUE_HOLD_DELAY, 240), 0)
+    }.bind(this), PRESS_CUE_HOLD_DELAY)
+  },
+
   initBackgroundAudio: function () {
     if (this.audioCtx || typeof wx.createInnerAudioContext !== "function") {
       return
+    }
+
+    if (typeof wx.setInnerAudioOption === "function") {
+      wx.setInnerAudioOption({
+        obeyMuteSwitch: true,
+      })
     }
 
     this.audioCtx = wx.createInnerAudioContext()
@@ -352,6 +552,44 @@ Page({
     this.audioCtx.onError(function (error) {
       console.error("sunrise background audio failed", error)
     })
+    this.registerAudioInterruptionListeners()
+  },
+
+  registerAudioInterruptionListeners: function () {
+    if (this.audioInterruptionBeginHandler || typeof wx.onAudioInterruptionBegin !== "function" || typeof wx.onAudioInterruptionEnd !== "function") {
+      return
+    }
+
+    this.audioInterruptionBeginHandler = function () {
+      this.shouldResumeAudioAfterInterruption = !!(this.audioCtx && !this.audioCtx.paused && this.data.ambientAudioEnabled)
+      if (this.shouldResumeAudioAfterInterruption && this.audioCtx) {
+        this.audioCtx.pause()
+      }
+    }.bind(this)
+
+    this.audioInterruptionEndHandler = function () {
+      var shouldResume = this.shouldResumeAudioAfterInterruption
+      this.shouldResumeAudioAfterInterruption = false
+      if (shouldResume && !this.isPageHidden) {
+        this.playBackgroundAudio()
+      }
+    }.bind(this)
+
+    wx.onAudioInterruptionBegin(this.audioInterruptionBeginHandler)
+    wx.onAudioInterruptionEnd(this.audioInterruptionEndHandler)
+  },
+
+  unregisterAudioInterruptionListeners: function () {
+    if (this.audioInterruptionBeginHandler && typeof wx.offAudioInterruptionBegin === "function") {
+      wx.offAudioInterruptionBegin(this.audioInterruptionBeginHandler)
+    }
+    if (this.audioInterruptionEndHandler && typeof wx.offAudioInterruptionEnd === "function") {
+      wx.offAudioInterruptionEnd(this.audioInterruptionEndHandler)
+    }
+
+    this.audioInterruptionBeginHandler = null
+    this.audioInterruptionEndHandler = null
+    this.shouldResumeAudioAfterInterruption = false
   },
 
   playBackgroundAudio: function () {
@@ -387,6 +625,7 @@ Page({
   setAmbientAudioEnabled: function (enabled) {
     var nextEnabled = !!enabled
     this.shouldResumeAudioOnShow = nextEnabled
+    this.shouldResumeAudioAfterInterruption = false
     this.setData(buildAmbientAudioActionState(nextEnabled))
 
     if (nextEnabled) {
@@ -412,6 +651,7 @@ Page({
   },
 
   destroyBackgroundAudio: function () {
+    this.unregisterAudioInterruptionListeners()
     if (!this.audioCtx) {
       return
     }
@@ -454,6 +694,10 @@ Page({
    */
   initial: function () {
     this.clearAnimationTimers()
+    this.resetMountainTouchTracking()
+    this.clearMountainTapSuppression()
+    this.hideRepeatHint()
+    this.hidePressCue()
     this.currentAnswerRecord = null
     this.lastPosterTempFilePath = ""
     this.resetShareImageCache()
@@ -476,6 +720,14 @@ Page({
       _anim_cloud_4: this.anim_sun_cloud.initial(false).export(),
       // _anim_exp: this.anim_exp.initial().export()
       _tran_exp_show: "",
+      showRepeatHint: false,
+      repeatHintText: this.getDefaultRepeatHintText(),
+      repeatHintClassName: "repeat-hint",
+      pressCueVisible: false,
+      pressCueText: "",
+      pressCueClassName: "press-cue",
+      pressCueMeterFillClassName: "press-cue-meter-fill",
+      pressCueMeterStyle: "",
       hasAnswer: false,
       canSavePoster: false,
       isCurrentFavorite: false,
@@ -514,71 +766,134 @@ Page({
    * ---------------------------  山点击功能，主要功能  ---------------------------
    */
 
-  onMountainLongPress: function(e) {
-    if (this.data.state == State.waiting)
-    {
-      this.ensureBackgroundAudioStarted()
-      this.touchStartTime = e.timeStamp
-
-      this.isScreenshotDrew = false    // 屏幕截图设置为需要重新画
-      this.lastPosterTempFilePath = ""
-      this.resetShareImageCache()
-
-      var time = this.anim_data.pressDuration + this.anim_data.afterPress
-
-      clearInterval(this.circleInterval)
-
-      this.setData({
-        content: "",
-        subContent: "",
-        exp: "",
-        state: State.pressing,
-        isShowTutorialTxt: false,
-        _anim_sun_rise: this.anim_sun_rise.initial().export(),
-        _anim_cloud_3: this.anim_sun_cloud.initial(true).export(),
-        _anim_cloud_4: this.anim_sun_cloud.initial(false).export(),
-
-        _anim_content: this.anim_content.initialTxt().export(),
-        _anim_sub_content: this.anim_content.initialSubTxt().export(),
-        // _anim_exp: this.anim_exp.initial().export(),
-        _tran_exp_show: "",
-        hasAnswer: false,
-        canSavePoster: false,
-        detailPanelVisible: false,
-        posterErrorVisible: false,
-      })
-
-      this.expShowable = false
-      this.isExpShow = false
-
-      this.sunRiseStartTimeout = setTimeout(function () {
-        this.setData({
-          _anim_sun_rise: this.anim_sun_rise.moveUp(time).export(),
-          _anim_cloud_3: this.anim_sun_cloud.move(time).export(),
-          _anim_cloud_4: this.anim_sun_cloud.move(time).export(),
-        })
-      }.bind(this), 50)
-
-      // 设置计时器，按压结束后一系列动作
-      this.timeout_press_over = setTimeout(this.pressSuccess.bind(this), time)
+  getTrackedTouchPoint: function (e) {
+    var groups = []
+    if (e && e.touches && e.touches.length) {
+      groups.push(e.touches)
     }
+    if (e && e.changedTouches && e.changedTouches.length) {
+      groups.push(e.changedTouches)
+    }
+
+    var fallbackPoint = null
+    for (var groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+      var group = groups[groupIndex]
+      for (var touchIndex = 0; touchIndex < group.length; touchIndex += 1) {
+        var touch = group[touchIndex]
+        if (!fallbackPoint) {
+          fallbackPoint = touch
+        }
+        if (this.pressTouchIdentifier === null || touch.identifier === this.pressTouchIdentifier) {
+          return touch
+        }
+      }
+    }
+
+    return fallbackPoint
   },
 
-  onMountainTap: function(e){
+  clearPendingLongPressDetection: function () {
+    clearTimeout(this.longPressDetectTimeout)
+    this.longPressDetectTimeout = null
+  },
+
+  queueMountainPressSequence: function (touchStartTime, delay, requireActiveTracking) {
+    this.clearPendingLongPressDetection()
+    this.longPressDetectTimeout = setTimeout(function () {
+      if (requireActiveTracking && !this.isTrackingMountainPress) {
+        return
+      }
+      this.beginMountainPressSequence(touchStartTime)
+    }.bind(this), Math.max(delay, 0))
+  },
+
+  clearMountainTapSuppression: function () {
+    clearTimeout(this.mountainTapSuppressionTimeout)
+    this.mountainTapSuppressionTimeout = null
+    this.suppressNextMountainTap = false
+  },
+
+  scheduleMountainTapSuppression: function () {
+    this.clearMountainTapSuppression()
+    this.suppressNextMountainTap = true
+    this.mountainTapSuppressionTimeout = setTimeout(function () {
+      this.suppressNextMountainTap = false
+      this.mountainTapSuppressionTimeout = null
+    }.bind(this), TAP_SUPPRESSION_DURATION)
+  },
+
+  resetMountainTouchTracking: function () {
+    this.pressTouchIdentifier = null
+    this.pressStartPoint = null
+    this.isTrackingMountainPress = false
+    this.touchStartTime = 0
+  },
+
+  beginMountainPressSequence: function (touchStartTime) {
+    if (this.data.state != State.waiting)
+    {
+      return
+    }
+
+    this.clearPendingLongPressDetection()
+    this.clearPendingPressCueHold()
+    if (typeof touchStartTime === "number") {
+      this.touchStartTime = touchStartTime
+    }
+
     this.ensureBackgroundAudioStarted()
-    if (this.data.state == State.waiting && this.expShowable)
-    {
-      this.setExpBubbleVisible(!this.isExpShow)
-    }else if (this.data.state == State.saving)
-    {
-      this.hidScreenshot()
-    }
+    this.scheduleMountainTapSuppression()
+    this.hideRepeatHint()
+    this.showPressCue("revealing", 0, 720)
+
+    this.isScreenshotDrew = false    // 屏幕截图设置为需要重新画
+    this.lastPosterTempFilePath = ""
+    this.resetShareImageCache()
+
+    var time = this.anim_data.pressDuration + this.anim_data.afterPress
+
+    clearInterval(this.circleInterval)
+
+    this.setData({
+      content: "",
+      subContent: "",
+      exp: "",
+      state: State.pressing,
+      isShowTutorialTxt: false,
+      _anim_sun_rise: this.anim_sun_rise.initial().export(),
+      _anim_cloud_3: this.anim_sun_cloud.initial(true).export(),
+      _anim_cloud_4: this.anim_sun_cloud.initial(false).export(),
+
+      _anim_content: this.anim_content.initialTxt().export(),
+      _anim_sub_content: this.anim_content.initialSubTxt().export(),
+      // _anim_exp: this.anim_exp.initial().export(),
+      _tran_exp_show: "",
+      showRepeatHint: false,
+      hasAnswer: false,
+      canSavePoster: false,
+      detailPanelVisible: false,
+      posterErrorVisible: false,
+    })
+
+    this.expShowable = false
+    this.isExpShow = false
+
+    this.sunRiseStartTimeout = setTimeout(function () {
+      this.setData({
+        _anim_sun_rise: this.anim_sun_rise.moveUp(time).export(),
+        _anim_cloud_3: this.anim_sun_cloud.move(time).export(),
+        _anim_cloud_4: this.anim_sun_cloud.move(time).export(),
+      })
+    }.bind(this), 50)
+
+    // 设置计时器，按压结束后一系列动作
+    this.timeout_press_over = setTimeout(this.pressSuccess.bind(this), time)
   },
 
-  onMountainTouchEnd: function (e) {
+  interruptMountainPressSequence: function (eventTimeStamp) {
     if (this.data.state == State.pressing)
     {
-      this.touchEndTime = e.timeStamp
+      this.touchEndTime = eventTimeStamp
       this.duration = this.touchEndTime - this.touchStartTime
 
       if (this.duration < this.anim_data.pressDuration) {
@@ -590,12 +905,129 @@ Page({
           _anim_sun_rise: this.anim_sun_rise.interrupt(this.duration).export(),
           _anim_cloud_3: this.anim_sun_cloud.interrupt(this.duration, true).export(),
           _anim_cloud_4: this.anim_sun_cloud.interrupt(this.duration, false).export(),
-          
         })
 
         this.expShowable = false
+        this.clearMountainTapSuppression()
       }
     }
+  },
+
+  onMountainTouchStart: function (e) {
+    if (this.data.state != State.waiting)
+    {
+      return
+    }
+
+    if (e.touches && e.touches.length > 1) {
+      this.clearPendingLongPressDetection()
+      this.resetMountainTouchTracking()
+      return
+    }
+
+    var touchPoint = this.getTrackedTouchPoint(e)
+    this.clearPendingLongPressDetection()
+    this.clearMountainTapSuppression()
+    this.clearPendingPressCueHold()
+    this.touchStartTime = e.timeStamp
+    this.isTrackingMountainPress = true
+    this.pressTouchIdentifier = touchPoint && typeof touchPoint.identifier === "number" ? touchPoint.identifier : null
+    this.pressStartPoint = touchPoint ? {
+      pageX: touchPoint.pageX,
+      pageY: touchPoint.pageY,
+    } : null
+
+    this.hideRepeatHint()
+    this.queuePressCueHolding()
+    this.queueMountainPressSequence(this.touchStartTime, this.anim_data.pressDuration, true)
+  },
+
+  onMountainTouchMove: function (e) {
+    if (!this.longPressDetectTimeout || !this.pressStartPoint) {
+      return
+    }
+
+    if (e.touches && e.touches.length > 1) {
+      this.clearPendingLongPressDetection()
+      this.clearPendingPressCueHold()
+      this.hidePressCue()
+      this.resetMountainTouchTracking()
+      return
+    }
+
+    var touchPoint = this.getTrackedTouchPoint(e)
+    if (!touchPoint) {
+      return
+    }
+
+    var deltaX = touchPoint.pageX - this.pressStartPoint.pageX
+    var deltaY = touchPoint.pageY - this.pressStartPoint.pageY
+    if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > PRESS_MOVE_TOLERANCE) {
+      this.clearPendingLongPressDetection()
+      this.clearPendingPressCueHold()
+      this.hidePressCue()
+      this.resetMountainTouchTracking()
+      this.syncRepeatHint()
+    }
+  },
+
+  onMountainLongPress: function(e) {
+    if (this.data.state != State.waiting) {
+      return
+    }
+
+    if (this.touchStartTime && !this.isTrackingMountainPress) {
+      return
+    }
+
+    var pressStartTime = this.touchStartTime || e.timeStamp || 0
+    var elapsed = this.touchStartTime ? Math.max((e.timeStamp || this.touchStartTime) - this.touchStartTime, 0) : this.anim_data.pressDuration
+    var remaining = this.touchStartTime ? this.anim_data.pressDuration - elapsed : 0
+    this.queueMountainPressSequence(pressStartTime, remaining, !!this.touchStartTime)
+  },
+
+  onMountainTap: function(e){
+    if (this.suppressNextMountainTap) {
+      this.clearMountainTapSuppression()
+      return
+    }
+
+    this.ensureBackgroundAudioStarted()
+    if (this.data.state == State.waiting && this.expShowable)
+    {
+      this.setExpBubbleVisible(!this.isExpShow)
+    }else if (this.data.state == State.saving)
+    {
+      this.hidScreenshot()
+    }
+  },
+
+  onMountainTouchEnd: function (e) {
+    var hadPendingLongPress = !!this.longPressDetectTimeout && this.isTrackingMountainPress
+    var holdDuration = this.touchStartTime ? Math.max((e.timeStamp || this.touchStartTime) - this.touchStartTime, 0) : 0
+    this.clearPendingLongPressDetection()
+    this.clearPendingPressCueHold()
+    this.interruptMountainPressSequence(e.timeStamp)
+    this.resetMountainTouchTracking()
+
+    if (hadPendingLongPress && holdDuration >= SHORT_PRESS_FEEDBACK_THRESHOLD && holdDuration < this.anim_data.pressDuration) {
+      this.showPressCue("warning", 0, 980)
+      return
+    }
+
+    if (this.data.state == State.waiting) {
+      this.hidePressCue()
+      this.syncRepeatHint()
+    }
+  },
+
+  onMountainTouchCancel: function (e) {
+    this.clearPendingLongPressDetection()
+    this.clearPendingPressCueHold()
+    this.interruptMountainPressSequence(e.timeStamp)
+    this.resetMountainTouchTracking()
+    this.hidePressCue()
+    this.syncRepeatHint()
   },
 
   /**
@@ -630,6 +1062,7 @@ Page({
       })
       this.expShowable = true
       this.isExpShow = true
+      this.syncRepeatHint()
     }.bind(this), time)
   },
   /**
@@ -1161,7 +1594,7 @@ Page({
   },
 
   getRecordPanelEmptyText: function (type) {
-    return type === "history" ? "还没有最近记录，先长按太阳试试。" : "还没有收藏的答案。"
+    return type === "history" ? "还没有最近记录，先按住山影试试。" : "还没有收藏的答案。"
   },
 
   setExpBubbleVisible: function (visible) {
@@ -1177,6 +1610,7 @@ Page({
     this.lastPosterTempFilePath = ""
     this.resetShareImageCache()
     this.expShowable = true
+    this.hidePressCue()
     this.setData({
       content: this.currentAnswerRecord.content,
       subContent: this.currentAnswerRecord.subContent,
@@ -1190,7 +1624,9 @@ Page({
       detailPanelVisible: false,
       actionMenuVisible: false,
       posterErrorVisible: false,
-    })
+    }, function () {
+      this.syncRepeatHint()
+    }.bind(this))
     this.isExpShow = true
     this.refreshAnswerRecords()
     this.prepareDynamicShareImages()
