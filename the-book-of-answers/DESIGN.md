@@ -2,46 +2,58 @@
 
 This document captures product and interaction observations for `the-book-of-answers`, with a focus on feature completeness, usability, and future iteration priorities.
 
+## Current Product Scope
+
+- `pages/sun_rise` is now the only public user-facing flow.
+- `pages/answers` is temporarily retained in the codebase as a rollback-safe legacy page, but it is no longer exposed through in-app navigation.
+- Older classic-mode entry paths should redirect back into the sunrise flow during this transition period.
+
 Last updated: April 22, 2026
 
 ## Scope
 
-The current Mini Program contains two interaction models:
+The current public Mini Program experience is centered on one interaction model:
 
-- `pages/sun_rise`: a cinematic sunrise scene with long-press interaction and poster export
+- `pages/sun_rise`: a cinematic sunrise scene with long-press interaction, optional ambient background audio, and poster export
+
+The legacy classic board still exists in the repository as a temporary rollback-safe page:
+
 - `pages/answers`: a classic answer board with rotating table interaction
 
 The notes below are based on a static code review of the current implementation as of April 22, 2026. They are intended to guide future product and UX improvements.
 
 ## Current Strengths
 
-- The project already offers two distinct answer experiences instead of a single static flow.
+- The project has already converged toward one stronger public answer flow instead of splitting user attention across two competing entry points.
 - The sunrise page has a strong visual identity and a clear emotional tone.
+- Ambient audio is now opt-in and muted by default, which avoids forcing background music on first entry while still letting users enable a continuous sunrise atmosphere when they want it.
 - Poster export is implemented locally with Canvas 2D and does not depend on backend services.
+- The answer dataset now supports richer interpretation output instead of only returning a short quote and one-line explanation.
+- All 156 bundled answers now have manually written detailed readings, with the previous rule-based interpretation layer kept only as a fallback.
 - The app has already been updated for modern WeChat base library requirements, including lazy component injection and HarmonyOS-safe layout handling.
 
 ## Functional And UX Gaps
 
-### 1. The classic answer page is likely unreachable
+### 1. The legacy classic answer page needs a clear sunset plan
 
 Status: Implemented
 
-`pages/answers` is registered in `app.json`, but there is no visible in-app routing path that takes the user there from the active sunrise experience.
+`pages/answers` is still registered in `app.json`, but it is now intentionally hidden from in-app navigation and treated as a temporary legacy page.
 
 Impact:
 
-- One of the two core product modes is effectively hidden from users.
-- The app experience feels smaller than the codebase suggests.
+- Product scope and public behavior are now more focused.
+- The remaining risk is engineering drift if the hidden legacy page stays too long without a removal plan.
 
 Recommendation:
 
-- Add an explicit mode switch on the first screen.
-- Add a secondary entry such as `Try the classic board` from the sunrise page.
-- Consider a lightweight landing page that lets users choose between the two answer experiences.
+- Keep the sunrise flow as the only public entry point for now.
+- Leave the classic page in place only as a short-term rollback path.
+- Remove the classic page from the codebase after the public sunrise-only release is stable.
 
 Implementation note:
 
-- Both pages now expose a visible mode switch so users can move between the classic board and the sunrise experience.
+- The public sunrise flow no longer exposes a classic-mode entry, and the legacy classic page should redirect users back into the sunrise flow.
 
 ### 2. First-run onboarding is weak on the classic answer page
 
@@ -144,12 +156,12 @@ Recommendation:
 
 - Add local history storage for recent answers.
 - Add favorites or bookmarking.
-- Add `Draw again`, `Copy result`, or `Save this answer` actions.
+- Add `Copy result`, `History`, `Favorites`, or `Save this answer` actions.
 
 Implementation note:
 
 - The app now stores local history and favorites.
-- Both pages now support copy, reroll, and revisit through history/favorite panels.
+- Both pages now support copy and revisit through history/favorite panels.
 - The sunrise page still retains poster save as a dedicated result action.
 
 ### 7. Interaction cues are too subtle
@@ -172,6 +184,7 @@ Recommendation:
 Implementation note:
 
 - Action labels, save text, copy/favorite/history entry points, and lightweight completion feedback have been added.
+- The sunrise `More` menu now also exposes an ambient audio toggle, and enabled audio is treated as background music rather than being tied only to the sunrise reveal moment.
 
 ### 8. Responsive consistency can be improved
 
@@ -194,6 +207,29 @@ Implementation note:
 - Both pages now derive key spacing, typography, control placement, and bottom-sheet padding from runtime window and safe-area data.
 - Decorative sunrise elements and interaction affordances now adapt more consistently across smaller and taller screens, and both pages recompute layout on resize.
 
+### 9. Answer interpretation was too short to feel satisfying
+
+Status: Implemented
+
+The previous answer format mostly stopped at a short quote and a compact `exp` line, which made the interaction feel lightweight but sometimes emotionally thin.
+
+Impact:
+
+- Users could get a beautiful answer but still feel under-served when they wanted help understanding it.
+- History, favorites, copy, and sharing had less emotional value because the interpretation layer was too shallow.
+
+Recommendation:
+
+- Keep the short quote as the first reveal so the pacing stays poetic.
+- Add a second-layer detail panel with a fuller reading, a practical prompt, and a reflective question.
+- Reuse the same enriched answer model across the active sunrise flow and any temporary legacy fallback so the interaction stays consistent during the transition.
+
+Implementation note:
+
+- Answers are now enriched through a shared interpretation utility, and all 156 bundled answers currently resolve to manually written structured detail fields.
+- Both pages now expose a `Detailed Reading` action that opens a multi-section explanation panel.
+- Saved history, favorites, and copy behavior now preserve the richer interpretation content instead of only keeping the short answer text.
+
 ## Priority Roadmap
 
 ### Priority 1
@@ -212,7 +248,8 @@ Implementation note:
 
 - [x] Add real sharing behavior and answer-aware share copy.
 - [x] Add local history and favorites.
-- [x] Add result actions such as copy, reroll, and revisit.
+- [x] Add result actions such as copy and revisit.
+- [x] Add a richer second-layer interpretation model for each answer.
 
 Legend:
 
@@ -234,3 +271,4 @@ If the project continues to evolve, a good direction would be:
 ## Maintenance Note
 
 This file should be updated whenever major interaction changes are made, especially if the routing model, answer-generation mechanics, or poster experience changes.
+The bundled answer set now uses stable answer IDs, so future content edits should preserve the existing IDs instead of recreating them from answer text.

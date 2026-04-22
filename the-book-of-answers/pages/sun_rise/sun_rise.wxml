@@ -1,8 +1,7 @@
 <!--sun_rise.wxml-->
+<import src="../../templates/result_actions.wxml"/>
+<import src="../../templates/result_panels.wxml"/>
 <view class="container">
-  <view class="mode-switch" style="{{modeSwitchStyle}}" bindtap="onTapSwitchMode">
-    <text class="mode-switch-txt">试试经典模式</text>
-  </view>
   <!-- 大背景 -->
   <view class="background">
     <image id="background-img" src="../../assets/sun_rise/bg.png" mode="scaleToFill"></image> 
@@ -27,6 +26,7 @@
     <image id="man-img" src="../../assets/sun_rise/man.png" mode="aspectFit" style="{{manStyle}}"></image>
     <image id="man-shadow" src="../../assets/sun_rise/man_shadow.png" mode="aspectFit" style="{{manShadowStyle}}"></image>
   </view>
+  <view class="man-hit-area" style="{{manHitAreaStyle}}" catchtap="onMountainTap"></view>
   <!-- 鸟 -->
   <view class="bird">
     <image id="bird-img1" src="../../assets/sun_rise/bird_1.png" mode="aspectFit" style="{{birdOneStyle}}"></image>
@@ -34,8 +34,12 @@
     <image id="bird-img3" src="../../assets/sun_rise/bird_3.png" mode="aspectFit" style="{{birdThreeStyle}}"></image>
   </view>
   <!-- 文本内容 -->
-  <text class="content1 txtColor-white" animation="{{_anim_content}}" style="{{contentPrimaryStyle}}">{{content}}</text>
-  <text class="content2 txtColor-white" animation="{{_anim_sub_content}}" style="{{contentSecondaryStyle}}">{{subContent}}</text>
+  <view class="content1 txtColor-white" animation="{{_anim_content}}" style="{{contentPrimaryStyle}}">
+    <text>{{content}}</text>
+  </view>
+  <view class="content2 txtColor-white" animation="{{_anim_sub_content}}" style="{{contentSecondaryStyle}}">
+    <text>{{subContent}}</text>
+  </view>
   <!-- animation="{{_anim_exp}}" -->
   <view class="exp {{_tran_exp_show}}" style="{{expBubbleStyle}}">
 		<view class="c-dialog">
@@ -54,49 +58,10 @@
       <view class="circle-line" animation="{{_anim_circle_line}}"></view>
     </view>
   </view>
-  <!-- 保存按钮 -->
-  <view class="save-btn {{_tran_save_btn_show}}" bindtap="onTapSave" style="{{saveButtonStyle}}">
-    <image class="save-btn-img" src="../../assets/sun_rise/save_btn.png"></image>
-    <text class="save-txt txtColor-white" style="{{saveButtonTextStyle}}">保存海报</text>
-  </view>
-  <view class="result-actions" wx:if="{{hasAnswer}}" style="{{resultActionStyle}}">
-    <view class="result-chip" bindtap="onTapReroll">
-      <text class="result-chip-txt">再抽一次</text>
-    </view>
-    <view class="result-chip" bindtap="onTapCopyResult">
-      <text class="result-chip-txt">复制</text>
-    </view>
-    <view class="result-chip" bindtap="onTapToggleFavorite">
-      <text class="result-chip-txt">{{isCurrentFavorite ? '已收藏' : '收藏'}}</text>
-    </view>
-    <view class="result-chip" bindtap="onTapShowHistory">
-      <text class="result-chip-txt">历史 {{historyCount}}</text>
-    </view>
-    <view class="result-chip" bindtap="onTapShowFavorites">
-      <text class="result-chip-txt">收藏夹 {{favoriteCount}}</text>
-    </view>
-  </view>
+  <template is="resultActions" data="{{hasAnswer: hasAnswer, actionBarStyle: resultActionStyle, resultActionThemeClass: resultActionThemeClass, resultActionMenuThemeClass: resultActionMenuThemeClass, historyCount: historyCount, favoriteCount: favoriteCount, isCurrentFavorite: isCurrentFavorite, actionMenuVisible: actionMenuVisible, showShareAction: true, shareActionLabel: '微信分享', showSavePosterAction: canSavePoster, savePosterActionLabel: '保存海报', showAmbientAudioAction: showAmbientAudioAction, ambientAudioActionLabel: ambientAudioActionLabel, ambientAudioActionDesc: ambientAudioActionDesc, ambientAudioActionMeta: ambientAudioActionMeta}}"/>
   <canvas id="share-canvas" type="2d" class="share-canvas"></canvas>
   <canvas id="canvas-big" type="2d" class="canvas-big"></canvas>
-  <view class="record-mask" wx:if="{{recordPanelVisible}}" bindtap="onCloseRecordPanel">
-    <view class="record-panel" catchtap="noop" style="{{recordPanelStyle}}">
-      <view class="record-panel-header">
-        <text class="record-panel-title">{{recordPanelTitle}}</text>
-        <text class="record-panel-close" bindtap="onCloseRecordPanel">关闭</text>
-      </view>
-      <view class="record-empty" wx:if="{{!recordPanelItems.length}}">
-        <text class="record-empty-txt">{{recordPanelEmptyText}}</text>
-      </view>
-      <scroll-view class="record-list" scroll-y wx:else>
-        <view class="record-item" wx:for="{{recordPanelItems}}" wx:key="signature" data-index="{{index}}" bindtap="onTapRecordItem">
-          <text class="record-item-content">{{item.content}}</text>
-          <text class="record-item-sub">{{item.subContent}}</text>
-          <text class="record-item-exp">{{item.exp}}</text>
-          <text class="record-item-meta">{{item.displayMeta}}</text>
-        </view>
-      </scroll-view>
-    </view>
-  </view>
+  <template is="resultPanels" data="{{resultPanelThemeClass: resultPanelThemeClass, recordPanelVisible: recordPanelVisible, recordPanelStyle: recordPanelStyle, recordPanelTitle: recordPanelTitle, recordPanelEmptyText: recordPanelEmptyText, recordPanelItems: recordPanelItems, detailPanelVisible: detailPanelVisible, detailPanelStyle: detailPanelStyle, detailPanelTitle: detailPanelTitle, detailPanelSummary: detailPanelSummary, detailPanelMeaning: detailPanelMeaning, detailPanelAdvice: detailPanelAdvice, detailPanelRisk: detailPanelRisk, detailPanelQuestion: detailPanelQuestion}}"/>
   <view class="poster-error-mask" wx:if="{{posterErrorVisible}}" bindtap="closePosterErrorDialog">
     <view class="poster-error-card" catchtap="noop">
       <text class="poster-error-title">{{posterErrorTitle}}</text>

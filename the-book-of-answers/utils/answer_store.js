@@ -1,7 +1,17 @@
+var answerDetail = require("./answer_detail.js")
+
 var HISTORY_KEY = "the_book_of_answers.history"
 var FAVORITES_KEY = "the_book_of_answers.favorites"
 var MAX_HISTORY_COUNT = 12
 var MAX_FAVORITES_COUNT = 50
+
+function getLegacyAnswerSignature(answer) {
+  return [
+    answer && answer.content ? answer.content : "",
+    answer && answer.subContent ? answer.subContent : "",
+    answer && answer.exp ? answer.exp : "",
+  ].join("::")
+}
 
 function safeReadList(key) {
   try {
@@ -22,28 +32,58 @@ function safeWriteList(key, list) {
 }
 
 function getAnswerSignature(answer) {
-  return [
-    answer && answer.content ? answer.content : "",
-    answer && answer.subContent ? answer.subContent : "",
-    answer && answer.exp ? answer.exp : "",
-  ].join("::")
+  return answerDetail.resolveAnswerId(answer) || getLegacyAnswerSignature(answer)
+}
+
+function getRecordIdentifiers(record) {
+  var identifiers = []
+  var primarySignature = getAnswerSignature(record)
+  var legacySignature = record && record.legacySignature ? record.legacySignature : getLegacyAnswerSignature(record)
+
+  if (primarySignature) {
+    identifiers.push(primarySignature)
+  }
+  if (legacySignature && identifiers.indexOf(legacySignature) === -1) {
+    identifiers.push(legacySignature)
+  }
+
+  return identifiers
+}
+
+function isSameRecord(left, right) {
+  var leftIdentifiers = getRecordIdentifiers(left)
+  var rightIdentifiers = getRecordIdentifiers(right)
+
+  return leftIdentifiers.some(function (identifier) {
+    return rightIdentifiers.indexOf(identifier) >= 0
+  })
 }
 
 function normalizeRecord(answer, source, createdAt) {
   var timestamp = createdAt || Date.now()
+  var enriched = answerDetail.enrichAnswer(answer || {})
+  var resolvedId = answerDetail.resolveAnswerId(enriched)
   return {
-    signature: getAnswerSignature(answer),
-    source: source || "answers",
-    content: answer && answer.content ? answer.content : "",
-    subContent: answer && answer.subContent ? answer.subContent : "",
-    exp: answer && answer.exp ? answer.exp : "",
+    signature: getAnswerSignature(enriched),
+    legacySignature: getLegacyAnswerSignature(enriched),
+    id: resolvedId,
+    source: source || (answer && answer.source) || "answers",
+    content: enriched.content || "",
+    subContent: enriched.subContent || "",
+    exp: enriched.exp || "",
+    detailTitle: enriched.detailTitle || "",
+    detailSummary: enriched.detailSummary || "",
+    detailMeaning: enriched.detailMeaning || "",
+    detailAdvice: enriched.detailAdvice || "",
+    detailRisk: enriched.detailRisk || "",
+    detailQuestion: enriched.detailQuestion || "",
     createdAt: timestamp,
   }
 }
 
 function dedupeAndLimit(list, record, maxCount) {
   var nextList = list.filter(function (item) {
-    return item.signature !== record.signature
+    return !isSameRecord(item, record)
   })
 
   nextList.unshift(record)
@@ -71,9 +111,9 @@ function recordAnswer(answer, source) {
 }
 
 function isFavorite(answer) {
-  var signature = getAnswerSignature(answer)
+  var record = normalizeRecord(answer)
   return getFavorites().some(function (item) {
-    return item.signature === signature
+    return isSameRecord(item, record)
   })
 }
 
@@ -81,12 +121,12 @@ function toggleFavorite(answer, source) {
   var record = normalizeRecord(answer, source, Date.now())
   var favorites = getFavorites()
   var exists = favorites.some(function (item) {
-    return item.signature === record.signature
+    return isSameRecord(item, record)
   })
 
   if (exists) {
     favorites = favorites.filter(function (item) {
-      return item.signature !== record.signature
+      return !isSameRecord(item, record)
     })
     safeWriteList(FAVORITES_KEY, favorites)
     return false
@@ -98,16 +138,36 @@ function toggleFavorite(answer, source) {
 }
 
 function buildClipboardText(answer) {
+  var enriched = answerDetail.enrichAnswer(answer || {})
   var parts = []
 
-  if (answer && answer.content) {
-    parts.push(answer.content)
+  if (enriched.content) {
+    parts.push(enriched.content)
   }
-  if (answer && answer.subContent) {
-    parts.push(answer.subContent)
+  if (enriched.subContent) {
+    parts.push(enriched.subContent)
   }
-  if (answer && answer.exp) {
-    parts.push(answer.exp)
+  if (enriched.exp) {
+    parts.push(enriched.exp)
+  }
+  if (enriched.detailTitle) {
+    parts.push("")
+    parts.push(enriched.detailTitle)
+  }
+  if (enriched.detailSummary) {
+    parts.push(enriched.detailSummary)
+  }
+  if (enriched.detailMeaning) {
+    parts.push(enriched.detailMeaning)
+  }
+  if (enriched.detailAdvice) {
+    parts.push(enriched.detailAdvice)
+  }
+  if (enriched.detailRisk) {
+    parts.push(enriched.detailRisk)
+  }
+  if (enriched.detailQuestion) {
+    parts.push(enriched.detailQuestion)
   }
 
   return parts.join("\n")
@@ -118,6 +178,7 @@ module.exports = {
   getAnswerSignature: getAnswerSignature,
   getFavorites: getFavorites,
   getHistory: getHistory,
+  getLegacyAnswerSignature: getLegacyAnswerSignature,
   isFavorite: isFavorite,
   recordAnswer: recordAnswer,
   toggleFavorite: toggleFavorite,

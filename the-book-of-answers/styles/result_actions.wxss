@@ -1,0 +1,292 @@
+.result-action-bar{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+
+.result-action-bar--answers{
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  padding: 0 36rpx;
+  box-sizing: border-box;
+}
+
+.result-action-bar--sunrise{
+  position: fixed;
+  left: 24rpx;
+  bottom: 122rpx;
+  z-index: 2;
+  justify-content: flex-start;
+  width: auto;
+  max-width: 360rpx;
+  gap: 12rpx;
+}
+
+.result-action-chip{
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 128rpx;
+  min-height: 82rpx;
+  padding: 6rpx;
+  border-radius: 999rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 248, 244, 0.24), rgba(255, 230, 217, 0.09));
+  border: 1px solid rgba(255, 247, 241, 0.34);
+  box-shadow: 0 18rpx 36rpx rgba(78, 40, 59, 0.12), inset 0 1rpx 0 rgba(255, 255, 255, 0.36);
+  backdrop-filter: blur(18rpx);
+  box-sizing: border-box;
+}
+
+.result-action-bar--sunrise .result-action-chip{
+  min-width: 82rpx;
+  min-height: 70rpx;
+}
+
+.result-action-chip-sheen{
+  position: absolute;
+  top: 4rpx;
+  left: 18rpx;
+  right: 18rpx;
+  height: 28rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08));
+  opacity: 0.9;
+}
+
+.result-action-chip-inner{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  padding: 12rpx 18rpx;
+  box-sizing: border-box;
+}
+
+.result-action-chip-label{
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.result-action-chip-text{
+  color: #fff9f4;
+  font-size: 24rpx;
+  letter-spacing: 2rpx;
+  text-align: center;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.result-action-chip-count{
+  color: rgba(255, 249, 244, 0.76);
+  font-size: 20rpx;
+  line-height: 1;
+}
+
+.result-action-chip--detail,
+.result-action-chip--more{
+  min-width: 104rpx;
+}
+
+.result-action-bar--sunrise .result-action-chip--detail,
+.result-action-bar--sunrise .result-action-chip--more{
+  min-width: 90rpx;
+}
+
+.result-action-bar--sunrise .result-action-chip-inner{
+  padding: 10rpx 14rpx;
+}
+
+.result-action-bar--sunrise .result-action-chip-text{
+  font-size: 22rpx;
+  letter-spacing: 1rpx;
+}
+
+.result-action-chip--favorite-active{
+  border-color: rgba(255, 225, 176, 0.66);
+  box-shadow: 0 20rpx 38rpx rgba(78, 40, 59, 0.16), inset 0 1rpx 0 rgba(255, 255, 255, 0.38), 0 0 0 1rpx rgba(255, 225, 176, 0.16);
+}
+
+.result-action-chip--switchMode{
+  opacity: 0.94;
+}
+
+.result-action-bar--answers .result-action-chip{
+  background: linear-gradient(135deg, rgba(255, 246, 248, 0.24), rgba(255, 214, 224, 0.09));
+  border-color: rgba(255, 243, 246, 0.36);
+  box-shadow: 0 18rpx 36rpx rgba(80, 22, 43, 0.16), inset 0 1rpx 0 rgba(255, 255, 255, 0.34);
+}
+
+.result-action-bar--answers .result-action-chip-sheen{
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.36), rgba(255, 229, 236, 0.08));
+}
+
+.result-action-bar--sunrise .result-action-chip{
+  background: linear-gradient(135deg, rgba(255, 250, 246, 0.28), rgba(255, 216, 190, 0.1));
+  border-color: rgba(255, 246, 239, 0.42);
+}
+
+.result-action-bar--sunrise .result-action-chip-sheen{
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.42), rgba(255, 231, 210, 0.08));
+}
+
+.result-action-bar--sunrise .result-action-chip-text{
+  text-shadow: 0 4rpx 12rpx rgba(0,0,0,.2);
+}
+
+.result-action-menu-overlay{
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9;
+  background: rgba(20, 12, 24, 0.34);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.result-action-menu{
+  width: 100%;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 28rpx 28rpx 34rpx;
+  box-sizing: border-box;
+}
+
+.result-action-menu--answers{
+  background: linear-gradient(180deg, rgba(255, 245, 244, 0.98), rgba(251, 228, 229, 0.98));
+}
+
+.result-action-menu--sunrise{
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.98), rgba(255, 238, 230, 0.98));
+}
+
+.result-action-menu-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.result-action-menu-title{
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.result-action-menu-close{
+  font-size: 24rpx;
+}
+
+.result-action-menu--answers .result-action-menu-title{
+  color: #7d112c;
+}
+
+.result-action-menu--sunrise .result-action-menu-title{
+  color: #8f375d;
+}
+
+.result-action-menu--answers .result-action-menu-close{
+  color: rgba(125, 17, 44, 0.72);
+}
+
+.result-action-menu--sunrise .result-action-menu-close{
+  color: rgba(143, 55, 93, 0.72);
+}
+
+.result-action-menu-list{
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.result-action-menu-item{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  min-height: 108rpx;
+  padding: 0 22rpx;
+  border-radius: 24rpx;
+  box-sizing: border-box;
+}
+
+.result-action-menu-item--share{
+  position: relative;
+  overflow: hidden;
+}
+
+.result-action-menu-share-trigger{
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  opacity: 0;
+  z-index: 2;
+}
+
+.result-action-menu-share-trigger::after{
+  border: none;
+}
+
+.result-action-menu--answers .result-action-menu-item{
+  background: rgba(125, 17, 44, 0.06);
+}
+
+.result-action-menu--sunrise .result-action-menu-item{
+  background: rgba(143, 55, 93, 0.06);
+}
+
+.result-action-menu-copy{
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.result-action-menu-item-title{
+  font-size: 28rpx;
+  line-height: 1.4;
+}
+
+.result-action-menu-item-desc{
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.result-action-menu-item-meta{
+  min-width: 44rpx;
+  text-align: right;
+  font-size: 24rpx;
+}
+
+.result-action-menu--answers .result-action-menu-item-title,
+.result-action-menu--answers .result-action-menu-item-meta{
+  color: #7d112c;
+}
+
+.result-action-menu--answers .result-action-menu-item-desc{
+  color: rgba(125, 17, 44, 0.68);
+}
+
+.result-action-menu--sunrise .result-action-menu-item-title,
+.result-action-menu--sunrise .result-action-menu-item-meta{
+  color: #8f375d;
+}
+
+.result-action-menu--sunrise .result-action-menu-item-desc{
+  color: rgba(143, 55, 93, 0.68);
+}

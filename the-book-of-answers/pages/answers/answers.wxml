@@ -1,4 +1,6 @@
 <!--answers.wxml-->
+<import src="../../templates/result_actions.wxml"/>
+<import src="../../templates/result_panels.wxml"/>
 <view class="container">
   <view class="modeSwitch" style="{{modeSwitchStyle}}" bindtap="onTapSwitchMode">
     <text class="modeSwitchText">回到日出模式</text>
@@ -17,44 +19,10 @@
     <text class="expTxt">{{exp}}</text>
   </view>
   <view class="table" style="{{tableStyle}}">
-    <view class="resultActions" wx:if="{{hasAnswer}}" style="{{resultActionsStyle}}">
-      <view class="actionChip" bindtap="onTapDrawAgain">
-        <text class="actionChipText">再抽一次</text>
-      </view>
-      <view class="actionChip" bindtap="onTapCopyResult">
-        <text class="actionChipText">复制</text>
-      </view>
-      <view class="actionChip" bindtap="onTapToggleFavorite">
-        <text class="actionChipText">{{isCurrentFavorite ? '已收藏' : '收藏'}}</text>
-      </view>
-      <view class="actionChip" bindtap="onTapShowHistory">
-        <text class="actionChipText">历史 {{historyCount}}</text>
-      </view>
-      <view class="actionChip" bindtap="onTapShowFavorites">
-        <text class="actionChipText">收藏夹 {{favoriteCount}}</text>
-      </view>
-    </view>
+    <template is="resultActions" data="{{hasAnswer: hasAnswer, actionBarStyle: resultActionsStyle, resultActionThemeClass: resultActionThemeClass, resultActionMenuThemeClass: resultActionMenuThemeClass, historyCount: historyCount, favoriteCount: favoriteCount, isCurrentFavorite: isCurrentFavorite, actionMenuVisible: actionMenuVisible, showShareAction: true, shareActionLabel: '微信分享'}}"/>
     <image id="table" class="tableImg" style="{{tableImageStyle}}" src="../../assets/table.png" bindtap="bindTap" bindlongpress="longPress" bindtouchend="touchEnd" animation="{{tableAnimation}}"></image>
     <text class="tableHint" style="{{tableHintStyle}}">{{tableHint}}</text>
   </view>
-  <view class="recordMask" wx:if="{{recordPanelVisible}}" bindtap="onCloseRecordPanel">
-    <view class="recordPanel" catchtap="noop" style="{{recordPanelStyle}}">
-      <view class="recordPanelHeader">
-        <text class="recordPanelTitle">{{recordPanelTitle}}</text>
-        <text class="recordPanelClose" bindtap="onCloseRecordPanel">关闭</text>
-      </view>
-      <view class="recordEmpty" wx:if="{{!recordPanelItems.length}}">
-        <text class="recordEmptyText">{{recordPanelEmptyText}}</text>
-      </view>
-      <scroll-view class="recordList" scroll-y wx:else>
-        <view class="recordItem" wx:for="{{recordPanelItems}}" wx:key="signature" data-index="{{index}}" bindtap="onTapRecordItem">
-          <text class="recordItemContent">{{item.content}}</text>
-          <text class="recordItemSub">{{item.subContent}}</text>
-          <text class="recordItemExp">{{item.exp}}</text>
-          <text class="recordItemMeta">{{item.displayMeta}}</text>
-        </view>
-      </scroll-view>
-    </view>
-  </view>
+  <template is="resultPanels" data="{{resultPanelThemeClass: resultPanelThemeClass, recordPanelVisible: recordPanelVisible, recordPanelStyle: recordPanelStyle, recordPanelTitle: recordPanelTitle, recordPanelEmptyText: recordPanelEmptyText, recordPanelItems: recordPanelItems, detailPanelVisible: detailPanelVisible, detailPanelStyle: detailPanelStyle, detailPanelTitle: detailPanelTitle, detailPanelSummary: detailPanelSummary, detailPanelMeaning: detailPanelMeaning, detailPanelAdvice: detailPanelAdvice, detailPanelRisk: detailPanelRisk, detailPanelQuestion: detailPanelQuestion}}"/>
   <canvas id="answers-share-canvas" type="2d" class="shareCanvas"></canvas>
 </view>

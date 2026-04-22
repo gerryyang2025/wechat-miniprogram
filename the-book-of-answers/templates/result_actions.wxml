@@ -1,0 +1,79 @@
+<template name="resultActions">
+  <view class="result-action-bar {{resultActionThemeClass}}" wx:if="{{hasAnswer}}" style="{{actionBarStyle}}">
+    <view class="result-action-chip result-action-chip--detail" data-action="detail" bindtap="onTapResultAction">
+      <view class="result-action-chip-sheen"></view>
+      <view class="result-action-chip-inner">
+        <view class="result-action-chip-label">
+          <text class="result-action-chip-text">解读</text>
+        </view>
+      </view>
+    </view>
+    <view class="result-action-chip result-action-chip--favorite {{isCurrentFavorite ? 'result-action-chip--favorite-active' : ''}}" data-action="favorite" bindtap="onTapResultAction">
+      <view class="result-action-chip-sheen"></view>
+      <view class="result-action-chip-inner">
+        <view class="result-action-chip-label">
+          <text class="result-action-chip-text">{{isCurrentFavorite ? '已收藏' : '收藏'}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="result-action-chip result-action-chip--more" data-action="more" bindtap="onTapResultAction">
+      <view class="result-action-chip-sheen"></view>
+      <view class="result-action-chip-inner">
+        <view class="result-action-chip-label">
+          <text class="result-action-chip-text">更多</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="result-action-menu-overlay" wx:if="{{actionMenuVisible}}" bindtap="onCloseActionMenu">
+    <view class="result-action-menu {{resultActionMenuThemeClass}}" catchtap="noop">
+      <view class="result-action-menu-header">
+        <text class="result-action-menu-title">更多操作</text>
+        <text class="result-action-menu-close" bindtap="onCloseActionMenu">关闭</text>
+      </view>
+      <view class="result-action-menu-list">
+        <view class="result-action-menu-item result-action-menu-item--share" wx:if="{{showShareAction}}">
+          <view class="result-action-menu-copy">
+            <text class="result-action-menu-item-title">{{shareActionLabel}}</text>
+            <text class="result-action-menu-item-desc">打开微信分享面板发送给朋友</text>
+          </view>
+          <button class="result-action-menu-share-trigger" open-type="share" hover-class="none" bindtap="onTapShareAction"></button>
+        </view>
+        <view class="result-action-menu-item" wx:if="{{showSavePosterAction}}" data-action="savePoster" bindtap="onTapMoreAction">
+          <view class="result-action-menu-copy">
+            <text class="result-action-menu-item-title">{{savePosterActionLabel}}</text>
+            <text class="result-action-menu-item-desc">把当前答案保存到系统相册</text>
+          </view>
+        </view>
+        <view class="result-action-menu-item" wx:if="{{showAmbientAudioAction}}" data-action="toggleAmbientAudio" bindtap="onTapMoreAction">
+          <view class="result-action-menu-copy">
+            <text class="result-action-menu-item-title">{{ambientAudioActionLabel}}</text>
+            <text class="result-action-menu-item-desc">{{ambientAudioActionDesc}}</text>
+          </view>
+          <text class="result-action-menu-item-meta">{{ambientAudioActionMeta}}</text>
+        </view>
+        <view class="result-action-menu-item" data-action="copy" bindtap="onTapMoreAction">
+          <view class="result-action-menu-copy">
+            <text class="result-action-menu-item-title">复制答案</text>
+            <text class="result-action-menu-item-desc">便于转发、留存或收藏到笔记</text>
+          </view>
+        </view>
+        <view class="result-action-menu-item" data-action="history" bindtap="onTapMoreAction">
+          <view class="result-action-menu-copy">
+            <text class="result-action-menu-item-title">最近记录</text>
+            <text class="result-action-menu-item-desc">查看最近抽到的答案</text>
+          </view>
+          <text class="result-action-menu-item-meta">{{historyCount}}</text>
+        </view>
+        <view class="result-action-menu-item" data-action="favorites" bindtap="onTapMoreAction">
+          <view class="result-action-menu-copy">
+            <text class="result-action-menu-item-title">收藏夹</text>
+            <text class="result-action-menu-item-desc">回看你标记过的答案</text>
+          </view>
+          <text class="result-action-menu-item-meta">{{favoriteCount}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>

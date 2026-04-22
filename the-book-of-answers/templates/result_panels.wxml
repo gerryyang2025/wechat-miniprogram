@@ -1,0 +1,55 @@
+<template name="resultPanels">
+  <view class="result-overlay result-overlay--record" wx:if="{{recordPanelVisible}}" bindtap="onCloseRecordPanel">
+    <view class="result-sheet result-sheet--record {{resultPanelThemeClass}}" catchtap="noop" style="{{recordPanelStyle}}">
+      <view class="result-sheet-header">
+        <text class="result-sheet-title">{{recordPanelTitle}}</text>
+        <text class="result-sheet-close" bindtap="onCloseRecordPanel">关闭</text>
+      </view>
+      <view class="result-sheet-empty" wx:if="{{!recordPanelItems.length}}">
+        <text class="result-sheet-empty-text">{{recordPanelEmptyText}}</text>
+      </view>
+      <scroll-view class="result-sheet-list" scroll-y wx:else>
+        <view class="result-sheet-item" wx:for="{{recordPanelItems}}" wx:key="signature" data-index="{{index}}" bindtap="onTapRecordItem">
+          <text class="result-sheet-item-content">{{item.content}}</text>
+          <text class="result-sheet-item-sub">{{item.subContent}}</text>
+          <text class="result-sheet-item-exp">{{item.exp}}</text>
+          <text class="result-sheet-item-meta">{{item.displayMeta}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="result-overlay result-overlay--detail" wx:if="{{detailPanelVisible}}" bindtap="onCloseDetailPanel">
+    <view class="result-sheet result-sheet--detail {{resultPanelThemeClass}}" catchtap="noop" style="{{detailPanelStyle}}">
+      <view class="result-sheet-header result-sheet-header--detail">
+        <view class="result-sheet-heading">
+          <text class="result-sheet-eyebrow">详细解读</text>
+          <text class="result-sheet-detail-title">{{detailPanelTitle}}</text>
+        </view>
+        <text class="result-sheet-close" bindtap="onCloseDetailPanel">关闭</text>
+      </view>
+      <scroll-view class="result-sheet-body" scroll-y>
+        <view class="result-sheet-section" wx:if="{{detailPanelSummary}}">
+          <text class="result-sheet-section-label">第一感觉</text>
+          <text class="result-sheet-section-text">{{detailPanelSummary}}</text>
+        </view>
+        <view class="result-sheet-section" wx:if="{{detailPanelMeaning}}">
+          <text class="result-sheet-section-label">你可以这样理解</text>
+          <text class="result-sheet-section-text">{{detailPanelMeaning}}</text>
+        </view>
+        <view class="result-sheet-section" wx:if="{{detailPanelAdvice}}">
+          <text class="result-sheet-section-label">现在更适合</text>
+          <text class="result-sheet-section-text">{{detailPanelAdvice}}</text>
+        </view>
+        <view class="result-sheet-section" wx:if="{{detailPanelRisk}}">
+          <text class="result-sheet-section-label">需要留意</text>
+          <text class="result-sheet-section-text">{{detailPanelRisk}}</text>
+        </view>
+        <view class="result-sheet-section" wx:if="{{detailPanelQuestion}}">
+          <text class="result-sheet-section-label">可以问问自己</text>
+          <text class="result-sheet-section-text">{{detailPanelQuestion}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>

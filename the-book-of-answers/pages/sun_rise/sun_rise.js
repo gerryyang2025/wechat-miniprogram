@@ -10,8 +10,8 @@ var anim_sun_cloud = require("./anim_sun_cloud.js")
 // var anim_exp = require("./anim_exp.js")
 var anim_cloud_move = require("./anim_cloud_move.js")
 var answerStore = require("../../utils/answer_store.js")
+var resultInteractionBehavior = require("../../behaviors/result_interaction.js")
 var shareImage = require("../../utils/share_image.js")
-var util = require("../../utils/util.js")
 
 
 var State = {
@@ -37,6 +37,8 @@ var ANSWER_SOURCE = "sun_rise"
 var ANSWERS_PAGE_PATH = "/pages/answers/answers"
 var SUN_RISE_PAGE_PATH = "/pages/sun_rise/sun_rise"
 var SUN_RISE_SHARE_IMAGE = "/assets/sun_rise/save_bg.png"
+var AUDIO_SRC = "/assets/audio_001.mp3"
+var AUDIO_START_TIME = 5
 var SHARE_SCENE_APP_MESSAGE = "appMessage"
 var SHARE_SCENE_TIMELINE = "timeline"
 var SHARE_QUERY_FROM_SHARE = "fromShare"
@@ -58,7 +60,17 @@ function buildQueryString(params) {
     .join("&")
 }
 
+function buildAmbientAudioActionState(enabled) {
+  return {
+    ambientAudioEnabled: !!enabled,
+    ambientAudioActionLabel: "环境音开关",
+    ambientAudioActionDesc: enabled ? "环境音已开启，点一下关闭" : "当前默认静音，点一下开启环境音",
+    ambientAudioActionMeta: enabled ? "已开" : "已关",
+  }
+}
+
 Page({
+  behaviors: [resultInteractionBehavior],
 
   /**
    * 页面的初始数据
@@ -87,10 +99,7 @@ Page({
     // _anim_exp: "",
 
     _tran_exp_show: "",
-    _tran_save_btn_show: "",
-    saveButtonStyle: "",
     thanksStyle: "",
-    modeSwitchStyle: "",
     resultActionStyle: "",
     sunImageStyle: "",
     cloudOneStyle: "",
@@ -99,6 +108,7 @@ Page({
     cloudFourStyle: "",
     manStyle: "",
     manShadowStyle: "",
+    manHitAreaStyle: "",
     birdOneStyle: "",
     birdTwoStyle: "",
     birdThreeStyle: "",
@@ -108,21 +118,23 @@ Page({
     tutorialStyle: "",
     circleContainerStyle: "",
     circleLineContainerStyle: "",
-    saveButtonTextStyle: "",
     recordPanelStyle: "",
     hasAnswer: false,
-    isCurrentFavorite: false,
-    historyCount: 0,
-    favoriteCount: 0,
-    recordPanelVisible: false,
-    recordPanelTitle: "",
-    recordPanelEmptyText: "",
-    recordPanelItems: [],
+    canSavePoster: false,
+    resultActionThemeClass: "result-action-bar--sunrise",
+    resultActionMenuThemeClass: "result-action-menu--sunrise",
+    resultPanelThemeClass: "result-theme--sunrise",
+    showAmbientAudioAction: true,
+    detailPanelStyle: "",
     posterErrorVisible: false,
     posterErrorTitle: "",
     posterErrorMessage: "",
     posterErrorSupportText: "",
     posterErrorRetryText: "重新尝试",
+    ambientAudioEnabled: false,
+    ambientAudioActionLabel: "环境音开关",
+    ambientAudioActionDesc: "当前默认静音，点一下开启环境音",
+    ambientAudioActionMeta: "已关",
   },
 
   touchStartTime: 0,
@@ -146,6 +158,8 @@ Page({
   posterRetryAction: "",
   shareImageCache: null,
   shareImageTask: null,
+  audioCtx: null,
+  shouldResumeAudioOnShow: false,
 
   /**
    * 生命周期函数--监听页面加载
@@ -167,6 +181,7 @@ Page({
     this.cloudFloatIntervals = []
     this.shareImageCache = {}
     this.shareImageTask = Promise.resolve()
+    this.initBackgroundAudio()
     this.initLayoutInfo()
     this.showShareOptions()
     this.refreshAnswerRecords()
@@ -179,6 +194,7 @@ Page({
     // 设置content默认内容
     this.isPageReady = true
     this.initial()
+    this.playBackgroundAudio()
   },
 
   /**
@@ -190,6 +206,9 @@ Page({
       this.initial()
     } else if (this.isPageReady && this.data.state === State.waiting && !this.data.isShowTutorialTxt) {
       this.startCloudFloatAnimations()
+    }
+    if (this.shouldResumeAudioOnShow) {
+      this.playBackgroundAudio()
     }
     this.refreshAnswerRecords()
   },
@@ -203,8 +222,11 @@ Page({
    */
   onHide: function () {
     this.clearAnimationTimers()
+    this.pauseBackgroundAudio()
     this.setData({
+      actionMenuVisible: false,
       recordPanelVisible: false,
+      detailPanelVisible: false,
       posterErrorVisible: false,
     })
     if (this.data.state !== State.waiting || this.data.isShowTutorialTxt) {
@@ -218,6 +240,7 @@ Page({
    */
   onUnload: function () {
     this.clearAnimationTimers()
+    this.destroyBackgroundAudio()
     this.shareCanvas = null
     this.shareCtx = null
     this.shareImageCache = null
@@ -246,7 +269,6 @@ Page({
   initLayoutInfo: function () {
     var runtimeInfo = app.refreshRuntimeInfo ? app.refreshRuntimeInfo() : app.globalData.runtimeInfo || {}
     var windowInfo = runtimeInfo.windowInfo || {}
-    var menuButtonInfo = runtimeInfo.menuButtonInfo || null
     var topInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.top : 0
     var bottomInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.bottom : 0
     var windowWidth = windowInfo.windowWidth || 375
@@ -258,25 +280,29 @@ Page({
     var bubbleBottom = bottomInset + clamp(windowHeight * (compact ? 0.18 : 0.22), 120, 188)
     var bubbleRight = clamp(windowWidth * 0.12, 20, 56)
     var actionWidth = clamp(windowWidth - 32, 236, 320)
-    var saveTextBottom = Math.max(bottomInset, 0)
     var sunHeight = clamp(windowHeight * 0.54, 320, 420)
     var circleBottom = bottomInset + clamp(windowHeight * 0.1, 70, 120)
     var circleLineBottom = Math.max(circleBottom - 10, bottomInset + 60)
-    var modeSwitchLeft = clamp(windowWidth * 0.045, 14, 22)
-    var modeSwitchTop = menuButtonInfo && menuButtonInfo.bottom ? menuButtonInfo.bottom + 10 : topInset + 14
+    var manLeft = Math.round(windowWidth * 0.654)
+    var manBottom = Math.round(bottomInset + clamp(windowHeight * 0.11, 66, 88))
+    var manShadowLeft = Math.round(windowWidth * 0.651)
+    var manShadowBottom = Math.round(bottomInset + clamp(windowHeight * 0.097, 58, 76))
+    var manHitWidth = clamp(windowWidth * 0.14, 42, 58)
+    var manHitHeight = clamp(windowHeight * 0.12, 56, 76)
+    var manHitLeft = Math.round(manLeft - manHitWidth * 0.45)
+    var manHitBottom = Math.round(manShadowBottom - manHitHeight * 0.2)
 
     this.setData({
-      saveButtonStyle: "bottom: " + bottomInset + "px;",
       thanksStyle: bottomInset ? "bottom: calc(10rpx + " + bottomInset + "px);" : "",
-      modeSwitchStyle: "top: " + Math.round(modeSwitchTop) + "px; left: " + Math.round(modeSwitchLeft) + "px;",
-      resultActionStyle: "bottom: " + (bottomInset + (compact ? 88 : 98)) + "px; width: " + actionWidth + "px;",
+      resultActionStyle: "bottom: " + (bottomInset + (compact ? 28 : 34)) + "px; max-width: " + actionWidth + "px;",
       sunImageStyle: "max-height: " + Math.round(sunHeight) + "px;",
       cloudOneStyle: "max-width: " + clamp(windowWidth * 0.17, 52, 72) + "px; max-height: " + clamp(windowWidth * 0.095, 28, 40) + "px; top: " + Math.round(clamp(topInset + windowHeight * 0.17, topInset + 84, topInset + 128)) + "px; right: " + Math.round(clamp(windowWidth * 0.045, 14, 22)) + "px;",
       cloudTwoStyle: "max-width: " + clamp(windowWidth * 0.17, 52, 72) + "px; max-height: " + clamp(windowWidth * 0.095, 28, 40) + "px; top: " + Math.round(clamp(topInset + windowHeight * 0.29, topInset + 142, topInset + 212)) + "px; left: " + Math.round(clamp(windowWidth * 0.045, 14, 22)) + "px;",
       cloudThreeStyle: "max-width: " + clamp(windowWidth * 0.14, 44, 62) + "px; max-height: " + clamp(windowWidth * 0.07, 20, 30) + "px; right: " + Math.round(clamp(windowWidth * 0.13, 36, 60)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.31, 184, 236)) + "px;",
       cloudFourStyle: "max-width: " + clamp(windowWidth * 0.1, 30, 45) + "px; max-height: " + clamp(windowWidth * 0.04, 10, 18) + "px; left: " + Math.round(clamp(windowWidth * 0.07, 20, 32)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.26, 146, 192)) + "px;",
-      manStyle: "max-width: " + clamp(windowWidth * 0.018, 6, 9) + "px; max-height: " + clamp(windowWidth * 0.044, 14, 20) + "px; left: " + Math.round(windowWidth * 0.654) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.11, 66, 88)) + "px;",
-      manShadowStyle: "max-width: " + clamp(windowWidth * 0.05, 16, 24) + "px; max-height: " + clamp(windowWidth * 0.035, 10, 16) + "px; left: " + Math.round(windowWidth * 0.651) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.097, 58, 76)) + "px;",
+      manStyle: "max-width: " + clamp(windowWidth * 0.018, 6, 9) + "px; max-height: " + clamp(windowWidth * 0.044, 14, 20) + "px; left: " + manLeft + "px; bottom: " + manBottom + "px;",
+      manShadowStyle: "max-width: " + clamp(windowWidth * 0.05, 16, 24) + "px; max-height: " + clamp(windowWidth * 0.035, 10, 16) + "px; left: " + manShadowLeft + "px; bottom: " + manShadowBottom + "px;",
+      manHitAreaStyle: "left: " + manHitLeft + "px; bottom: " + manHitBottom + "px; width: " + Math.round(manHitWidth) + "px; height: " + Math.round(manHitHeight) + "px;",
       birdOneStyle: "max-width: " + clamp(windowWidth * 0.033, 10, 15) + "px; max-height: " + clamp(windowWidth * 0.017, 4, 8) + "px; right: " + Math.round(clamp(windowWidth * 0.11, 18, 28)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.145, 86, 114)) + "px;",
       birdTwoStyle: "max-width: " + clamp(windowWidth * 0.026, 8, 12) + "px; max-height: " + clamp(windowWidth * 0.013, 3, 6) + "px; left: " + Math.round(windowWidth * 0.322) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.07, 40, 58)) + "px;",
       birdThreeStyle: "max-width: " + clamp(windowWidth * 0.018, 5, 8) + "px; max-height: " + clamp(windowWidth * 0.008, 2, 4) + "px; left: " + Math.round(windowWidth * 0.262) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.06, 34, 50)) + "px;",
@@ -286,8 +312,8 @@ Page({
       tutorialStyle: "top: " + Math.round(tutorialTop) + "px;",
       circleContainerStyle: "bottom: " + Math.round(circleBottom) + "px;",
       circleLineContainerStyle: "bottom: " + Math.round(circleLineBottom) + "px;",
-      saveButtonTextStyle: "margin-bottom: " + (bottomInset > 0 ? 20 : 28) + "rpx;",
       recordPanelStyle: "padding-bottom: " + Math.max(bottomInset, 16) + "px;",
+      detailPanelStyle: "padding-bottom: " + Math.max(bottomInset, 20) + "px;",
     })
   },
 
@@ -306,6 +332,93 @@ Page({
       })
       this.cloudFloatIntervals = []
     }
+  },
+
+  initBackgroundAudio: function () {
+    if (this.audioCtx || typeof wx.createInnerAudioContext !== "function") {
+      return
+    }
+
+    this.audioCtx = wx.createInnerAudioContext()
+    this.audioCtx.src = AUDIO_SRC
+    this.audioCtx.startTime = AUDIO_START_TIME
+    this.audioCtx.loop = true
+    if (typeof this.audioCtx.obeyMuteSwitch === "boolean") {
+      this.audioCtx.obeyMuteSwitch = true
+    }
+    this.audioCtx.onPlay(function () {
+      this.shouldResumeAudioOnShow = !!this.data.ambientAudioEnabled
+    }.bind(this))
+    this.audioCtx.onError(function (error) {
+      console.error("sunrise background audio failed", error)
+    })
+  },
+
+  playBackgroundAudio: function () {
+    if (!this.audioCtx || !this.data.ambientAudioEnabled) {
+      return
+    }
+
+    this.shouldResumeAudioOnShow = true
+    this.audioCtx.play()
+  },
+
+  pauseBackgroundAudio: function () {
+    if (!this.audioCtx) {
+      return
+    }
+
+    this.shouldResumeAudioOnShow = !!this.data.ambientAudioEnabled
+    this.audioCtx.pause()
+  },
+
+  ensureBackgroundAudioStarted: function () {
+    if (!this.data.ambientAudioEnabled) {
+      return
+    }
+
+    if (!this.audioCtx) {
+      this.initBackgroundAudio()
+    }
+
+    this.playBackgroundAudio()
+  },
+
+  setAmbientAudioEnabled: function (enabled) {
+    var nextEnabled = !!enabled
+    this.shouldResumeAudioOnShow = nextEnabled
+    this.setData(buildAmbientAudioActionState(nextEnabled))
+
+    if (nextEnabled) {
+      this.ensureBackgroundAudioStarted()
+      wx.showToast({
+        title: "环境音已开启",
+        icon: "none",
+        duration: 1200,
+      })
+      return
+    }
+
+    this.pauseBackgroundAudio()
+    wx.showToast({
+      title: "环境音已关闭",
+      icon: "none",
+      duration: 1200,
+    })
+  },
+
+  onTapToggleAmbientAudioAction: function () {
+    this.setAmbientAudioEnabled(!this.data.ambientAudioEnabled)
+  },
+
+  destroyBackgroundAudio: function () {
+    if (!this.audioCtx) {
+      return
+    }
+
+    this.shouldResumeAudioOnShow = false
+    this.audioCtx.destroy()
+    this.audioCtx = null
   },
 
   startCloudFloatAnimations: function () {
@@ -364,7 +477,9 @@ Page({
       // _anim_exp: this.anim_exp.initial().export()
       _tran_exp_show: "",
       hasAnswer: false,
+      canSavePoster: false,
       isCurrentFavorite: false,
+      detailPanelVisible: false,
       posterErrorVisible: false,
       posterErrorSupportText: "",
     })
@@ -402,6 +517,7 @@ Page({
   onMountainLongPress: function(e) {
     if (this.data.state == State.waiting)
     {
+      this.ensureBackgroundAudioStarted()
       this.touchStartTime = e.timeStamp
 
       this.isScreenshotDrew = false    // 屏幕截图设置为需要重新画
@@ -426,8 +542,9 @@ Page({
         _anim_sub_content: this.anim_content.initialSubTxt().export(),
         // _anim_exp: this.anim_exp.initial().export(),
         _tran_exp_show: "",
-        _tran_save_btn_show: "",    // 隐藏保存按钮
         hasAnswer: false,
+        canSavePoster: false,
+        detailPanelVisible: false,
         posterErrorVisible: false,
       })
 
@@ -448,13 +565,10 @@ Page({
   },
 
   onMountainTap: function(e){
+    this.ensureBackgroundAudioStarted()
     if (this.data.state == State.waiting && this.expShowable)
     {
-      this.setData({
-        // _anim_exp: this.anim_exp.exp(this.anim_data.expDuration, this.isExpShow ? 0 : 1).export()
-        _tran_exp_show: this.isExpShow ? "" : this.anim_data.tran_exp_show
-      })
-      this.isExpShow = !this.isExpShow
+      this.setExpBubbleVisible(!this.isExpShow)
     }else if (this.data.state == State.saving)
     {
       this.hidScreenshot()
@@ -501,6 +615,7 @@ Page({
       _anim_content: this.anim_content.contentShow(this.anim_data.contentDuration, 0).export(),
       _anim_sub_content: this.anim_content.subContentShow(this.anim_data.subContentDuration, this.anim_data.contentInteral + this.anim_data.contentDuration).export(),
       hasAnswer: true,
+      detailPanelVisible: false,
     })
 
     this.triggerSuccessFeedback()
@@ -510,9 +625,11 @@ Page({
     this.answerRevealTimeout = setTimeout(function () {
       this.setData({
         state: State.waiting,
-        _tran_save_btn_show: this.anim_data.tran_save_btn_show    // 显示保存按钮
+        canSavePoster: true,
+        _tran_exp_show: this.anim_data.tran_exp_show,
       })
       this.expShowable = true
+      this.isExpShow = true
     }.bind(this), time)
   },
   /**
@@ -547,11 +664,8 @@ Page({
    * ---------------------------  保存截图功能  ---------------------------
    */
 
-  /**
-   * 点击保存按钮事件
-   */
-  onTapSave: function (e) {
-    if (this.data.state == State.waiting && this.getCurrentAnswer() && this.data._tran_save_btn_show != ""){
+  onTapSavePosterAction: function () {
+    if (this.data.state == State.waiting && this.getCurrentAnswer() && this.data.canSavePoster){
       this.requestAlbumPermission(function () {
         this.startSaveFlow()
       }.bind(this))
@@ -787,7 +901,7 @@ Page({
   hidScreenshot: function (e) {
     this.setData({
       state: State.waiting,
-      _tran_save_btn_show: this.anim_data.tran_save_btn_show,    // 显示保存按钮
+      canSavePoster: true,
     })
   },
 
@@ -1015,13 +1129,6 @@ Page({
       return false
     }
 
-    if (mode === "answers") {
-      wx.redirectTo({
-        url: ANSWERS_PAGE_PATH + "?" + this.buildShareQuery(options[SHARE_QUERY_SCENE] || "", mode),
-      })
-      return true
-    }
-
     return false
   },
 
@@ -1053,76 +1160,23 @@ Page({
     return this.currentAnswerRecord
   },
 
-  refreshAnswerRecords: function () {
-    var history = answerStore.getHistory()
-    var favorites = answerStore.getFavorites()
-    var currentAnswer = this.getCurrentAnswer()
+  getRecordPanelEmptyText: function (type) {
+    return type === "history" ? "还没有最近记录，先长按太阳试试。" : "还没有收藏的答案。"
+  },
 
+  setExpBubbleVisible: function (visible) {
+    this.isExpShow = visible
     this.setData({
-      historyCount: history.length,
-      favoriteCount: favorites.length,
-      isCurrentFavorite: currentAnswer ? answerStore.isFavorite(currentAnswer) : false,
+      _tran_exp_show: visible ? this.anim_data.tran_exp_show : "",
     })
   },
 
-  getSourceLabel: function (source) {
-    return source === ANSWER_SOURCE ? "日出模式" : "经典模式"
-  },
-
-  formatRecordItems: function (records) {
-    return records.map(function (item) {
-      var createdAt = item.createdAt || Date.now()
-      return {
-        signature: item.signature,
-        source: item.source,
-        content: item.content,
-        subContent: item.subContent,
-        exp: item.exp,
-        createdAt: createdAt,
-        displayMeta: this.getSourceLabel(item.source) + " · " + util.formatTime(new Date(createdAt)),
-      }
-    }.bind(this))
-  },
-
-  openRecordPanel: function (type) {
-    var isHistory = type === "history"
-    var items = isHistory ? answerStore.getHistory() : answerStore.getFavorites()
-
-    this.setData({
-      recordPanelVisible: true,
-      recordPanelTitle: isHistory ? "最近答案" : "收藏夹",
-      recordPanelEmptyText: isHistory ? "还没有最近记录，先长按太阳试试。" : "还没有收藏的答案。",
-      recordPanelItems: this.formatRecordItems(items),
-    })
-  },
-
-  onTapShowHistory: function () {
-    this.openRecordPanel("history")
-  },
-
-  onTapShowFavorites: function () {
-    this.openRecordPanel("favorites")
-  },
-
-  onCloseRecordPanel: function () {
-    this.setData({
-      recordPanelVisible: false,
-    })
-  },
-
-  onTapRecordItem: function (e) {
-    var index = Number(e.currentTarget.dataset.index)
-    var record = this.data.recordPanelItems[index]
-    if (!record) {
-      return
-    }
-
+  applySelectedAnswerRecord: function (record) {
     this.currentAnswerRecord = answerStore.recordAnswer(record, record.source || ANSWER_SOURCE)
     this.isScreenshotDrew = false
     this.lastPosterTempFilePath = ""
     this.resetShareImageCache()
     this.expShowable = true
-    this.isExpShow = true
     this.setData({
       content: this.currentAnswerRecord.content,
       subContent: this.currentAnswerRecord.subContent,
@@ -1130,81 +1184,16 @@ Page({
       state: State.waiting,
       isShowTutorialTxt: false,
       _tran_exp_show: this.anim_data.tran_exp_show,
-      _tran_save_btn_show: this.anim_data.tran_save_btn_show,
       hasAnswer: true,
+      canSavePoster: true,
       recordPanelVisible: false,
+      detailPanelVisible: false,
+      actionMenuVisible: false,
       posterErrorVisible: false,
     })
+    this.isExpShow = true
     this.refreshAnswerRecords()
     this.prepareDynamicShareImages()
-  },
-
-  onTapCopyResult: function () {
-    var answer = this.getCurrentAnswer()
-    if (!answer) {
-      return
-    }
-
-    wx.setClipboardData({
-      data: answerStore.buildClipboardText(answer),
-      success: function () {
-        wx.showToast({
-          title: "已复制答案",
-          icon: "none",
-          duration: 1200,
-        })
-      }
-    })
-  },
-
-  onTapToggleFavorite: function () {
-    var answer = this.getCurrentAnswer()
-    if (!answer) {
-      return
-    }
-
-    var isFavorite = answerStore.toggleFavorite(answer, ANSWER_SOURCE)
-    this.setData({
-      isCurrentFavorite: isFavorite,
-    })
-    this.refreshAnswerRecords()
-    wx.showToast({
-      title: isFavorite ? "已加入收藏" : "已取消收藏",
-      icon: "none",
-      duration: 1200,
-    })
-  },
-
-  onTapReroll: function () {
-    if (!this.getCurrentAnswer() || this.data.state !== State.waiting) {
-      return
-    }
-
-    clearTimeout(this.answerRevealTimeout)
-    clearTimeout(this.timeout_press_over)
-    clearTimeout(this.sunRiseStartTimeout)
-    this.isScreenshotDrew = false
-    this.lastPosterTempFilePath = ""
-    this.resetShareImageCache()
-    this.expShowable = false
-    this.isExpShow = false
-
-    this.setData({
-      content: "",
-      subContent: "",
-      exp: "",
-      state: State.pressing,
-      hasAnswer: false,
-      _anim_content: this.anim_content.initialTxt().export(),
-      _anim_sub_content: this.anim_content.initialSubTxt().export(),
-      _tran_exp_show: "",
-      _tran_save_btn_show: "",
-      posterErrorVisible: false,
-    })
-
-    this.answerRevealTimeout = setTimeout(function () {
-      this.pressSuccess()
-    }.bind(this), 120)
   },
 
   noop: function () {},

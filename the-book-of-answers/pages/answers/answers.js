@@ -3,8 +3,8 @@
 var app = getApp()
 var answerData = require("./answer_data.js")
 var answerStore = require("../../utils/answer_store.js")
+var resultInteractionBehavior = require("../../behaviors/result_interaction.js")
 var shareImage = require("../../utils/share_image.js")
-var util = require("../../utils/util.js")
 
 const AUDIO_START_TIME = 5
 const AUDIO_SRC = "/assets/audio_001.mp3"
@@ -39,7 +39,22 @@ function buildQueryString(params) {
     .join("&")
 }
 
+function buildSunriseRedirectUrl(options) {
+  var params = {}
+  if (options && options[SHARE_QUERY_FROM_SHARE]) {
+    params[SHARE_QUERY_FROM_SHARE] = options[SHARE_QUERY_FROM_SHARE]
+  }
+  if (options && options[SHARE_QUERY_SCENE]) {
+    params[SHARE_QUERY_SCENE] = options[SHARE_QUERY_SCENE]
+  }
+  params[SHARE_QUERY_MODE] = "sun_rise"
+  var query = buildQueryString(params)
+  return query ? SUN_RISE_PAGE_PATH + "?" + query : SUN_RISE_PAGE_PATH
+}
+
 Page({
+  behaviors: [resultInteractionBehavior],
+
   /**
    * 页面的初始数据
    */
@@ -57,13 +72,10 @@ Page({
     tableHint: DEFAULT_HINT,
     modeSwitchStyle: "",
     hasAnswer: false,
-    isCurrentFavorite: false,
-    historyCount: 0,
-    favoriteCount: 0,
-    recordPanelVisible: false,
-    recordPanelTitle: "",
-    recordPanelEmptyText: "",
-    recordPanelItems: [],
+    resultActionThemeClass: "result-action-bar--answers",
+    resultActionMenuThemeClass: "result-action-menu--answers",
+    resultPanelThemeClass: "result-theme--answers",
+    detailPanelStyle: "",
     contentCardStyle: "",
     contentLayoutStyle: "",
     subContentLayoutStyle: "",
@@ -101,9 +113,10 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    if (this.handleShareEntryRedirect(options)) {
-      return
-    }
+    wx.redirectTo({
+      url: buildSunriseRedirectUrl(options || {}),
+    })
+    return
 
     this.answerData = new answerData()
     this.shareImageCache = {}
@@ -146,7 +159,9 @@ Page({
     this.stopPressAudio()
     this.clearInteractionTimers()
     this.setData({
+      actionMenuVisible: false,
       recordPanelVisible: false,
+      detailPanelVisible: false,
     })
     if (this.inRotation && !this.inShow) {
       this.restoreLastAnswerOrDefault()
@@ -214,6 +229,7 @@ Page({
       tableImageStyle: "width: " + tableSize + "px; height: " + tableSize + "px;",
       resultActionsStyle: "max-width: " + resultActionsWidth + "px;",
       recordPanelStyle: "padding-bottom: " + Math.max(bottomInset, 16) + "px;",
+      detailPanelStyle: "padding-bottom: " + Math.max(bottomInset, 20) + "px;",
     })
   },
 
@@ -307,6 +323,7 @@ Page({
       tableHint: DEFAULT_HINT,
       hasAnswer: false,
       isCurrentFavorite: false,
+      detailPanelVisible: false,
     })
     this.createExpResetAnimation(1)
   },
@@ -319,7 +336,8 @@ Page({
     this.setData({
       content: "",
       subContent: "",
-      exp: ""
+      exp: "",
+      detailPanelVisible: false,
     })
   },
 
@@ -359,6 +377,7 @@ Page({
       exp: record.exp,
       tableHint: ANSWER_HINT,
       hasAnswer: true,
+      detailPanelVisible: false,
     })
     this.createExpResetAnimation(0)
     this.refreshAnswerRecords()
@@ -409,6 +428,7 @@ Page({
       exp: answer.exp,
       tableHint: ANSWER_HINT,
       hasAnswer: true,
+      detailPanelVisible: false,
     })
     this.createExpResetAnimation(0)
   },
@@ -431,6 +451,10 @@ Page({
     return ANSWER_SOURCE
   },
 
+  getRecordPanelEmptyText: function (type) {
+    return type === "history" ? "还没有最近记录，先抽一次看看。" : "还没有收藏的答案。"
+  },
+
   buildShareQuery: function (scene, mode) {
     var params = {}
     params[SHARE_QUERY_FROM_SHARE] = 1
@@ -444,18 +468,6 @@ Page({
   },
 
   handleShareEntryRedirect: function (options) {
-    var mode = options && options[SHARE_QUERY_MODE]
-    if (!mode || mode === this.getPageMode()) {
-      return false
-    }
-
-    if (mode === "sun_rise") {
-      wx.redirectTo({
-        url: SUN_RISE_PAGE_PATH + "?" + this.buildShareQuery(options[SHARE_QUERY_SCENE] || "", mode),
-      })
-      return true
-    }
-
     return false
   },
 
@@ -515,71 +527,7 @@ Page({
     return this.currentAnswerRecord
   },
 
-  refreshAnswerRecords: function () {
-    var history = answerStore.getHistory()
-    var favorites = answerStore.getFavorites()
-    var currentAnswer = this.getCurrentAnswer()
-
-    this.setData({
-      historyCount: history.length,
-      favoriteCount: favorites.length,
-      isCurrentFavorite: currentAnswer ? answerStore.isFavorite(currentAnswer) : false,
-    })
-  },
-
-  getSourceLabel: function (source) {
-    return source === "sun_rise" ? "日出模式" : "经典模式"
-  },
-
-  formatRecordItems: function (records) {
-    return records.map(function (item, index) {
-      var createdAt = item.createdAt || Date.now()
-      return {
-        signature: item.signature,
-        source: item.source,
-        content: item.content,
-        subContent: item.subContent,
-        exp: item.exp,
-        createdAt: createdAt,
-        displayMeta: this.getSourceLabel(item.source) + " · " + util.formatTime(new Date(createdAt)),
-        recordIndex: index,
-      }
-    }.bind(this))
-  },
-
-  openRecordPanel: function (type) {
-    var isHistory = type === "history"
-    var items = isHistory ? answerStore.getHistory() : answerStore.getFavorites()
-
-    this.setData({
-      recordPanelVisible: true,
-      recordPanelTitle: isHistory ? "最近答案" : "收藏夹",
-      recordPanelEmptyText: isHistory ? "还没有最近记录，先抽一次看看。" : "还没有收藏的答案。",
-      recordPanelItems: this.formatRecordItems(items),
-    })
-  },
-
-  onTapShowHistory: function () {
-    this.openRecordPanel("history")
-  },
-
-  onTapShowFavorites: function () {
-    this.openRecordPanel("favorites")
-  },
-
-  onCloseRecordPanel: function () {
-    this.setData({
-      recordPanelVisible: false,
-    })
-  },
-
-  onTapRecordItem: function (e) {
-    var index = Number(e.currentTarget.dataset.index)
-    var record = this.data.recordPanelItems[index]
-    if (!record) {
-      return
-    }
-
+  applySelectedAnswerRecord: function (record) {
     this.currentAnswerRecord = answerStore.recordAnswer(record, record.source || ANSWER_SOURCE)
     this.resetShareImageCache()
     this.setData({
@@ -589,74 +537,11 @@ Page({
       tableHint: ANSWER_HINT,
       hasAnswer: true,
       recordPanelVisible: false,
+      detailPanelVisible: false,
     })
     this.createExpResetAnimation(1)
     this.refreshAnswerRecords()
     this.prepareDynamicShareImages()
-  },
-
-  buildClipboardText: function () {
-    var answer = this.getCurrentAnswer()
-    return answer ? answerStore.buildClipboardText(answer) : ""
-  },
-
-  onTapCopyResult: function () {
-    var content = this.buildClipboardText()
-    if (!content) {
-      return
-    }
-
-    wx.setClipboardData({
-      data: content,
-      success: function () {
-        wx.showToast({
-          title: "已复制答案",
-          icon: "none",
-          duration: 1200,
-        })
-      }
-    })
-  },
-
-  onTapToggleFavorite: function () {
-    var answer = this.getCurrentAnswer()
-    if (!answer) {
-      return
-    }
-
-    var isFavorite = answerStore.toggleFavorite(answer, ANSWER_SOURCE)
-    this.setData({
-      isCurrentFavorite: isFavorite,
-    })
-    this.refreshAnswerRecords()
-    wx.showToast({
-      title: isFavorite ? "已加入收藏" : "已取消收藏",
-      icon: "none",
-      duration: 1200,
-    })
-  },
-
-  onTapDrawAgain: function () {
-    if (this.inShow || this.inRotation) {
-      return
-    }
-
-    this.clearInteractionTimers()
-    this.clearOldContent()
-    this.setData({
-      tableHint: HOLDING_HINT,
-      hasAnswer: false,
-    })
-    this.createContentStartAnimation()
-    this.createSubContentStartAnimation()
-    this.createExpStartAnimation()
-
-    this.answerRevealDoneTimeout = setTimeout(function () {
-      this.setNewContent()
-      this.createContentShowAnimation()
-      this.createSubContentShowAnimation()
-      this.triggerSuccessFeedback()
-    }.bind(this), 80)
   },
 
   noop: function () {},
