@@ -99,7 +99,6 @@ Page({
     _anim_sun_rise: "",
     _anim_tutorial_txt_1: "",
     _anim_tutorial_txt_2: "",
-    _anim_tutorial_txt_3: "",
     _anim_circle: "",
     _anim_circle_line: "",
     _anim_cloud_1: "",
@@ -506,7 +505,7 @@ Page({
     }.bind(this), 40)
   },
 
-  setRepeatHintState: function (text, strong, autoResetDuration) {
+  setRepeatHintState: function (text, autoResetDuration) {
     clearTimeout(this.repeatHintResetTimeout)
     this.repeatHintResetTimeout = null
 
@@ -539,7 +538,7 @@ Page({
       })
       return
     }
-    this.setRepeatHintState(this.getDefaultRepeatHintText(), false, 0)
+    this.setRepeatHintState(this.getDefaultRepeatHintText(), 0)
   },
 
   hideRepeatHint: function () {
@@ -786,7 +785,6 @@ Page({
       _anim_sun_rise: this.anim_sun_rise.initial().export(),
       _anim_tutorial_txt_1: this.anim_tutorial.initialTxt().export(),
       _anim_tutorial_txt_2: this.anim_tutorial.initialTxt().export(),
-      _anim_tutorial_txt_3: this.anim_tutorial.initialTxt().export(),
       _anim_circle: this.anim_tutorial.initialCircle().export(),
       _anim_circle_line: this.anim_tutorial.initialCircleLine().export(),
       _anim_cloud_1: this.anim_tutorial.initialCloud(true).export(),
@@ -815,7 +813,6 @@ Page({
       this.setData({
         _anim_tutorial_txt_1: this.anim_tutorial.moveDown(this.anim_data.tutorialTime, 0).export(),
         _anim_tutorial_txt_2: this.anim_tutorial.moveDown(this.anim_data.tutorialTime,this.anim_data.tutorialDelay).export(),
-        _anim_tutorial_txt_3: this.anim_tutorial.moveDown(this.anim_data.tutorialTime, this.anim_data.tutorialDelay * 2).export(),
         _anim_circle: this.anim_tutorial.circleFadeIn(this.anim_data.circleFadeIn, this.anim_data.tutorialDuration()).export(),
         _anim_cloud_1: this.anim_tutorial.moveIn(this.anim_data.tutorialDuration(), 0).export(),
         _anim_cloud_2: this.anim_tutorial.moveIn(this.anim_data.tutorialDuration(), 0).export(),

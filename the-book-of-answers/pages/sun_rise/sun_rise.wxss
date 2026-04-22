@@ -267,13 +267,6 @@
   text-shadow: 0 8rpx 22rpx rgba(50, 13, 20, 0.2);
 }
 
-.tutorial-txt3{
-  width: 100%;
-  margin-top: 80rpx;
-  text-align: center;
-  font-size: 40rpx;
-}
-
 .repeat-hint{
   position: fixed;
   left: 50%;
