@@ -9,6 +9,9 @@ var anim_content = require("./anim_content.js")
 var anim_sun_cloud = require("./anim_sun_cloud.js")
 // var anim_exp = require("./anim_exp.js")
 var anim_cloud_move = require("./anim_cloud_move.js")
+var answerStore = require("../../utils/answer_store.js")
+var shareImage = require("../../utils/share_image.js")
+var util = require("../../utils/util.js")
 
 
 var State = {
@@ -20,13 +23,40 @@ var State = {
 
 var ALBUM_SCOPE = "scope.writePhotosAlbum"
 var POSTER_WIDTH = 750
-var POSTER_HEIGHT = 2084
-var POSTER_MAIN_HEIGHT = 1334
-var POSTER_QR_TOP = 1334
+var POSTER_HEIGHT = 1334
 var POSTER_CONTENT_Y = 299
 var POSTER_SUB_CONTENT_Y = 508
 var POSTER_BG = "../../assets/sun_rise/save_bg.png"
-var POSTER_QR = "../../assets/sun_rise/save_QR_code.png"
+var POSTER_ASSET_TIMEOUT = 8000
+var POSTER_CONTENT_MAX_WIDTH = 560
+var POSTER_SUB_CONTENT_MAX_WIDTH = 520
+var POSTER_CONTENT_LINE_HEIGHT = 76
+var POSTER_SUB_CONTENT_LINE_HEIGHT = 40
+var POSTER_MAX_LINES = 2
+var ANSWER_SOURCE = "sun_rise"
+var ANSWERS_PAGE_PATH = "/pages/answers/answers"
+var SUN_RISE_PAGE_PATH = "/pages/sun_rise/sun_rise"
+var SUN_RISE_SHARE_IMAGE = "/assets/sun_rise/save_bg.png"
+var SHARE_SCENE_APP_MESSAGE = "appMessage"
+var SHARE_SCENE_TIMELINE = "timeline"
+var SHARE_QUERY_FROM_SHARE = "fromShare"
+var SHARE_QUERY_MODE = "mode"
+var SHARE_QUERY_SCENE = "shareScene"
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function buildQueryString(params) {
+  return Object.keys(params)
+    .filter(function (key) {
+      return params[key] !== undefined && params[key] !== null && params[key] !== ""
+    })
+    .map(function (key) {
+      return encodeURIComponent(key) + "=" + encodeURIComponent(String(params[key]))
+    })
+    .join("&")
+}
 
 Page({
 
@@ -60,6 +90,39 @@ Page({
     _tran_save_btn_show: "",
     saveButtonStyle: "",
     thanksStyle: "",
+    modeSwitchStyle: "",
+    resultActionStyle: "",
+    sunImageStyle: "",
+    cloudOneStyle: "",
+    cloudTwoStyle: "",
+    cloudThreeStyle: "",
+    cloudFourStyle: "",
+    manStyle: "",
+    manShadowStyle: "",
+    birdOneStyle: "",
+    birdTwoStyle: "",
+    birdThreeStyle: "",
+    contentPrimaryStyle: "",
+    contentSecondaryStyle: "",
+    expBubbleStyle: "",
+    tutorialStyle: "",
+    circleContainerStyle: "",
+    circleLineContainerStyle: "",
+    saveButtonTextStyle: "",
+    recordPanelStyle: "",
+    hasAnswer: false,
+    isCurrentFavorite: false,
+    historyCount: 0,
+    favoriteCount: 0,
+    recordPanelVisible: false,
+    recordPanelTitle: "",
+    recordPanelEmptyText: "",
+    recordPanelItems: [],
+    posterErrorVisible: false,
+    posterErrorTitle: "",
+    posterErrorMessage: "",
+    posterErrorSupportText: "",
+    posterErrorRetryText: "重新尝试",
   },
 
   touchStartTime: 0,
@@ -72,13 +135,26 @@ Page({
   isScreenshotDrew: false,
   posterCanvas: null,
   posterCtx: null,
+  shareCanvas: null,
+  shareCtx: null,
   posterAssetCache: null,
   cloudFloatIntervals: null,
+  shouldReinitializeOnShow: false,
+  isPageReady: false,
+  currentAnswerRecord: null,
+  lastPosterTempFilePath: "",
+  posterRetryAction: "",
+  shareImageCache: null,
+  shareImageTask: null,
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
+    if (this.handleShareEntryRedirect(options)) {
+      return
+    }
+
     this.answer_data = new answer_data()
     this.anim_data = new anim_data()
     this.anim_sun_rise = new anim_sun_rise()
@@ -89,7 +165,11 @@ Page({
     this.anim_cloud_move = new anim_cloud_move()
     this.posterAssetCache = {}
     this.cloudFloatIntervals = []
+    this.shareImageCache = {}
+    this.shareImageTask = Promise.resolve()
     this.initLayoutInfo()
+    this.showShareOptions()
+    this.refreshAnswerRecords()
   },
 
   /**
@@ -97,38 +177,117 @@ Page({
    */
   onReady: function () {
     // 设置content默认内容
+    this.isPageReady = true
     this.initial()
   },
 
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow: function () {},
+  onShow: function () {
+    if (this.isPageReady && this.shouldReinitializeOnShow) {
+      this.shouldReinitializeOnShow = false
+      this.initial()
+    } else if (this.isPageReady && this.data.state === State.waiting && !this.data.isShowTutorialTxt) {
+      this.startCloudFloatAnimations()
+    }
+    this.refreshAnswerRecords()
+  },
+
+  onResize: function () {
+    this.initLayoutInfo()
+  },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
-  onHide: function () {},
+  onHide: function () {
+    this.clearAnimationTimers()
+    this.setData({
+      recordPanelVisible: false,
+      posterErrorVisible: false,
+    })
+    if (this.data.state !== State.waiting || this.data.isShowTutorialTxt) {
+      this.shouldReinitializeOnShow = true
+    }
+    wx.hideLoading()
+  },
 
   /**
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
     this.clearAnimationTimers()
+    this.shareCanvas = null
+    this.shareCtx = null
+    this.shareImageCache = null
+    this.shareImageTask = null
   },
 
   /**
    * 用户点击右上角分享
    */
-  onShareAppMessage: function () { },
+  onShareAppMessage: function () {
+    var shareData = this.buildShareData()
+    if (this.getCurrentAnswer()) {
+      shareData.promise = this.buildDynamicShareResult(SHARE_SCENE_APP_MESSAGE)
+    }
+    return shareData
+  },
+
+  onShareTimeline: function () {
+    var shareData = this.buildTimelineShareData()
+    if (this.getCurrentAnswer()) {
+      shareData.promise = this.buildDynamicShareResult(SHARE_SCENE_TIMELINE)
+    }
+    return shareData
+  },
 
   initLayoutInfo: function () {
     var runtimeInfo = app.refreshRuntimeInfo ? app.refreshRuntimeInfo() : app.globalData.runtimeInfo || {}
+    var windowInfo = runtimeInfo.windowInfo || {}
+    var menuButtonInfo = runtimeInfo.menuButtonInfo || null
+    var topInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.top : 0
     var bottomInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.bottom : 0
+    var windowWidth = windowInfo.windowWidth || 375
+    var windowHeight = windowInfo.windowHeight || 667
+    var compact = windowHeight < 720
+    var contentTop = clamp(topInset + windowHeight * (compact ? 0.22 : 0.27), topInset + 110, topInset + 220)
+    var subContentTop = clamp(contentTop + windowHeight * (compact ? 0.17 : 0.19), contentTop + 96, contentTop + 180)
+    var tutorialTop = clamp(topInset + windowHeight * (compact ? 0.11 : 0.14), topInset + 64, topInset + 132)
+    var bubbleBottom = bottomInset + clamp(windowHeight * (compact ? 0.18 : 0.22), 120, 188)
+    var bubbleRight = clamp(windowWidth * 0.12, 20, 56)
+    var actionWidth = clamp(windowWidth - 32, 236, 320)
+    var saveTextBottom = Math.max(bottomInset, 0)
+    var sunHeight = clamp(windowHeight * 0.54, 320, 420)
+    var circleBottom = bottomInset + clamp(windowHeight * 0.1, 70, 120)
+    var circleLineBottom = Math.max(circleBottom - 10, bottomInset + 60)
+    var modeSwitchLeft = clamp(windowWidth * 0.045, 14, 22)
+    var modeSwitchTop = menuButtonInfo && menuButtonInfo.bottom ? menuButtonInfo.bottom + 10 : topInset + 14
 
     this.setData({
-      saveButtonStyle: bottomInset ? "bottom: " + bottomInset + "px;" : "",
+      saveButtonStyle: "bottom: " + bottomInset + "px;",
       thanksStyle: bottomInset ? "bottom: calc(10rpx + " + bottomInset + "px);" : "",
+      modeSwitchStyle: "top: " + Math.round(modeSwitchTop) + "px; left: " + Math.round(modeSwitchLeft) + "px;",
+      resultActionStyle: "bottom: " + (bottomInset + (compact ? 88 : 98)) + "px; width: " + actionWidth + "px;",
+      sunImageStyle: "max-height: " + Math.round(sunHeight) + "px;",
+      cloudOneStyle: "max-width: " + clamp(windowWidth * 0.17, 52, 72) + "px; max-height: " + clamp(windowWidth * 0.095, 28, 40) + "px; top: " + Math.round(clamp(topInset + windowHeight * 0.17, topInset + 84, topInset + 128)) + "px; right: " + Math.round(clamp(windowWidth * 0.045, 14, 22)) + "px;",
+      cloudTwoStyle: "max-width: " + clamp(windowWidth * 0.17, 52, 72) + "px; max-height: " + clamp(windowWidth * 0.095, 28, 40) + "px; top: " + Math.round(clamp(topInset + windowHeight * 0.29, topInset + 142, topInset + 212)) + "px; left: " + Math.round(clamp(windowWidth * 0.045, 14, 22)) + "px;",
+      cloudThreeStyle: "max-width: " + clamp(windowWidth * 0.14, 44, 62) + "px; max-height: " + clamp(windowWidth * 0.07, 20, 30) + "px; right: " + Math.round(clamp(windowWidth * 0.13, 36, 60)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.31, 184, 236)) + "px;",
+      cloudFourStyle: "max-width: " + clamp(windowWidth * 0.1, 30, 45) + "px; max-height: " + clamp(windowWidth * 0.04, 10, 18) + "px; left: " + Math.round(clamp(windowWidth * 0.07, 20, 32)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.26, 146, 192)) + "px;",
+      manStyle: "max-width: " + clamp(windowWidth * 0.018, 6, 9) + "px; max-height: " + clamp(windowWidth * 0.044, 14, 20) + "px; left: " + Math.round(windowWidth * 0.654) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.11, 66, 88)) + "px;",
+      manShadowStyle: "max-width: " + clamp(windowWidth * 0.05, 16, 24) + "px; max-height: " + clamp(windowWidth * 0.035, 10, 16) + "px; left: " + Math.round(windowWidth * 0.651) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.097, 58, 76)) + "px;",
+      birdOneStyle: "max-width: " + clamp(windowWidth * 0.033, 10, 15) + "px; max-height: " + clamp(windowWidth * 0.017, 4, 8) + "px; right: " + Math.round(clamp(windowWidth * 0.11, 18, 28)) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.145, 86, 114)) + "px;",
+      birdTwoStyle: "max-width: " + clamp(windowWidth * 0.026, 8, 12) + "px; max-height: " + clamp(windowWidth * 0.013, 3, 6) + "px; left: " + Math.round(windowWidth * 0.322) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.07, 40, 58)) + "px;",
+      birdThreeStyle: "max-width: " + clamp(windowWidth * 0.018, 5, 8) + "px; max-height: " + clamp(windowWidth * 0.008, 2, 4) + "px; left: " + Math.round(windowWidth * 0.262) + "px; bottom: " + Math.round(bottomInset + clamp(windowHeight * 0.06, 34, 50)) + "px;",
+      contentPrimaryStyle: "top: " + Math.round(contentTop) + "px; padding: 0 " + clamp(windowWidth * 0.12, 34, 60) + "px; font-size: " + (compact ? 28 : 32) + "px;",
+      contentSecondaryStyle: "top: " + Math.round(subContentTop) + "px; padding: 0 " + clamp(windowWidth * 0.18, 54, 80) + "px; font-size: " + (compact ? 14 : 16) + "px;",
+      expBubbleStyle: "right: " + Math.round(bubbleRight) + "px; bottom: " + Math.round(bubbleBottom) + "px; max-width: " + clamp(windowWidth * 0.58, 180, 240) + "px;",
+      tutorialStyle: "top: " + Math.round(tutorialTop) + "px;",
+      circleContainerStyle: "bottom: " + Math.round(circleBottom) + "px;",
+      circleLineContainerStyle: "bottom: " + Math.round(circleLineBottom) + "px;",
+      saveButtonTextStyle: "margin-bottom: " + (bottomInset > 0 ? 20 : 28) + "rpx;",
+      recordPanelStyle: "padding-bottom: " + Math.max(bottomInset, 16) + "px;",
     })
   },
 
@@ -137,6 +296,9 @@ Page({
     clearTimeout(this.timeout_press_over)
     clearTimeout(this.tutorialEnterTimeout)
     clearTimeout(this.tutorialDoneTimeout)
+    clearTimeout(this.sunRiseStartTimeout)
+    clearTimeout(this.answerRevealTimeout)
+    clearTimeout(this.screenshotResetTimeout)
 
     if (this.cloudFloatIntervals) {
       this.cloudFloatIntervals.forEach(function (intervalId) {
@@ -146,11 +308,42 @@ Page({
     }
   },
 
+  startCloudFloatAnimations: function () {
+    if (!this.cloudFloatIntervals) {
+      this.cloudFloatIntervals = []
+    }
+
+    this.cloudFloatIntervals.forEach(function (intervalId) {
+      clearInterval(intervalId)
+    })
+    this.cloudFloatIntervals = []
+
+    this.setData({
+      _anim_cloud_1: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
+      _anim_cloud_2: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
+    })
+
+    this.cloudFloatIntervals.push(setInterval(function () {
+      this.setData({
+        _anim_cloud_1: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
+      })
+    }.bind(this), this.anim_data.cloudFloat * (3.2 + Math.random())))
+
+    this.cloudFloatIntervals.push(setInterval(function () {
+      this.setData({
+        _anim_cloud_2: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
+      })
+    }.bind(this), this.anim_data.cloudFloat * (3.2 + Math.random())))
+  },
+
   /**
    * 设置默认文本、初始状态，教程动画
    */
   initial: function () {
     this.clearAnimationTimers()
+    this.currentAnswerRecord = null
+    this.lastPosterTempFilePath = ""
+    this.resetShareImageCache()
 
     this.setData({
       content: this.answer_data.getDefaultContent(),
@@ -169,7 +362,11 @@ Page({
       _anim_cloud_3: this.anim_sun_cloud.initial(true).export(),
       _anim_cloud_4: this.anim_sun_cloud.initial(false).export(),
       // _anim_exp: this.anim_exp.initial().export()
-      _tran_exp_show: ""
+      _tran_exp_show: "",
+      hasAnswer: false,
+      isCurrentFavorite: false,
+      posterErrorVisible: false,
+      posterErrorSupportText: "",
     })
 
     this.tutorialEnterTimeout = setTimeout(function () {
@@ -193,21 +390,8 @@ Page({
     this.tutorialDoneTimeout = setTimeout(function () {
       this.setData({
         state: State.waiting,
-        _anim_cloud_1: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
-        _anim_cloud_2: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
       })
-      
-      // 云朵的持续动画
-      this.cloudFloatIntervals.push(setInterval(function () {
-        this.setData({
-          _anim_cloud_1: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
-        })
-      }.bind(this), this.anim_data.cloudFloat * (3.2 + Math.random())))
-      this.cloudFloatIntervals.push(setInterval(function () {
-        this.setData({
-          _anim_cloud_2: this.anim_cloud_move.move(this.anim_data.cloudFloat, 0).export(),
-        })
-      }.bind(this), this.anim_data.cloudFloat * (3.2 + Math.random())))
+      this.startCloudFloatAnimations()
     }.bind(this), this.anim_data.tutorialDuration())
   },
 
@@ -221,6 +405,8 @@ Page({
       this.touchStartTime = e.timeStamp
 
       this.isScreenshotDrew = false    // 屏幕截图设置为需要重新画
+      this.lastPosterTempFilePath = ""
+      this.resetShareImageCache()
 
       var time = this.anim_data.pressDuration + this.anim_data.afterPress
 
@@ -240,12 +426,15 @@ Page({
         _anim_sub_content: this.anim_content.initialSubTxt().export(),
         // _anim_exp: this.anim_exp.initial().export(),
         _tran_exp_show: "",
-        _tran_save_btn_show: ""    // 隐藏保存按钮
+        _tran_save_btn_show: "",    // 隐藏保存按钮
+        hasAnswer: false,
+        posterErrorVisible: false,
       })
 
       this.expShowable = false
+      this.isExpShow = false
 
-      setTimeout(function () {
+      this.sunRiseStartTimeout = setTimeout(function () {
         this.setData({
           _anim_sun_rise: this.anim_sun_rise.moveUp(time).export(),
           _anim_cloud_3: this.anim_sun_cloud.move(time).export(),
@@ -300,17 +489,25 @@ Page({
    */
   pressSuccess: function () {
     var answer = this.getRandomAnswer()
+    var record = answerStore.recordAnswer(answer, ANSWER_SOURCE)
     var time = this.anim_data.contentDuration + this.anim_data.contentInteral + this.anim_data.subContentDuration
+    this.currentAnswerRecord = record
+    this.resetShareImageCache()
 
     this.setData({
-      content: answer.content,
-      subContent: answer.subContent,
-      exp: answer.exp,
+      content: record.content,
+      subContent: record.subContent,
+      exp: record.exp,
       _anim_content: this.anim_content.contentShow(this.anim_data.contentDuration, 0).export(),
       _anim_sub_content: this.anim_content.subContentShow(this.anim_data.subContentDuration, this.anim_data.contentInteral + this.anim_data.contentDuration).export(),
+      hasAnswer: true,
     })
 
-    setTimeout(function () {
+    this.triggerSuccessFeedback()
+    this.refreshAnswerRecords()
+    this.prepareDynamicShareImages()
+
+    this.answerRevealTimeout = setTimeout(function () {
       this.setData({
         state: State.waiting,
         _tran_save_btn_show: this.anim_data.tran_save_btn_show    // 显示保存按钮
@@ -343,7 +540,7 @@ Page({
    * 获得上次的答案
    */
   getLastAnswer: function () {
-    return this.answer_data.getAnswerByIndex(this.lastIndex)
+    return this.getCurrentAnswer()
   },
 
   /**
@@ -354,7 +551,7 @@ Page({
    * 点击保存按钮事件
    */
   onTapSave: function (e) {
-    if (this.data.state == State.waiting && this.lastIndex != -1 && this.data._tran_save_btn_show != ""){
+    if (this.data.state == State.waiting && this.getCurrentAnswer() && this.data._tran_save_btn_show != ""){
       this.requestAlbumPermission(function () {
         this.startSaveFlow()
       }.bind(this))
@@ -407,6 +604,7 @@ Page({
   },
 
   startSaveFlow: function () {
+    this.closePosterErrorDialog()
     wx.showLoading({
       title: "保存中",
       mask: true
@@ -417,26 +615,18 @@ Page({
     })
 
     if (this.isScreenshotDrew) {
-      this.saveScreenFunction()
+      this.continuePosterSaveFlow()
       return
     }
 
     var answer = this.getLastAnswer()
     this.drawPoster(answer)
       .then(function () {
-      this.isScreenshotDrew = true
-      this.saveScreenFunction()
+        this.isScreenshotDrew = true
+        return this.continuePosterSaveFlow()
       }.bind(this))
       .catch(function (error) {
-        wx.hideLoading()
-        wx.showToast({
-          title: "生成海报失败",
-          icon: "none",
-          duration: 1500,
-          mask: true,
-        })
-        this.hidScreenshot()
-        console.error("drawPoster failed", error)
+        this.handlePosterFlowError(error && error.posterStage ? error.posterStage : "draw", error)
       }.bind(this))
   },
 
@@ -473,11 +663,30 @@ Page({
 
       return new Promise(function (resolve, reject) {
         var image = this.posterCanvas.createImage()
+        var settled = false
+        var timeoutId = setTimeout(function () {
+          if (settled) {
+            return
+          }
+          settled = true
+          reject(new Error("load image timeout: " + src))
+        }, POSTER_ASSET_TIMEOUT)
+
         image.onload = function () {
+          if (settled) {
+            return
+          }
+          settled = true
+          clearTimeout(timeoutId)
           this.posterAssetCache[src] = image
           resolve(image)
         }.bind(this)
         image.onerror = function (error) {
+          if (settled) {
+            return
+          }
+          settled = true
+          clearTimeout(timeoutId)
           reject(error || new Error("load image failed: " + src))
         }
         image.src = src
@@ -486,25 +695,93 @@ Page({
   },
 
   drawPoster: function (answer) {
-    return Promise.all([
-      this.loadPosterImage(POSTER_BG),
-      this.loadPosterImage(POSTER_QR),
-    ]).then(function (images) {
-      var bgImage = images[0]
-      var qrImage = images[1]
+    return this.loadPosterImage(POSTER_BG).then(function (bgImage) {
       var ctx = this.posterCtx
 
       ctx.clearRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT)
-      ctx.drawImage(bgImage, 0, 0, POSTER_WIDTH, POSTER_MAIN_HEIGHT)
-      ctx.drawImage(qrImage, 0, POSTER_QR_TOP, POSTER_WIDTH, POSTER_HEIGHT - POSTER_QR_TOP)
+      ctx.drawImage(bgImage, 0, 0, POSTER_WIDTH, POSTER_HEIGHT)
       ctx.textAlign = "center"
       ctx.textBaseline = "middle"
       ctx.fillStyle = "white"
       ctx.font = "55px sans-serif"
-      ctx.fillText(answer.content, POSTER_WIDTH / 2, POSTER_CONTENT_Y)
+      this.drawPosterTextBlock(ctx, answer.content, POSTER_WIDTH / 2, POSTER_CONTENT_Y, POSTER_CONTENT_MAX_WIDTH, POSTER_CONTENT_LINE_HEIGHT, POSTER_MAX_LINES)
       ctx.font = "25px sans-serif"
-      ctx.fillText(answer.subContent, POSTER_WIDTH / 2, POSTER_SUB_CONTENT_Y)
+      this.drawPosterTextBlock(ctx, answer.subContent, POSTER_WIDTH / 2, POSTER_SUB_CONTENT_Y, POSTER_SUB_CONTENT_MAX_WIDTH, POSTER_SUB_CONTENT_LINE_HEIGHT, POSTER_MAX_LINES)
     }.bind(this))
+  },
+
+  continuePosterSaveFlow: function () {
+    var filePathPromise = this.lastPosterTempFilePath
+      ? Promise.resolve(this.lastPosterTempFilePath)
+      : this.getPosterTempFile().then(function (filePath) {
+          this.lastPosterTempFilePath = filePath
+          return filePath
+        }.bind(this))
+
+    return filePathPromise
+      .then(function (filePath) {
+        return this.savePosterTempFile(filePath)
+      }.bind(this))
+      .then(this.finishPosterSaveSuccess.bind(this))
+      .catch(function (error) {
+        this.handlePosterFlowError(error && error.posterStage ? error.posterStage : "save", error)
+      }.bind(this))
+  },
+
+  getPosterTempFile: function () {
+    return new Promise(function (resolve, reject) {
+      if (!this.posterCanvas) {
+        var noCanvasError = new Error("poster canvas not initialized")
+        noCanvasError.posterStage = "export"
+        reject(noCanvasError)
+        return
+      }
+
+      wx.canvasToTempFilePath({
+        x: 0,
+        y: 0,
+        width: POSTER_WIDTH,
+        height: POSTER_HEIGHT,
+        destWidth: POSTER_WIDTH,
+        destHeight: POSTER_HEIGHT,
+        canvas: this.posterCanvas,
+        success: function (res) {
+          resolve(res.tempFilePath)
+        },
+        fail: function (error) {
+          error = error || new Error("canvas export failed")
+          error.posterStage = "export"
+          reject(error)
+        }
+      })
+    }.bind(this))
+  },
+
+  savePosterTempFile: function (filePath) {
+    return new Promise(function (resolve, reject) {
+      wx.saveImageToPhotosAlbum({
+        filePath: filePath,
+        success: resolve,
+        fail: function (error) {
+          error = error || new Error("save image failed")
+          error.posterStage = "save"
+          reject(error)
+        }
+      })
+    })
+  },
+
+  finishPosterSaveSuccess: function () {
+    wx.hideLoading()
+    wx.showToast({
+      title: "保存成功",
+      icon: "success",
+      duration: 1000,
+      mask: true,
+    })
+    this.screenshotResetTimeout = setTimeout(function () {
+      this.hidScreenshot()
+    }.bind(this), 1000)
   },
 
   hidScreenshot: function (e) {
@@ -514,80 +791,582 @@ Page({
     })
   },
 
-  saveScreenFunction: function () {
-    if (!this.posterCanvas) {
-      wx.hideLoading()
-      wx.showToast({
-        title: "海报画布未初始化",
-        icon: "none",
-        duration: 1500,
-        mask: true,
-      })
-      this.hidScreenshot()
+  handlePosterFlowError: function (stage, error) {
+    var errorMessage = error && (error.errMsg || error.message) ? (error.errMsg || error.message) : ""
+    var title = "海报生成失败"
+    var message = "这次没有成功完成海报操作，你可以再试一次。"
+    var supportText = "如果连续失败，也可以先复制当前答案，稍后再回来保存海报。"
+    var retryText = "重新尝试"
+    var retryAction = "restart-save"
+
+    if (stage === "draw") {
+      title = "生成海报失败"
+      message = "海报绘制没有完成，重新生成后再保存会更稳一些。"
+      supportText = "素材加载可能还没完全准备好。可以重新生成一次，如果还是不稳定，先复制答案或稍后重试。"
+      retryText = "重新生成"
+      retryAction = "restart-save"
+    } else if (stage === "export") {
+      title = "导出海报失败"
+      message = "海报已经生成，但导出图片时中断了。你可以重新导出一次。"
+      supportText = "如果在开发者工具里连续失败，真机里通常会更稳定一些，也可以先截图留存结果。"
+      retryText = "重新导出"
+      retryAction = "export-and-save"
+    } else if (stage === "save") {
+      title = "保存到相册失败"
+      message = "图片已经生成，但写入系统相册时没有成功。"
+      supportText = "你可以先重新保存；如果暂时不方便，也可以先复制答案内容。"
+      retryText = "重新保存"
+      retryAction = "save-temp-file"
+
+      if (/auth deny|auth denied|permission/i.test(errorMessage)) {
+        title = "需要相册权限"
+        message = "当前没有保存到相册的权限，请先授权后再继续保存。"
+        supportText = "授权完成后可以继续保存海报；如果现在不想授权，也可以先复制答案。"
+        retryText = "去设置"
+        retryAction = "request-permission-and-save"
+      } else if (/file|path/i.test(errorMessage)) {
+        message = "临时图片似乎已经失效，重新导出一张再保存会更稳一些。"
+        supportText = "临时文件在切后台或等待较久后可能失效，重新导出通常就能恢复。"
+        retryText = "重新导出"
+        retryAction = "export-and-save"
+      }
+    }
+
+    wx.hideLoading()
+    this.hidScreenshot()
+    this.showPosterErrorDialog(title, message, retryText, retryAction, supportText)
+    console.error("poster flow failed", stage, error)
+  },
+
+  showPosterErrorDialog: function (title, message, retryText, retryAction, supportText) {
+    this.posterRetryAction = retryAction
+    this.setData({
+      posterErrorVisible: true,
+      posterErrorTitle: title,
+      posterErrorMessage: message,
+      posterErrorSupportText: supportText || "",
+      posterErrorRetryText: retryText,
+    })
+  },
+
+  closePosterErrorDialog: function () {
+    this.posterRetryAction = ""
+    this.setData({
+      posterErrorVisible: false,
+      posterErrorSupportText: "",
+    })
+  },
+
+  onTapPosterRetry: function () {
+    var retryAction = this.posterRetryAction || "restart-save"
+    this.closePosterErrorDialog()
+
+    if (retryAction === "request-permission-and-save") {
+      this.requestAlbumPermission(function () {
+        this.onTapPosterRetryWithAction("save-temp-file")
+      }.bind(this))
       return
     }
 
-    // 保存
-    wx.canvasToTempFilePath({    // canvs导出成图片
-      x: 0,
-      y: 0,
-      width: POSTER_WIDTH,
-      height: POSTER_HEIGHT,
-      destWidth: POSTER_WIDTH,
-      destHeight: POSTER_HEIGHT,
-      canvas: this.posterCanvas,
-      success: function (res) {    // 导出图片成功
-        // 保存到相册
-        wx.saveImageToPhotosAlbum({
-          filePath: res.tempFilePath,
-          success: function (e) {  // 保存到相册成功
-            // 隐藏loading
-            wx.hideLoading()
-            // 提示成功
-            wx.showToast({
-              title: "保存成功",
-              icon: "success",
-              duration: 1000,
-              mask: true,
-            })
-            // 切回waiting状态
-            setTimeout(function () {
-              this.hidScreenshot()
-            }.bind(this), 1000)
-          }.bind(this),
-          fail: function (e) {   // 保存到相册失败
-            // 隐藏loading
-            wx.hideLoading()
-            // 提示失败
-            wx.showToast({
-              title: "保存失败",
-              icon: "none",
-              duration: 1000,
-              mask: true,
-            })
-            // 切回waiting状态
-            setTimeout(function () {
-              this.hidScreenshot()
-            }.bind(this), 1000)
-          }.bind(this)
-        })
-      }.bind(this),
-      fail: function (e) {       // 导出图片失败
-        // 隐藏loading
-        wx.hideLoading()
-        // 提示失败
-        wx.showToast({
-          title: "导出失败",
-          icon: "none",
-          duration: 1000,
-          mask: true,
-        })
-        // 切回waiting状态
-        setTimeout(function () {
-          this.hidScreenshot()
-        }.bind(this), 1000)
-      }.bind(this)
+    this.onTapPosterRetryWithAction(retryAction)
+  },
+
+  onTapPosterRetryWithAction: function (retryAction) {
+    if (retryAction === "restart-save") {
+      this.isScreenshotDrew = false
+      this.lastPosterTempFilePath = ""
+      this.startSaveFlow()
+      return
+    }
+
+    wx.showLoading({
+      title: "保存中",
+      mask: true
     })
+    this.setData({
+      state: State.saving,
+    })
+
+    if (retryAction === "export-and-save") {
+      this.lastPosterTempFilePath = ""
+      this.continuePosterSaveFlow()
+      return
+    }
+
+    if (retryAction === "save-temp-file" && this.lastPosterTempFilePath) {
+      this.savePosterTempFile(this.lastPosterTempFilePath)
+        .then(this.finishPosterSaveSuccess.bind(this))
+        .catch(function (error) {
+          this.handlePosterFlowError("save", error)
+        }.bind(this))
+      return
+    }
+
+    this.isScreenshotDrew = false
+    this.lastPosterTempFilePath = ""
+    this.startSaveFlow()
+  },
+
+  onTapPosterCopyAnswer: function () {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      return
+    }
+
+    wx.setClipboardData({
+      data: answerStore.buildClipboardText(answer),
+      success: function () {
+        wx.showToast({
+          title: "已复制答案",
+          icon: "none",
+          duration: 1200,
+        })
+      }
+    })
+  },
+
+  getWrappedPosterLines: function (ctx, text, maxWidth, maxLines) {
+    var content = text || ""
+    var lines = []
+    var currentLine = ""
+
+    for (var i = 0; i < content.length; i++) {
+      var nextLine = currentLine + content[i]
+      if (ctx.measureText(nextLine).width <= maxWidth || currentLine === "") {
+        currentLine = nextLine
+      } else {
+        lines.push(currentLine)
+        currentLine = content[i]
+      }
+
+      if (lines.length === maxLines) {
+        break
+      }
+    }
+
+    if (lines.length < maxLines && currentLine) {
+      lines.push(currentLine)
+    }
+
+    if (lines.length > maxLines) {
+      lines = lines.slice(0, maxLines)
+    }
+
+    if (content.length && lines.length === maxLines) {
+      var joinedLength = lines.join("").length
+      if (joinedLength < content.length) {
+        lines[maxLines - 1] = this.fitPosterLineWithEllipsis(ctx, lines[maxLines - 1], maxWidth)
+      }
+    }
+
+    return lines
+  },
+
+  fitPosterLineWithEllipsis: function (ctx, text, maxWidth) {
+    var line = text
+    while (line && ctx.measureText(line + "…").width > maxWidth) {
+      line = line.slice(0, -1)
+    }
+    return line + "…"
+  },
+
+  drawPosterTextBlock: function (ctx, text, centerX, centerY, maxWidth, lineHeight, maxLines) {
+    var lines = this.getWrappedPosterLines(ctx, text, maxWidth, maxLines)
+    var startY = centerY - ((lines.length - 1) * lineHeight) / 2
+
+    lines.forEach(function (line, index) {
+      ctx.fillText(line, centerX, startY + index * lineHeight)
+    })
+  },
+
+  triggerSuccessFeedback: function () {
+    if (typeof wx.vibrateShort === "function") {
+      wx.vibrateShort()
+    }
+  },
+
+  showShareOptions: function () {
+    if (typeof wx.showShareMenu === "function") {
+      wx.showShareMenu({
+        menus: ["shareAppMessage", "shareTimeline"],
+      })
+    }
+  },
+
+  getPageMode: function () {
+    return ANSWER_SOURCE
+  },
+
+  buildShareQuery: function (scene, mode) {
+    var params = {}
+    params[SHARE_QUERY_FROM_SHARE] = 1
+    params[SHARE_QUERY_MODE] = mode || this.getPageMode()
+    params[SHARE_QUERY_SCENE] = scene || ""
+    return buildQueryString(params)
+  },
+
+  buildSharePath: function (scene, mode) {
+    return SUN_RISE_PAGE_PATH + "?" + this.buildShareQuery(scene, mode)
+  },
+
+  handleShareEntryRedirect: function (options) {
+    var mode = options && options[SHARE_QUERY_MODE]
+    if (!mode || mode === this.getPageMode()) {
+      return false
+    }
+
+    if (mode === "answers") {
+      wx.redirectTo({
+        url: ANSWERS_PAGE_PATH + "?" + this.buildShareQuery(options[SHARE_QUERY_SCENE] || "", mode),
+      })
+      return true
+    }
+
+    return false
+  },
+
+  buildShareData: function () {
+    var answer = this.getCurrentAnswer()
+    return {
+      title: answer ? "今天抽到的答案是：" + answer.content : "默想一个问题，等待太阳给出答案",
+      path: this.buildSharePath(SHARE_SCENE_APP_MESSAGE),
+      imageUrl: SUN_RISE_SHARE_IMAGE,
+    }
+  },
+
+  buildTimelineShareData: function () {
+    var answer = this.getCurrentAnswer()
+    return {
+      title: answer ? "今天抽到的答案是：" + answer.content : "默想一个问题，等待太阳给出答案",
+      query: this.buildShareQuery(SHARE_SCENE_TIMELINE),
+      imageUrl: SUN_RISE_SHARE_IMAGE,
+    }
+  },
+
+  onTapSwitchMode: function () {
+    wx.navigateTo({
+      url: ANSWERS_PAGE_PATH,
+    })
+  },
+
+  getCurrentAnswer: function () {
+    return this.currentAnswerRecord
+  },
+
+  refreshAnswerRecords: function () {
+    var history = answerStore.getHistory()
+    var favorites = answerStore.getFavorites()
+    var currentAnswer = this.getCurrentAnswer()
+
+    this.setData({
+      historyCount: history.length,
+      favoriteCount: favorites.length,
+      isCurrentFavorite: currentAnswer ? answerStore.isFavorite(currentAnswer) : false,
+    })
+  },
+
+  getSourceLabel: function (source) {
+    return source === ANSWER_SOURCE ? "日出模式" : "经典模式"
+  },
+
+  formatRecordItems: function (records) {
+    return records.map(function (item) {
+      var createdAt = item.createdAt || Date.now()
+      return {
+        signature: item.signature,
+        source: item.source,
+        content: item.content,
+        subContent: item.subContent,
+        exp: item.exp,
+        createdAt: createdAt,
+        displayMeta: this.getSourceLabel(item.source) + " · " + util.formatTime(new Date(createdAt)),
+      }
+    }.bind(this))
+  },
+
+  openRecordPanel: function (type) {
+    var isHistory = type === "history"
+    var items = isHistory ? answerStore.getHistory() : answerStore.getFavorites()
+
+    this.setData({
+      recordPanelVisible: true,
+      recordPanelTitle: isHistory ? "最近答案" : "收藏夹",
+      recordPanelEmptyText: isHistory ? "还没有最近记录，先长按太阳试试。" : "还没有收藏的答案。",
+      recordPanelItems: this.formatRecordItems(items),
+    })
+  },
+
+  onTapShowHistory: function () {
+    this.openRecordPanel("history")
+  },
+
+  onTapShowFavorites: function () {
+    this.openRecordPanel("favorites")
+  },
+
+  onCloseRecordPanel: function () {
+    this.setData({
+      recordPanelVisible: false,
+    })
+  },
+
+  onTapRecordItem: function (e) {
+    var index = Number(e.currentTarget.dataset.index)
+    var record = this.data.recordPanelItems[index]
+    if (!record) {
+      return
+    }
+
+    this.currentAnswerRecord = answerStore.recordAnswer(record, record.source || ANSWER_SOURCE)
+    this.isScreenshotDrew = false
+    this.lastPosterTempFilePath = ""
+    this.resetShareImageCache()
+    this.expShowable = true
+    this.isExpShow = true
+    this.setData({
+      content: this.currentAnswerRecord.content,
+      subContent: this.currentAnswerRecord.subContent,
+      exp: this.currentAnswerRecord.exp,
+      state: State.waiting,
+      isShowTutorialTxt: false,
+      _tran_exp_show: this.anim_data.tran_exp_show,
+      _tran_save_btn_show: this.anim_data.tran_save_btn_show,
+      hasAnswer: true,
+      recordPanelVisible: false,
+      posterErrorVisible: false,
+    })
+    this.refreshAnswerRecords()
+    this.prepareDynamicShareImages()
+  },
+
+  onTapCopyResult: function () {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      return
+    }
+
+    wx.setClipboardData({
+      data: answerStore.buildClipboardText(answer),
+      success: function () {
+        wx.showToast({
+          title: "已复制答案",
+          icon: "none",
+          duration: 1200,
+        })
+      }
+    })
+  },
+
+  onTapToggleFavorite: function () {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      return
+    }
+
+    var isFavorite = answerStore.toggleFavorite(answer, ANSWER_SOURCE)
+    this.setData({
+      isCurrentFavorite: isFavorite,
+    })
+    this.refreshAnswerRecords()
+    wx.showToast({
+      title: isFavorite ? "已加入收藏" : "已取消收藏",
+      icon: "none",
+      duration: 1200,
+    })
+  },
+
+  onTapReroll: function () {
+    if (!this.getCurrentAnswer() || this.data.state !== State.waiting) {
+      return
+    }
+
+    clearTimeout(this.answerRevealTimeout)
+    clearTimeout(this.timeout_press_over)
+    clearTimeout(this.sunRiseStartTimeout)
+    this.isScreenshotDrew = false
+    this.lastPosterTempFilePath = ""
+    this.resetShareImageCache()
+    this.expShowable = false
+    this.isExpShow = false
+
+    this.setData({
+      content: "",
+      subContent: "",
+      exp: "",
+      state: State.pressing,
+      hasAnswer: false,
+      _anim_content: this.anim_content.initialTxt().export(),
+      _anim_sub_content: this.anim_content.initialSubTxt().export(),
+      _tran_exp_show: "",
+      _tran_save_btn_show: "",
+      posterErrorVisible: false,
+    })
+
+    this.answerRevealTimeout = setTimeout(function () {
+      this.pressSuccess()
+    }.bind(this), 120)
+  },
+
+  noop: function () {},
+
+  resetShareImageCache: function () {
+    this.shareImageCache = {}
+  },
+
+  getShareImageSize: function (scene) {
+    if (scene === SHARE_SCENE_TIMELINE) {
+      return {
+        width: 600,
+        height: 600,
+      }
+    }
+
+    return {
+      width: 500,
+      height: 400,
+    }
+  },
+
+  getCachedShareImage: function (scene, signature) {
+    var cache = this.shareImageCache && this.shareImageCache[scene]
+    if (cache && cache.signature === signature && cache.filePath) {
+      return cache.filePath
+    }
+    return ""
+  },
+
+  setCachedShareImage: function (scene, signature, filePath) {
+    if (!this.shareImageCache) {
+      this.shareImageCache = {}
+    }
+    this.shareImageCache[scene] = {
+      signature: signature,
+      filePath: filePath,
+    }
+  },
+
+  ensureShareCanvas: function () {
+    if (this.shareCanvas && this.shareCtx) {
+      return Promise.resolve()
+    }
+
+    return new Promise(function (resolve, reject) {
+      wx.createSelectorQuery()
+        .select("#share-canvas")
+        .fields({ node: true, size: true })
+        .exec(function (res) {
+          var canvasRef = res && res[0]
+          if (!canvasRef || !canvasRef.node) {
+            reject(new Error("share canvas not found"))
+            return
+          }
+
+          this.shareCanvas = canvasRef.node
+          this.shareCtx = this.shareCanvas.getContext("2d")
+          resolve()
+        }.bind(this))
+    }.bind(this))
+  },
+
+  enqueueShareImageTask: function (task) {
+    var baseTask = this.shareImageTask || Promise.resolve()
+    var queuedTask = baseTask
+      .catch(function () {})
+      .then(task)
+
+    this.shareImageTask = queuedTask.catch(function () {})
+    return queuedTask
+  },
+
+  generateShareImage: function (scene) {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      return Promise.reject(new Error("no answer to share"))
+    }
+
+    var cached = this.getCachedShareImage(scene, answer.signature)
+    if (cached) {
+      return Promise.resolve(cached)
+    }
+
+    var size = this.getShareImageSize(scene)
+
+    return this.enqueueShareImageTask(function () {
+      return this.ensureShareCanvas()
+        .then(function () {
+          this.shareCanvas.width = size.width
+          this.shareCanvas.height = size.height
+
+          shareImage.drawQuoteShareImage(this.shareCtx, {
+            width: size.width,
+            height: size.height,
+            modeLabel: "日出模式",
+            heading: "太阳给你的答案",
+            answer: answer.content,
+            subContent: answer.subContent,
+            exp: answer.exp,
+            footer: "默想一个问题，等待太阳给出答案",
+            theme: {
+              backgroundColors: [
+                { stop: 0, color: "#F6A45F" },
+                { stop: 1, color: "#D75862" },
+              ],
+              accentColor: "#FFF1D7",
+              cardColor: "rgba(255,250,244,0.94)",
+              labelBg: "rgba(228,120,88,0.14)",
+              labelText: "#B1535D",
+              headingText: "#AD5260",
+              answerText: "#8F375D",
+              bodyText: "#A4495F",
+              mutedText: "rgba(143,55,93,0.74)",
+              dividerColor: "rgba(173,82,96,0.18)",
+              footerText: "rgba(143,55,93,0.68)",
+            },
+          })
+
+          return new Promise(function (resolve, reject) {
+            wx.canvasToTempFilePath({
+              x: 0,
+              y: 0,
+              width: size.width,
+              height: size.height,
+              destWidth: size.width,
+              destHeight: size.height,
+              canvas: this.shareCanvas,
+              success: function (res) {
+                this.setCachedShareImage(scene, answer.signature, res.tempFilePath)
+                resolve(res.tempFilePath)
+              }.bind(this),
+              fail: reject,
+            })
+          }.bind(this))
+        }.bind(this))
+    }.bind(this))
+  },
+
+  prepareDynamicShareImages: function () {
+    if (!this.getCurrentAnswer()) {
+      return Promise.resolve()
+    }
+
+    return this.generateShareImage(SHARE_SCENE_APP_MESSAGE)
+      .catch(function () {})
+      .then(function () {
+        return this.generateShareImage(SHARE_SCENE_TIMELINE)
+      }.bind(this))
+      .catch(function () {})
+  },
+
+  buildDynamicShareResult: function (scene) {
+    var fallback = scene === SHARE_SCENE_TIMELINE ? this.buildTimelineShareData() : this.buildShareData()
+    return this.generateShareImage(scene)
+      .then(function (filePath) {
+        fallback.imageUrl = filePath
+        return fallback
+      })
+      .catch(function () {
+        return fallback
+      })
   },
 
   /**

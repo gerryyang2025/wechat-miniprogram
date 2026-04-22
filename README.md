@@ -13,7 +13,7 @@ Each mini program lives in its own subdirectory and is expected to keep its own:
 
 | Project | Description | Status |
 | --- | --- | --- |
-| [`the-book-of-answers`](./the-book-of-answers/README.md) | A quote-based answer mini program with classic and sunrise interaction flows. | Active |
+| [`the-book-of-answers`](./the-book-of-answers/README.md) | A quote-based answer mini program with classic and sunrise interaction flows, dynamic share images, and poster export. | Active |
 
 ## Working with a Project
 

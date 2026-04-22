@@ -3,6 +3,7 @@
 function getRuntimeInfo() {
   var deviceInfo = {}
   var windowInfo = {}
+  var menuButtonInfo = null
 
   if (typeof wx.getDeviceInfo === "function") {
     deviceInfo = wx.getDeviceInfo()
@@ -10,6 +11,14 @@ function getRuntimeInfo() {
 
   if (typeof wx.getWindowInfo === "function") {
     windowInfo = wx.getWindowInfo()
+  }
+
+  if (typeof wx.getMenuButtonBoundingClientRect === "function") {
+    try {
+      menuButtonInfo = wx.getMenuButtonBoundingClientRect()
+    } catch (error) {
+      menuButtonInfo = null
+    }
   }
 
   var safeArea = windowInfo.safeArea || null
@@ -25,6 +34,7 @@ function getRuntimeInfo() {
   return {
     deviceInfo: deviceInfo,
     windowInfo: windowInfo,
+    menuButtonInfo: menuButtonInfo,
     safeAreaInsets: safeAreaInsets,
     isHarmonyOS: deviceInfo.platform === "ohos" || deviceInfo.platform === "ohos_pc" || deviceInfo.system === "HarmonyOS",
   }

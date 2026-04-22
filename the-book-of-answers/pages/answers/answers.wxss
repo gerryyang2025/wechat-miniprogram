@@ -1,9 +1,33 @@
+page{
+  background: #86061d;
+}
+
 /* answers.wxss */
 .background{
   width: 100%;
   height: 100%;
   z-index: -1;
   position: fixed;
+}
+
+.modeSwitch{
+  position: fixed;
+  top: 24rpx;
+  left: 24rpx;
+  z-index: 5;
+  padding: 14rpx 24rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12rpx);
+  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.12);
+}
+
+.modeSwitchText{
+  color: white;
+  font-size: 24rpx;
+  letter-spacing: 2rpx;
+  line-height: 1.2;
 }
 
 .backgroundImg{
@@ -19,7 +43,10 @@
   align-items: center;
   position: fixed;
   text-align: center;
-  font-size: 24px;
+  padding: 0 72rpx;
+  box-sizing: border-box;
+  font-size: 32px;
+  line-height: 1.45;
   top: 250rpx;
 }
 
@@ -29,7 +56,10 @@
   color: white;
   position: fixed;
   text-align: center;
-  font-size: 10px;
+  padding: 0 96rpx;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.7;
   top: 420rpx;
 
 }
@@ -38,9 +68,10 @@
   width: 700rpx;
   height: 432rpx;
   margin: auto;
-  border-radius: 16px;
+  border-radius: 32rpx;
   background: #C4000C;
   position: fixed;
+  left: 25rpx;
   top: 160rpx;
   /*box-shadow:2px 2px 3px #000000; */
   /*opacity: 1;*/
@@ -52,7 +83,10 @@
   color: white;
   position: fixed;
   text-align: center;
-  font-size: 14px;
+  padding: 0 96rpx;
+  box-sizing: border-box;
+  font-size: 18px;
+  line-height: 1.6;
   bottom: 420rpx;
 }
 
@@ -60,13 +94,149 @@
   width: 100%;
   margin: auto;
   display: flex;
+  flex-direction: column;
   position: fixed;
   align-items: center;
   bottom: 80rpx;
 }
 
+.resultActions{
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+  padding: 0 36rpx;
+  box-sizing: border-box;
+}
+
+.actionChip{
+  min-width: 128rpx;
+  padding: 14rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(12rpx);
+  box-sizing: border-box;
+}
+
+.actionChipText{
+  color: white;
+  font-size: 24rpx;
+  text-align: center;
+}
+
 .tableImg{
-  width: 128px;
-  height: 128px;
+  width: 256rpx;
+  height: 256rpx;
   margin: auto;
+}
+
+.tableHint{
+  margin-top: 20rpx;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 24rpx;
+  line-height: 1.5;
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.24);
+}
+
+.recordMask{
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  background: rgba(15, 10, 18, 0.64);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.recordPanel{
+  width: 100%;
+  max-height: 70vh;
+  padding: 36rpx 32rpx 48rpx;
+  border-radius: 36rpx 36rpx 0 0;
+  background: linear-gradient(180deg, rgba(111, 9, 28, 0.98), rgba(58, 8, 23, 0.96));
+  box-sizing: border-box;
+}
+
+.recordPanelHeader{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.recordPanelTitle{
+  color: white;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.recordPanelClose{
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 24rpx;
+}
+
+.recordEmpty{
+  padding: 48rpx 24rpx 64rpx;
+  text-align: center;
+}
+
+.recordEmptyText{
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.recordList{
+  max-height: 58vh;
+}
+
+.recordItem{
+  padding: 24rpx 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.recordItemContent{
+  display: block;
+  color: white;
+  font-size: 34rpx;
+  line-height: 1.45;
+}
+
+.recordItemSub{
+  display: block;
+  margin-top: 8rpx;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.recordItemExp{
+  display: block;
+  margin-top: 8rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.recordItemMeta{
+  display: block;
+  margin-top: 14rpx;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 22rpx;
+}
+
+.shareCanvas{
+  width: 600px;
+  height: 600px;
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  pointer-events: none;
+  z-index: -10;
 }

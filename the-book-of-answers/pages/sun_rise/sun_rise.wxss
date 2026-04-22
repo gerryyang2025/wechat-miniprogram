@@ -10,6 +10,26 @@
   position: fixed;
 }
 
+.mode-switch{
+  position: fixed;
+  top: 24rpx;
+  left: 24rpx;
+  z-index: 4;
+  padding: 14rpx 24rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(12rpx);
+  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.12);
+}
+
+.mode-switch-txt{
+  color: white;
+  font-size: 24rpx;
+  letter-spacing: 2rpx;
+  line-height: 1.2;
+}
+
 #background-img{
   width: 100%;
   height: 100%;
@@ -26,46 +46,10 @@
   align-items: flex-end;
 }
 
-#sun-img-halo1{
-  width: 100%;
-  max-height: 723rpx;
-  margin: auto;
-}
-
 .sun-img-whole{
   width: 100%;
   max-height: 723rpx;
   margin: auto;
-}
-
-#sun-img-halo2{
-  width: 100%;
-  max-width: 229rpx;
-  max-height: 229rpx;
-  margin: auto;
-  position: fixed;
-  left: 233rpx;
-  bottom: 187rpx;
-}
-
-#sun-img-halo3{
-  width: 100%;
-  max-width: 180rpx;
-  max-height: 180rpx;
-  margin: auto;
-  position: fixed;
-  left: 257rpx;
-  bottom: 212rpx;
-}
-
-#sun{
-  width: 100%;
-  max-width: 135rpx;
-  max-height: 135rpx;
-  margin: auto;
-  position: fixed;
-  left: 278rpx;
-  bottom: 236rpx;
 }
 
 .cloud{
@@ -179,7 +163,10 @@
   align-items: center;
   position: fixed;
   text-align: center;
+  padding: 0 60rpx;
+  box-sizing: border-box;
   font-size: 56rpx;
+  line-height: 1.45;
   top: 305rpx;
 }
 
@@ -189,14 +176,17 @@
   z-index: -1;
   position: fixed;
   text-align: center;
+  padding: 0 88rpx;
+  box-sizing: border-box;
   font-size: 27rpx;
+  line-height: 1.6;
   top: 537rpx;
 }
 
 .exp{
   z-index: -1;
   position: fixed;
-  height: 100rpx;
+  min-height: 100rpx;
   right: 105rpx;/*让对话框靠右，自适应的时候宽度向左扩张*/
   bottom: 180rpx;
   pointer-events: none;
@@ -216,6 +206,7 @@
   top: 0;
   min-height: 64rpx;
   min-width: 200rpx;
+  max-width: 100%;
   color: #E20B4F;
   background: rgba(255,255,255,.6);
   border-radius: 10rpx;
@@ -318,7 +309,7 @@
 .save-btn{
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   position: fixed;
   left: 0rpx;
   bottom: 0rpx;
@@ -332,7 +323,10 @@
 }
 
 .save-txt{
-  font-size: 30rpx;
+  margin: 0 0 28rpx 16rpx;
+  font-size: 26rpx;
+  letter-spacing: 2rpx;
+  text-shadow: 0 4rpx 12rpx rgba(0,0,0,.2);
 }
 
 .save-btn-show{
@@ -340,14 +334,235 @@
   transition: opacity 1s;
 }
 
+.result-actions{
+  position: fixed;
+  right: 24rpx;
+  bottom: 122rpx;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 16rpx;
+  width: 480rpx;
+}
+
+.result-chip{
+  min-width: 136rpx;
+  padding: 14rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.28);
+  backdrop-filter: blur(12rpx);
+  box-sizing: border-box;
+}
+
+.result-chip-txt{
+  color: white;
+  font-size: 24rpx;
+  text-align: center;
+  text-shadow: 0 4rpx 12rpx rgba(0,0,0,.2);
+}
+
 .canvas-big{
   width: 750px;
-  height: 2084px;
+  height: 1334px;
   position: fixed;
   left: -9999px;
   top: 0;
   pointer-events: none;
   z-index: -10; 
+}
+
+.share-canvas{
+  width: 600px;
+  height: 600px;
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  pointer-events: none;
+  z-index: -10;
+}
+
+.record-mask{
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  background: rgba(16, 9, 30, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.record-panel{
+  width: 100%;
+  max-height: 70vh;
+  padding: 36rpx 32rpx 48rpx;
+  border-radius: 36rpx 36rpx 0 0;
+  background: linear-gradient(180deg, rgba(250, 145, 101, 0.97), rgba(136, 37, 90, 0.98));
+  box-sizing: border-box;
+}
+
+.record-panel-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.record-panel-title{
+  color: white;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.record-panel-close{
+  color: rgba(255,255,255,.82);
+  font-size: 24rpx;
+}
+
+.record-empty{
+  padding: 48rpx 24rpx 64rpx;
+  text-align: center;
+}
+
+.record-empty-txt{
+  color: rgba(255,255,255,.82);
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.record-list{
+  max-height: 58vh;
+}
+
+.record-item{
+  padding: 24rpx 0;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.record-item-content{
+  display: block;
+  color: white;
+  font-size: 34rpx;
+  line-height: 1.45;
+}
+
+.record-item-sub{
+  display: block;
+  margin-top: 8rpx;
+  color: rgba(255,255,255,.86);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.record-item-exp{
+  display: block;
+  margin-top: 8rpx;
+  color: rgba(255,255,255,.72);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.record-item-meta{
+  display: block;
+  margin-top: 14rpx;
+  color: rgba(255,255,255,.56);
+  font-size: 22rpx;
+}
+
+.poster-error-mask{
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 12;
+  background: rgba(22, 10, 26, 0.66);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+}
+
+.poster-error-card{
+  width: 100%;
+  max-width: 640rpx;
+  padding: 40rpx 32rpx 36rpx;
+  border-radius: 32rpx;
+  background: rgba(255,255,255,.94);
+  box-sizing: border-box;
+  box-shadow: 0 24rpx 48rpx rgba(0,0,0,.18);
+}
+
+.poster-error-title{
+  display: block;
+  color: #92385d;
+  font-size: 34rpx;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.poster-error-message{
+  display: block;
+  margin-top: 16rpx;
+  color: rgba(99, 34, 63, 0.88);
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.poster-error-support{
+  display: block;
+  margin-top: 14rpx;
+  color: rgba(99, 34, 63, 0.64);
+  font-size: 22rpx;
+  line-height: 1.7;
+}
+
+.poster-error-link{
+  display: inline-block;
+  margin-top: 18rpx;
+  color: #b04c67;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.poster-error-actions{
+  display: flex;
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+
+.poster-error-btn{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 84rpx;
+  border-radius: 999rpx;
+  box-sizing: border-box;
+}
+
+.poster-error-btn-primary{
+  background: linear-gradient(135deg, #f49f62, #d75862);
+}
+
+.poster-error-btn-secondary{
+  background: rgba(146, 56, 93, 0.08);
+  border: 1px solid rgba(146, 56, 93, 0.14);
+}
+
+.poster-error-btn-txt{
+  color: white;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.poster-error-btn-txt-secondary{
+  color: #92385d;
 }
 
 .thanks{

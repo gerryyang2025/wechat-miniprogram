@@ -1,25 +1,22 @@
 <!--sun_rise.wxml-->
 <view class="container">
+  <view class="mode-switch" style="{{modeSwitchStyle}}" bindtap="onTapSwitchMode">
+    <text class="mode-switch-txt">试试经典模式</text>
+  </view>
   <!-- 大背景 -->
   <view class="background">
     <image id="background-img" src="../../assets/sun_rise/bg.png" mode="scaleToFill"></image> 
   </view>
   <!-- 太阳 -->
   <view class="sun" animation="{{_anim_sun_rise}}">
-    <image class="sun-img-whole" src="../../assets/sun_rise/sun_whole.png" mode="widthFix"></image>
-    <!--
-    <image id="sun-img-halo1" src="../../assets/sun_rise/sun_halo_1.png" mode="widthFix"></image>
-    <image id="sun-img-halo2" src="../../assets/sun_rise/sun_halo_2.png" mode="aspectFill"></image>
-    <image id="sun-img-halo3" src="../../assets/sun_rise/sun_halo_3.png" mode="aspectFill"></image>
-    <image id="sun" src="../../assets/sun_rise/sun.png" mode="aspectFill"></image>
-    -->
+    <image class="sun-img-whole" src="../../assets/sun_rise/sun_whole.png" mode="widthFix" style="{{sunImageStyle}}"></image>
   </view>
   <!-- 云 -->
   <view class="cloud">
-    <image id="cloud-img1" src="../../assets/sun_rise/cloud_1.png" mode="aspectFit" animation="{{_anim_cloud_1}}" bindtap="onTapCloud_1"></image>
-    <image id="cloud-img2" src="../../assets/sun_rise/cloud_2.png" mode="aspectFit" animation="{{_anim_cloud_2}}" bindtap="onTapCloud_2"></image>
-    <image id="cloud-img3" src="../../assets/sun_rise/cloud_3.png" mode="aspectFit" animation="{{_anim_cloud_3}}"></image>
-    <image id="cloud-img4" src="../../assets/sun_rise/cloud_4.png" mode="aspectFit" animation="{{_anim_cloud_4}}"></image>
+    <image id="cloud-img1" src="../../assets/sun_rise/cloud_1.png" mode="aspectFit" animation="{{_anim_cloud_1}}" bindtap="onTapCloud_1" style="{{cloudOneStyle}}"></image>
+    <image id="cloud-img2" src="../../assets/sun_rise/cloud_2.png" mode="aspectFit" animation="{{_anim_cloud_2}}" bindtap="onTapCloud_2" style="{{cloudTwoStyle}}"></image>
+    <image id="cloud-img3" src="../../assets/sun_rise/cloud_3.png" mode="aspectFit" animation="{{_anim_cloud_3}}" style="{{cloudThreeStyle}}"></image>
+    <image id="cloud-img4" src="../../assets/sun_rise/cloud_4.png" mode="aspectFit" animation="{{_anim_cloud_4}}" style="{{cloudFourStyle}}"></image>
   </view>
   <!-- 山 -->
   <view class="mountain" bindlongpress="onMountainLongPress" bindtouchend="onMountainTouchEnd" bindtap="onMountainTap">
@@ -27,42 +24,95 @@
   </view>
   <!-- 人 -->
   <view class="man">
-    <image id="man-img" src="../../assets/sun_rise/man.png" mode="aspectFit"></image>
-    <image id="man-shadow" src="../../assets/sun_rise/man_shadow.png" mode="aspectFit"></image>
+    <image id="man-img" src="../../assets/sun_rise/man.png" mode="aspectFit" style="{{manStyle}}"></image>
+    <image id="man-shadow" src="../../assets/sun_rise/man_shadow.png" mode="aspectFit" style="{{manShadowStyle}}"></image>
   </view>
   <!-- 鸟 -->
   <view class="bird">
-    <image id="bird-img1" src="../../assets/sun_rise/bird_1.png" mode="aspectFit"></image>
-    <image id="bird-img2" src="../../assets/sun_rise/bird_2.png" mode="aspectFit"></image>
-    <image id="bird-img3" src="../../assets/sun_rise/bird_3.png" mode="aspectFit"></image>
+    <image id="bird-img1" src="../../assets/sun_rise/bird_1.png" mode="aspectFit" style="{{birdOneStyle}}"></image>
+    <image id="bird-img2" src="../../assets/sun_rise/bird_2.png" mode="aspectFit" style="{{birdTwoStyle}}"></image>
+    <image id="bird-img3" src="../../assets/sun_rise/bird_3.png" mode="aspectFit" style="{{birdThreeStyle}}"></image>
   </view>
   <!-- 文本内容 -->
-  <text class="content1 txtColor-white" animation="{{_anim_content}}">{{content}}</text>
-  <text class="content2 txtColor-white" animation="{{_anim_sub_content}}">{{subContent}}</text>
+  <text class="content1 txtColor-white" animation="{{_anim_content}}" style="{{contentPrimaryStyle}}">{{content}}</text>
+  <text class="content2 txtColor-white" animation="{{_anim_sub_content}}" style="{{contentSecondaryStyle}}">{{subContent}}</text>
   <!-- animation="{{_anim_exp}}" -->
-  <view class="exp {{_tran_exp_show}}">
+  <view class="exp {{_tran_exp_show}}" style="{{expBubbleStyle}}">
 		<view class="c-dialog">
       <text id="exp-txt">{{exp}}</text>
     </view>
 	</view>
   <!-- 引导界面 -->
-  <view class="tutorial txtColor-white" wx:if="{{isShowTutorialTxt}}">
+  <view class="tutorial txtColor-white" wx:if="{{isShowTutorialTxt}}" style="{{tutorialStyle}}">
     <text class="tutorial-txt1" animation="{{_anim_tutorial_txt_1}}">{{tutorial_txt[0]}}</text>
     <text class="tutorial-txt2" animation="{{_anim_tutorial_txt_2}}">{{tutorial_txt[1]}}</text>
     <text class="tutorial-txt3" animation="{{_anim_tutorial_txt_3}}">{{tutorial_txt[2]}}</text>
-    <view class="circle-container">
+    <view class="circle-container" style="{{circleContainerStyle}}">
       <view class="circle" animation="{{_anim_circle}}"></view>
     </view>
-    <view class="circle-line-container">
+    <view class="circle-line-container" style="{{circleLineContainerStyle}}">
       <view class="circle-line" animation="{{_anim_circle_line}}"></view>
     </view>
   </view>
   <!-- 保存按钮 -->
   <view class="save-btn {{_tran_save_btn_show}}" bindtap="onTapSave" style="{{saveButtonStyle}}">
     <image class="save-btn-img" src="../../assets/sun_rise/save_btn.png"></image>
-    <!-- <text class="save-txt txtColor-white">保存</text> -->
+    <text class="save-txt txtColor-white" style="{{saveButtonTextStyle}}">保存海报</text>
   </view>
+  <view class="result-actions" wx:if="{{hasAnswer}}" style="{{resultActionStyle}}">
+    <view class="result-chip" bindtap="onTapReroll">
+      <text class="result-chip-txt">再抽一次</text>
+    </view>
+    <view class="result-chip" bindtap="onTapCopyResult">
+      <text class="result-chip-txt">复制</text>
+    </view>
+    <view class="result-chip" bindtap="onTapToggleFavorite">
+      <text class="result-chip-txt">{{isCurrentFavorite ? '已收藏' : '收藏'}}</text>
+    </view>
+    <view class="result-chip" bindtap="onTapShowHistory">
+      <text class="result-chip-txt">历史 {{historyCount}}</text>
+    </view>
+    <view class="result-chip" bindtap="onTapShowFavorites">
+      <text class="result-chip-txt">收藏夹 {{favoriteCount}}</text>
+    </view>
+  </view>
+  <canvas id="share-canvas" type="2d" class="share-canvas"></canvas>
   <canvas id="canvas-big" type="2d" class="canvas-big"></canvas>
+  <view class="record-mask" wx:if="{{recordPanelVisible}}" bindtap="onCloseRecordPanel">
+    <view class="record-panel" catchtap="noop" style="{{recordPanelStyle}}">
+      <view class="record-panel-header">
+        <text class="record-panel-title">{{recordPanelTitle}}</text>
+        <text class="record-panel-close" bindtap="onCloseRecordPanel">关闭</text>
+      </view>
+      <view class="record-empty" wx:if="{{!recordPanelItems.length}}">
+        <text class="record-empty-txt">{{recordPanelEmptyText}}</text>
+      </view>
+      <scroll-view class="record-list" scroll-y wx:else>
+        <view class="record-item" wx:for="{{recordPanelItems}}" wx:key="signature" data-index="{{index}}" bindtap="onTapRecordItem">
+          <text class="record-item-content">{{item.content}}</text>
+          <text class="record-item-sub">{{item.subContent}}</text>
+          <text class="record-item-exp">{{item.exp}}</text>
+          <text class="record-item-meta">{{item.displayMeta}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+  <view class="poster-error-mask" wx:if="{{posterErrorVisible}}" bindtap="closePosterErrorDialog">
+    <view class="poster-error-card" catchtap="noop">
+      <text class="poster-error-title">{{posterErrorTitle}}</text>
+      <text class="poster-error-message">{{posterErrorMessage}}</text>
+      <text class="poster-error-support" wx:if="{{posterErrorSupportText}}">{{posterErrorSupportText}}</text>
+      <text class="poster-error-link" wx:if="{{hasAnswer}}" bindtap="onTapPosterCopyAnswer">复制当前答案</text>
+      <view class="poster-error-actions">
+        <view class="poster-error-btn poster-error-btn-secondary" bindtap="closePosterErrorDialog">
+          <text class="poster-error-btn-txt poster-error-btn-txt-secondary">稍后再试</text>
+        </view>
+        <view class="poster-error-btn poster-error-btn-primary" bindtap="onTapPosterRetry">
+          <text class="poster-error-btn-txt">{{posterErrorRetryText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
   <!-- 彩蛋致谢 -->
   <view class="thanks" hidden="{{isThx}}" style="{{thanksStyle}}">
     <text class="thanks-txt">Designed by LYZ & JXK & ZX</text>

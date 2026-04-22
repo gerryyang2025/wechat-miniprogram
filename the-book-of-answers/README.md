@@ -13,6 +13,8 @@ This repository is prepared as a lightweight GitHub-friendly project:
 
 - Two user flows: `pages/answers` and `pages/sun_rise`
 - Local answer dataset with no backend dependency
+- Answer-aware sharing with dynamic share images for chat and timeline
+- Mode-preserving share re-entry through share path and query parameters
 - Canvas 2D poster generation and save-to-album flow
 - Compatibility handling for modern WeChat base libraries
 - Safe-area layout adjustments for HarmonyOS and full-screen devices
@@ -73,6 +75,10 @@ The same validation is executed by GitHub Actions on pushes and pull requests.
 - The app collects runtime device and window information through `wx.getDeviceInfo()` and `wx.getWindowInfo()`.
 - HarmonyOS layout compatibility is handled through safe-area aware spacing.
 - Poster export on the sunrise page uses Canvas 2D APIs instead of the legacy canvas flow.
+- Share behavior follows the current WeChat `Page` API contract:
+  - `onShareAppMessage` uses `path` plus dynamic `imageUrl`
+  - `onShareTimeline` uses `query` plus dynamic `imageUrl`
+  - both modes preserve their own re-entry state through share parameters
 
 ## Data and Privacy
 
@@ -85,6 +91,8 @@ The same validation is executed by GitHub Actions on pushes and pull requests.
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [SECURITY.md](SECURITY.md)
+- [DESIGN.md](DESIGN.md)
+- [RELEASE_TEST_CHECKLIST.md](RELEASE_TEST_CHECKLIST.md)
 
 ## Development Notes
 
@@ -95,7 +103,7 @@ The same validation is executed by GitHub Actions on pushes and pull requests.
 ## Recommended Next Steps
 
 - Add product screenshots or preview GIFs for the README
-- Add device-level regression testing if the project grows further
+- Keep expanding real-device regression coverage for share re-entry and poster save flows
 
 ## License
 

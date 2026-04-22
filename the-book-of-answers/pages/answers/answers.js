@@ -2,23 +2,75 @@
 
 var app = getApp()
 var answerData = require("./answer_data.js")
+var answerStore = require("../../utils/answer_store.js")
+var shareImage = require("../../utils/share_image.js")
+var util = require("../../utils/util.js")
 
 const AUDIO_START_TIME = 5
+const AUDIO_SRC = "/assets/audio_001.mp3"
+const DEFAULT_CONTENT = "默想一个问题"
+const DEFAULT_SUB_CONTENT = "比如：明天会顺利吗？接下来我该怎么办？"
+const DEFAULT_EXP = "长按下方圆盘，等待答案显现"
+const DEFAULT_HINT = "长按圆盘开始抽取"
+const HOLDING_HINT = "继续按住，答案正在显现"
+const ANSWER_HINT = "点击圆盘查看或收起释义"
+const ANSWER_SOURCE = "answers"
+const ANSWERS_PAGE_PATH = "/pages/answers/answers"
+const SUN_RISE_PAGE_PATH = "/pages/sun_rise/sun_rise"
+const ANSWERS_SHARE_IMAGE = "/assets/bg1.png"
+const SHARE_SCENE_APP_MESSAGE = "appMessage"
+const SHARE_SCENE_TIMELINE = "timeline"
+const SHARE_QUERY_FROM_SHARE = "fromShare"
+const SHARE_QUERY_MODE = "mode"
+const SHARE_QUERY_SCENE = "shareScene"
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function buildQueryString(params) {
+  return Object.keys(params)
+    .filter(function (key) {
+      return params[key] !== undefined && params[key] !== null && params[key] !== ""
+    })
+    .map(function (key) {
+      return encodeURIComponent(key) + "=" + encodeURIComponent(String(params[key]))
+    })
+    .join("&")
+}
 
 Page({
   /**
    * 页面的初始数据
    */
   data: {
-    content: "",
-    subContent: "",
-    exp: "",
+    content: DEFAULT_CONTENT,
+    subContent: DEFAULT_SUB_CONTENT,
+    exp: DEFAULT_EXP,
     tableAnimation: "",
     contentAnimation: "",
     subContentAnimation: "",
     expAnimation: "",
-    audio_src: "../../assets/audio_001.mp3",
+    audio_src: AUDIO_SRC,
     tableStyle: "",
+    tableHintStyle: "",
+    tableHint: DEFAULT_HINT,
+    modeSwitchStyle: "",
+    hasAnswer: false,
+    isCurrentFavorite: false,
+    historyCount: 0,
+    favoriteCount: 0,
+    recordPanelVisible: false,
+    recordPanelTitle: "",
+    recordPanelEmptyText: "",
+    recordPanelItems: [],
+    contentCardStyle: "",
+    contentLayoutStyle: "",
+    subContentLayoutStyle: "",
+    expLayoutStyle: "",
+    tableImageStyle: "",
+    resultActionsStyle: "",
+    recordPanelStyle: "",
   },
 
   // 触摸事件
@@ -28,7 +80,7 @@ Page({
   touchEndTime: 0,
   duration: 0,
   // 动画
-  pressDuration: 4500,
+  pressDuration: 1800,
   defaultStopDuration: 1500,
   deg: 0,
   rotateDeg: 180,
@@ -39,43 +91,79 @@ Page({
   expDuration: 500,
   
   lastIndex: -1,
+  currentAnswerRecord: null,
+  shareCanvas: null,
+  shareCtx: null,
+  shareImageCache: null,
+  shareImageTask: null,
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
+    if (this.handleShareEntryRedirect(options)) {
+      return
+    }
+
     this.answerData = new answerData()
+    this.shareImageCache = {}
+    this.shareImageTask = Promise.resolve()
     this.initLayoutInfo()
+    this.showShareOptions()
+    this.refreshAnswerRecords()
   },
 
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
   onReady: function () {
-    // 设置content默认内容
-    this.setDefaultContent()
+    if (!this.getCurrentAnswer()) {
+      this.createExpResetAnimation(1)
+    }
     // 使用 InnerAudioContext 管理短音频，并在页面卸载时释放资源
-    this.audioCtx = wx.createInnerAudioContext()
-    this.audioCtx.src = this.data.audio_src
-    this.audioCtx.startTime = AUDIO_START_TIME
+    if (typeof wx.createInnerAudioContext === "function") {
+      this.audioCtx = wx.createInnerAudioContext()
+      this.audioCtx.src = this.data.audio_src
+      this.audioCtx.startTime = AUDIO_START_TIME
+    }
   },
 
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow: function () {},
+  onShow: function () {
+    this.refreshAnswerRecords()
+  },
+
+  onResize: function () {
+    this.initLayoutInfo()
+  },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
   onHide: function () {
     this.stopPressAudio()
+    this.clearInteractionTimers()
+    this.setData({
+      recordPanelVisible: false,
+    })
+    if (this.inRotation && !this.inShow) {
+      this.restoreLastAnswerOrDefault()
+      this.createTableResetAnimation()
+    }
+    this.resetInteractionState()
   },
 
   /**
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
+    this.clearInteractionTimers()
+    this.shareCanvas = null
+    this.shareCtx = null
+    this.shareImageCache = null
+    this.shareImageTask = null
     if (this.audioCtx) {
       this.audioCtx.destroy()
       this.audioCtx = null
@@ -92,16 +180,40 @@ Page({
    */
   onReachBottom: function () {},
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {},
-
   initLayoutInfo: function () {
     var runtimeInfo = app.refreshRuntimeInfo ? app.refreshRuntimeInfo() : app.globalData.runtimeInfo || {}
+    var windowInfo = runtimeInfo.windowInfo || {}
+    var menuButtonInfo = runtimeInfo.menuButtonInfo || null
+    var topInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.top : 0
     var bottomInset = runtimeInfo.safeAreaInsets ? runtimeInfo.safeAreaInsets.bottom : 0
+    var windowWidth = windowInfo.windowWidth || 375
+    var windowHeight = windowInfo.windowHeight || 667
+    var compact = windowHeight < 720
+    var cardWidth = clamp(windowWidth - 28, 308, 370)
+    var cardHeight = clamp(windowHeight * (compact ? 0.33 : 0.35), 218, 272)
+    var cardTop = clamp(topInset + windowHeight * (compact ? 0.11 : 0.135), topInset + 72, topInset + 124)
+    var contentTop = cardTop + cardHeight * 0.2
+    var subContentTop = cardTop + cardHeight * 0.56
+    var tableSize = clamp(windowWidth * 0.32, 108, 132)
+    var tableBottom = bottomInset + (compact ? 18 : 28)
+    var expBottom = tableBottom + tableSize + (compact ? 48 : 68)
+    var horizontalPadding = clamp(windowWidth * 0.15, 48, 86)
+    var resultActionsWidth = clamp(windowWidth - 40, 280, 360)
+    var tableHintWidth = clamp(windowWidth - 52, 220, 340)
+    var modeSwitchLeft = clamp(windowWidth * 0.045, 14, 22)
+    var modeSwitchTop = menuButtonInfo && menuButtonInfo.bottom ? menuButtonInfo.bottom + 10 : topInset + 14
+
     this.setData({
-      tableStyle: bottomInset ? "bottom: calc(80rpx + " + bottomInset + "px);" : "",
+      tableStyle: "bottom: " + tableBottom + "px;",
+      tableHintStyle: "max-width: " + tableHintWidth + "px; padding: 0 16px; font-size: " + (compact ? 13 : 14) + "px;",
+      modeSwitchStyle: "top: " + Math.round(modeSwitchTop) + "px; left: " + Math.round(modeSwitchLeft) + "px;",
+      contentCardStyle: "width: " + cardWidth + "px; height: " + cardHeight + "px; left: " + (windowWidth - cardWidth) / 2 + "px; top: " + cardTop + "px;",
+      contentLayoutStyle: "top: " + Math.round(contentTop) + "px; padding: 0 " + horizontalPadding + "px; font-size: " + (compact ? 28 : 32) + "px;",
+      subContentLayoutStyle: "top: " + Math.round(subContentTop) + "px; padding: 0 " + (horizontalPadding + 18) + "px; font-size: " + (compact ? 13 : 14) + "px;",
+      expLayoutStyle: "bottom: " + Math.round(expBottom) + "px; padding: 0 " + (horizontalPadding + 16) + "px; font-size: " + (compact ? 16 : 18) + "px;",
+      tableImageStyle: "width: " + tableSize + "px; height: " + tableSize + "px;",
+      resultActionsStyle: "max-width: " + resultActionsWidth + "px;",
+      recordPanelStyle: "padding-bottom: " + Math.max(bottomInset, 16) + "px;",
     })
   },
 
@@ -114,6 +226,10 @@ Page({
 
       // 清除旧的内容
       this.clearOldContent()
+      this.setData({
+        tableHint: HOLDING_HINT,
+        hasAnswer: false,
+      })
 
       // 设置旋转动画
       this.createTableRotateAnimation()
@@ -147,6 +263,7 @@ Page({
     this.stopPressAudio()
     // 播放停止音效
     //
+    this.triggerSuccessFeedback()
   },
 
   touchEnd: function (e) {
@@ -165,12 +282,13 @@ Page({
 
         this.createTableInterruptAnimation()
         this.inRotation = false
+        this.restoreLastAnswerOrDefault()
       }
     }
   },
 
   bindTap: function(e) {
-    if (!this.inShow && !this.inRotation)
+    if (this.getCurrentAnswer() && !this.inShow && !this.inRotation)
     {
       this.createExpShowAnimation()
     }
@@ -180,16 +298,24 @@ Page({
    * 设置默认content文本
    */
   setDefaultContent: function () {
+    this.currentAnswerRecord = null
+    this.resetShareImageCache()
     this.setData({
-      content: this.answerData.getDefaultContent(),
-      subContent: this.answerData.getDefaultSubContent()
+      content: DEFAULT_CONTENT,
+      subContent: DEFAULT_SUB_CONTENT,
+      exp: DEFAULT_EXP,
+      tableHint: DEFAULT_HINT,
+      hasAnswer: false,
+      isCurrentFavorite: false,
     })
+    this.createExpResetAnimation(1)
   },
 
   /**
    * 清除旧的content
    */
   clearOldContent: function () {
+    this.resetShareImageCache()
     this.setData({
       content: "",
       subContent: "",
@@ -203,7 +329,8 @@ Page({
   setNewContent: function () {
     this.inShow = true
     this.inRotation = false
-    setTimeout(function(){
+    clearTimeout(this.answerRevealDoneTimeout)
+    this.answerRevealDoneTimeout = setTimeout(function(){
       this.inShow = false
       // console.log("好了")
     }.bind(this), Math.max(this.defaultStopDuration, this.contentDuration) + this.subContentDelay + this.subContentDuration)
@@ -222,12 +349,20 @@ Page({
     }
     // 更新数据以更新显示
     var answer = this.answerData.getAnswerByIndex(index)
+    var record = answerStore.recordAnswer(answer, ANSWER_SOURCE)
     this.lastIndex = index
+    this.currentAnswerRecord = record
+    this.resetShareImageCache()
     this.setData({
-      content: answer.content,
-      subContent: answer.subContent,
-      exp: answer.exp,
+      content: record.content,
+      subContent: record.subContent,
+      exp: record.exp,
+      tableHint: ANSWER_HINT,
+      hasAnswer: true,
     })
+    this.createExpResetAnimation(0)
+    this.refreshAnswerRecords()
+    this.prepareDynamicShareImages()
   },
 
   /**
@@ -248,6 +383,442 @@ Page({
     if (this.audioCtx) {
       this.audioCtx.pause()
     }
+  },
+
+  clearInteractionTimers: function () {
+    clearTimeout(this.timeout_press_over)
+    clearTimeout(this.answerRevealDoneTimeout)
+    clearTimeout(this.tableResetTimeout)
+  },
+
+  resetInteractionState: function () {
+    this.inShow = false
+    this.inRotation = false
+  },
+
+  restoreLastAnswerOrDefault: function () {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      this.setDefaultContent()
+      return
+    }
+
+    this.setData({
+      content: answer.content,
+      subContent: answer.subContent,
+      exp: answer.exp,
+      tableHint: ANSWER_HINT,
+      hasAnswer: true,
+    })
+    this.createExpResetAnimation(0)
+  },
+
+  triggerSuccessFeedback: function () {
+    if (typeof wx.vibrateShort === "function") {
+      wx.vibrateShort()
+    }
+  },
+
+  showShareOptions: function () {
+    if (typeof wx.showShareMenu === "function") {
+      wx.showShareMenu({
+        menus: ["shareAppMessage", "shareTimeline"],
+      })
+    }
+  },
+
+  getPageMode: function () {
+    return ANSWER_SOURCE
+  },
+
+  buildShareQuery: function (scene, mode) {
+    var params = {}
+    params[SHARE_QUERY_FROM_SHARE] = 1
+    params[SHARE_QUERY_MODE] = mode || this.getPageMode()
+    params[SHARE_QUERY_SCENE] = scene || ""
+    return buildQueryString(params)
+  },
+
+  buildSharePath: function (scene, mode) {
+    return ANSWERS_PAGE_PATH + "?" + this.buildShareQuery(scene, mode)
+  },
+
+  handleShareEntryRedirect: function (options) {
+    var mode = options && options[SHARE_QUERY_MODE]
+    if (!mode || mode === this.getPageMode()) {
+      return false
+    }
+
+    if (mode === "sun_rise") {
+      wx.redirectTo({
+        url: SUN_RISE_PAGE_PATH + "?" + this.buildShareQuery(options[SHARE_QUERY_SCENE] || "", mode),
+      })
+      return true
+    }
+
+    return false
+  },
+
+  buildShareData: function () {
+    var answer = this.getCurrentAnswer()
+    var title = answer ? "我抽到的答案是：" + answer.content : "默想一个问题，让答案自己浮现"
+
+    return {
+      title: title,
+      path: this.buildSharePath(SHARE_SCENE_APP_MESSAGE),
+      imageUrl: ANSWERS_SHARE_IMAGE,
+    }
+  },
+
+  buildTimelineShareData: function () {
+    var answer = this.getCurrentAnswer()
+    return {
+      title: answer ? "我抽到的答案是：" + answer.content : "默想一个问题，让答案自己浮现",
+      query: this.buildShareQuery(SHARE_SCENE_TIMELINE),
+      imageUrl: ANSWERS_SHARE_IMAGE,
+    }
+  },
+
+  onShareTimeline: function () {
+    var shareData = this.buildTimelineShareData()
+    if (this.getCurrentAnswer()) {
+      shareData.promise = this.buildDynamicShareResult(SHARE_SCENE_TIMELINE)
+    }
+    return shareData
+  },
+
+  onShareAppMessage: function () {
+    var shareData = this.buildShareData()
+    if (this.getCurrentAnswer()) {
+      shareData.promise = this.buildDynamicShareResult(SHARE_SCENE_APP_MESSAGE)
+    }
+    return shareData
+  },
+
+  onTapSwitchMode: function () {
+    var pages = getCurrentPages()
+    var previousPage = pages.length > 1 ? pages[pages.length - 2] : null
+
+    if (previousPage && previousPage.route === "pages/sun_rise/sun_rise") {
+      wx.navigateBack({
+        delta: 1,
+      })
+      return
+    }
+
+    wx.redirectTo({
+      url: SUN_RISE_PAGE_PATH,
+    })
+  },
+
+  getCurrentAnswer: function () {
+    return this.currentAnswerRecord
+  },
+
+  refreshAnswerRecords: function () {
+    var history = answerStore.getHistory()
+    var favorites = answerStore.getFavorites()
+    var currentAnswer = this.getCurrentAnswer()
+
+    this.setData({
+      historyCount: history.length,
+      favoriteCount: favorites.length,
+      isCurrentFavorite: currentAnswer ? answerStore.isFavorite(currentAnswer) : false,
+    })
+  },
+
+  getSourceLabel: function (source) {
+    return source === "sun_rise" ? "日出模式" : "经典模式"
+  },
+
+  formatRecordItems: function (records) {
+    return records.map(function (item, index) {
+      var createdAt = item.createdAt || Date.now()
+      return {
+        signature: item.signature,
+        source: item.source,
+        content: item.content,
+        subContent: item.subContent,
+        exp: item.exp,
+        createdAt: createdAt,
+        displayMeta: this.getSourceLabel(item.source) + " · " + util.formatTime(new Date(createdAt)),
+        recordIndex: index,
+      }
+    }.bind(this))
+  },
+
+  openRecordPanel: function (type) {
+    var isHistory = type === "history"
+    var items = isHistory ? answerStore.getHistory() : answerStore.getFavorites()
+
+    this.setData({
+      recordPanelVisible: true,
+      recordPanelTitle: isHistory ? "最近答案" : "收藏夹",
+      recordPanelEmptyText: isHistory ? "还没有最近记录，先抽一次看看。" : "还没有收藏的答案。",
+      recordPanelItems: this.formatRecordItems(items),
+    })
+  },
+
+  onTapShowHistory: function () {
+    this.openRecordPanel("history")
+  },
+
+  onTapShowFavorites: function () {
+    this.openRecordPanel("favorites")
+  },
+
+  onCloseRecordPanel: function () {
+    this.setData({
+      recordPanelVisible: false,
+    })
+  },
+
+  onTapRecordItem: function (e) {
+    var index = Number(e.currentTarget.dataset.index)
+    var record = this.data.recordPanelItems[index]
+    if (!record) {
+      return
+    }
+
+    this.currentAnswerRecord = answerStore.recordAnswer(record, record.source || ANSWER_SOURCE)
+    this.resetShareImageCache()
+    this.setData({
+      content: this.currentAnswerRecord.content,
+      subContent: this.currentAnswerRecord.subContent,
+      exp: this.currentAnswerRecord.exp,
+      tableHint: ANSWER_HINT,
+      hasAnswer: true,
+      recordPanelVisible: false,
+    })
+    this.createExpResetAnimation(1)
+    this.refreshAnswerRecords()
+    this.prepareDynamicShareImages()
+  },
+
+  buildClipboardText: function () {
+    var answer = this.getCurrentAnswer()
+    return answer ? answerStore.buildClipboardText(answer) : ""
+  },
+
+  onTapCopyResult: function () {
+    var content = this.buildClipboardText()
+    if (!content) {
+      return
+    }
+
+    wx.setClipboardData({
+      data: content,
+      success: function () {
+        wx.showToast({
+          title: "已复制答案",
+          icon: "none",
+          duration: 1200,
+        })
+      }
+    })
+  },
+
+  onTapToggleFavorite: function () {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      return
+    }
+
+    var isFavorite = answerStore.toggleFavorite(answer, ANSWER_SOURCE)
+    this.setData({
+      isCurrentFavorite: isFavorite,
+    })
+    this.refreshAnswerRecords()
+    wx.showToast({
+      title: isFavorite ? "已加入收藏" : "已取消收藏",
+      icon: "none",
+      duration: 1200,
+    })
+  },
+
+  onTapDrawAgain: function () {
+    if (this.inShow || this.inRotation) {
+      return
+    }
+
+    this.clearInteractionTimers()
+    this.clearOldContent()
+    this.setData({
+      tableHint: HOLDING_HINT,
+      hasAnswer: false,
+    })
+    this.createContentStartAnimation()
+    this.createSubContentStartAnimation()
+    this.createExpStartAnimation()
+
+    this.answerRevealDoneTimeout = setTimeout(function () {
+      this.setNewContent()
+      this.createContentShowAnimation()
+      this.createSubContentShowAnimation()
+      this.triggerSuccessFeedback()
+    }.bind(this), 80)
+  },
+
+  noop: function () {},
+
+  resetShareImageCache: function () {
+    this.shareImageCache = {}
+  },
+
+  getShareImageSize: function (scene) {
+    if (scene === SHARE_SCENE_TIMELINE) {
+      return {
+        width: 600,
+        height: 600,
+      }
+    }
+
+    return {
+      width: 500,
+      height: 400,
+    }
+  },
+
+  getCachedShareImage: function (scene, signature) {
+    var cache = this.shareImageCache && this.shareImageCache[scene]
+    if (cache && cache.signature === signature && cache.filePath) {
+      return cache.filePath
+    }
+    return ""
+  },
+
+  setCachedShareImage: function (scene, signature, filePath) {
+    if (!this.shareImageCache) {
+      this.shareImageCache = {}
+    }
+    this.shareImageCache[scene] = {
+      signature: signature,
+      filePath: filePath,
+    }
+  },
+
+  ensureShareCanvas: function () {
+    if (this.shareCanvas && this.shareCtx) {
+      return Promise.resolve()
+    }
+
+    return new Promise(function (resolve, reject) {
+      wx.createSelectorQuery()
+        .select("#answers-share-canvas")
+        .fields({ node: true, size: true })
+        .exec(function (res) {
+          var canvasRef = res && res[0]
+          if (!canvasRef || !canvasRef.node) {
+            reject(new Error("share canvas not found"))
+            return
+          }
+
+          this.shareCanvas = canvasRef.node
+          this.shareCtx = this.shareCanvas.getContext("2d")
+          resolve()
+        }.bind(this))
+    }.bind(this))
+  },
+
+  enqueueShareImageTask: function (task) {
+    var baseTask = this.shareImageTask || Promise.resolve()
+    var queuedTask = baseTask
+      .catch(function () {})
+      .then(task)
+
+    this.shareImageTask = queuedTask.catch(function () {})
+    return queuedTask
+  },
+
+  generateShareImage: function (scene) {
+    var answer = this.getCurrentAnswer()
+    if (!answer) {
+      return Promise.reject(new Error("no answer to share"))
+    }
+
+    var cached = this.getCachedShareImage(scene, answer.signature)
+    if (cached) {
+      return Promise.resolve(cached)
+    }
+
+    var size = this.getShareImageSize(scene)
+
+    return this.enqueueShareImageTask(function () {
+      return this.ensureShareCanvas()
+        .then(function () {
+          this.shareCanvas.width = size.width
+          this.shareCanvas.height = size.height
+
+          shareImage.drawQuoteShareImage(this.shareCtx, {
+            width: size.width,
+            height: size.height,
+            modeLabel: "经典模式",
+            heading: "抽到的答案",
+            answer: answer.content,
+            subContent: answer.subContent,
+            exp: answer.exp,
+            footer: "长按圆盘，等待下一次答案出现",
+            theme: {
+              backgroundColors: [
+                { stop: 0, color: "#6D001D" },
+                { stop: 1, color: "#C4000C" },
+              ],
+              accentColor: "#FFD6DC",
+              cardColor: "rgba(255,248,245,0.95)",
+              labelBg: "rgba(196,0,12,0.12)",
+              labelText: "#A21633",
+              headingText: "#9A1730",
+              answerText: "#5F0D24",
+              bodyText: "#7D2740",
+              mutedText: "rgba(95,13,36,0.74)",
+              dividerColor: "rgba(160,35,58,0.16)",
+              footerText: "rgba(95,13,36,0.68)",
+            },
+          })
+
+          return new Promise(function (resolve, reject) {
+            wx.canvasToTempFilePath({
+              x: 0,
+              y: 0,
+              width: size.width,
+              height: size.height,
+              destWidth: size.width,
+              destHeight: size.height,
+              canvas: this.shareCanvas,
+              success: function (res) {
+                this.setCachedShareImage(scene, answer.signature, res.tempFilePath)
+                resolve(res.tempFilePath)
+              }.bind(this),
+              fail: reject,
+            })
+          }.bind(this))
+        }.bind(this))
+    }.bind(this))
+  },
+
+  prepareDynamicShareImages: function () {
+    if (!this.getCurrentAnswer()) {
+      return Promise.resolve()
+    }
+
+    return this.generateShareImage(SHARE_SCENE_APP_MESSAGE)
+      .catch(function () {})
+      .then(function () {
+        return this.generateShareImage(SHARE_SCENE_TIMELINE)
+      }.bind(this))
+      .catch(function () {})
+  },
+
+  buildDynamicShareResult: function (scene) {
+    var fallback = scene === SHARE_SCENE_TIMELINE ? this.buildTimelineShareData() : this.buildShareData()
+    return this.generateShareImage(scene)
+      .then(function (filePath) {
+        fallback.imageUrl = filePath
+        return fallback
+      })
+      .catch(function () {
+        return fallback
+      })
   },
 
   /**
@@ -301,7 +872,8 @@ Page({
       tableAnimation: stopAnimation.export()
     })
 
-    setTimeout(this.createTableResetAnimation.bind(this), this.defaultStopDuration)
+    clearTimeout(this.tableResetTimeout)
+    this.tableResetTimeout = setTimeout(this.createTableResetAnimation.bind(this), this.defaultStopDuration)
   },
 
   /**
@@ -387,17 +959,7 @@ Page({
    * exp内容动画初始设置
    */
   createExpStartAnimation: function () {
-    this.expOpacity = 0
-    // console.log("exp透明度: " + this.expOpacity)
-    var animation = wx.createAnimation({
-      duration: 1,
-      timingFunction: "step-start",
-    })
-    animation.opacity(0).step()
-    // 输出动画
-    this.setData({
-      expAnimation: animation.export()
-    })
+    this.createExpResetAnimation(0)
   },
 
   /**
@@ -412,6 +974,18 @@ Page({
     // console.log((this.expOpacity) % 2)
     animation.opacity((this.expOpacity) % 2).step()
     // 输出动画
+    this.setData({
+      expAnimation: animation.export()
+    })
+  },
+
+  createExpResetAnimation: function (opacity) {
+    this.expOpacity = opacity
+    var animation = wx.createAnimation({
+      duration: 1,
+      timingFunction: "step-start",
+    })
+    animation.opacity(opacity).step()
     this.setData({
       expAnimation: animation.export()
     })

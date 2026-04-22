@@ -1,4 +1,3 @@
 {
-  "navigationBarBackgroundColor": "#E70012",
-  "navigationBarTitleText": "周过路过"
+  "disableScroll": true
 }

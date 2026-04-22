@@ -5,10 +5,6 @@
   ],
   "lazyCodeLoading": "requiredComponents",
   "window": {
-    "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#e30b52",
-    "navigationBarTitleText": "WeChat",
-    "navigationBarTextStyle": "white",
     "navigationStyle": "custom"
   },
   "sitemapLocation": "sitemap.json"

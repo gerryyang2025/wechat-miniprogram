@@ -1,19 +1,60 @@
 <!--answers.wxml-->
 <view class="container">
+  <view class="modeSwitch" style="{{modeSwitchStyle}}" bindtap="onTapSwitchMode">
+    <text class="modeSwitchText">回到日出模式</text>
+  </view>
   <view class="background">
     <image class="backgroundImg" src="../../assets/bg1.png" mode="aspectFill"></image> 
   </view>
-  <view class="contentBg"></view>
-  <view class="content" animation="{{contentAnimation}}">
+  <view class="contentBg" style="{{contentCardStyle}}"></view>
+  <view class="content" animation="{{contentAnimation}}" style="{{contentLayoutStyle}}">
       <text class="answerTxt">{{content}}</text>
   </view>
-  <view class="subContent" animation="{{subContentAnimation}}">
+  <view class="subContent" animation="{{subContentAnimation}}" style="{{subContentLayoutStyle}}">
     <text class="subContentTxt">{{subContent}}</text>
   </view>
-  <view class="exp" animation="{{expAnimation}}">
+  <view class="exp" animation="{{expAnimation}}" style="{{expLayoutStyle}}">
     <text class="expTxt">{{exp}}</text>
   </view>
   <view class="table" style="{{tableStyle}}">
-    <image id="table" class="tableImg" src="../../assets/table.png" bindtap="bindTap" bindlongpress="longPress" bindtouchend="touchEnd" animation="{{tableAnimation}}"></image>
+    <view class="resultActions" wx:if="{{hasAnswer}}" style="{{resultActionsStyle}}">
+      <view class="actionChip" bindtap="onTapDrawAgain">
+        <text class="actionChipText">再抽一次</text>
+      </view>
+      <view class="actionChip" bindtap="onTapCopyResult">
+        <text class="actionChipText">复制</text>
+      </view>
+      <view class="actionChip" bindtap="onTapToggleFavorite">
+        <text class="actionChipText">{{isCurrentFavorite ? '已收藏' : '收藏'}}</text>
+      </view>
+      <view class="actionChip" bindtap="onTapShowHistory">
+        <text class="actionChipText">历史 {{historyCount}}</text>
+      </view>
+      <view class="actionChip" bindtap="onTapShowFavorites">
+        <text class="actionChipText">收藏夹 {{favoriteCount}}</text>
+      </view>
+    </view>
+    <image id="table" class="tableImg" style="{{tableImageStyle}}" src="../../assets/table.png" bindtap="bindTap" bindlongpress="longPress" bindtouchend="touchEnd" animation="{{tableAnimation}}"></image>
+    <text class="tableHint" style="{{tableHintStyle}}">{{tableHint}}</text>
   </view>
+  <view class="recordMask" wx:if="{{recordPanelVisible}}" bindtap="onCloseRecordPanel">
+    <view class="recordPanel" catchtap="noop" style="{{recordPanelStyle}}">
+      <view class="recordPanelHeader">
+        <text class="recordPanelTitle">{{recordPanelTitle}}</text>
+        <text class="recordPanelClose" bindtap="onCloseRecordPanel">关闭</text>
+      </view>
+      <view class="recordEmpty" wx:if="{{!recordPanelItems.length}}">
+        <text class="recordEmptyText">{{recordPanelEmptyText}}</text>
+      </view>
+      <scroll-view class="recordList" scroll-y wx:else>
+        <view class="recordItem" wx:for="{{recordPanelItems}}" wx:key="signature" data-index="{{index}}" bindtap="onTapRecordItem">
+          <text class="recordItemContent">{{item.content}}</text>
+          <text class="recordItemSub">{{item.subContent}}</text>
+          <text class="recordItemExp">{{item.exp}}</text>
+          <text class="recordItemMeta">{{item.displayMeta}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+  <canvas id="answers-share-canvas" type="2d" class="shareCanvas"></canvas>
 </view>
