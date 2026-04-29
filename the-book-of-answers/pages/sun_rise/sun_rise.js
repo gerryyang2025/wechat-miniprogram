@@ -24,17 +24,11 @@ var State = {
 var ALBUM_SCOPE = "scope.writePhotosAlbum"
 var POSTER_WIDTH = 750
 var POSTER_HEIGHT = 1334
-var POSTER_CONTENT_Y = 299
-var POSTER_SUB_CONTENT_Y = 508
 var POSTER_BG = "../../assets/sun_rise/save_bg.png"
 var MINI_PROGRAM_QR_IMAGE = "../../assets/miniprogram_qr.png"
 var POSTER_ASSET_TIMEOUT = 8000
 var OPTIONAL_ASSET_TIMEOUT = 1600
-var POSTER_CONTENT_MAX_WIDTH = 560
-var POSTER_SUB_CONTENT_MAX_WIDTH = 520
-var POSTER_CONTENT_LINE_HEIGHT = 76
-var POSTER_SUB_CONTENT_LINE_HEIGHT = 40
-var POSTER_MAX_LINES = 2
+var POSTER_LAYOUT_VERSION = "poster-detail-card-v1"
 var ANSWER_SOURCE = "sun_rise"
 var ANSWERS_PAGE_PATH = "/pages/answers/answers"
 var SUN_RISE_PAGE_PATH = "/pages/sun_rise/sun_rise"
@@ -178,6 +172,7 @@ Page({
   isPageReady: false,
   currentAnswerRecord: null,
   lastPosterTempFilePath: "",
+  lastPosterRenderSignature: "",
   posterRetryAction: "",
   shareImageCache: null,
   shareImageTask: null,
@@ -773,7 +768,7 @@ Page({
     this.hideRepeatHint()
     this.hidePressCue()
     this.currentAnswerRecord = null
-    this.lastPosterTempFilePath = ""
+    this.resetPosterCache()
     this.resetShareImageCache()
 
     this.setData({
@@ -928,8 +923,7 @@ Page({
     this.hideRepeatHint()
     this.showPressCue("revealing", 0, 720)
 
-    this.isScreenshotDrew = false    // 屏幕截图设置为需要重新画
-    this.lastPosterTempFilePath = ""
+    this.resetPosterCache()
     this.resetShareImageCache()
 
     var time = this.anim_data.pressDuration + this.anim_data.afterPress
@@ -1120,6 +1114,7 @@ Page({
     var record = answerStore.recordAnswer(answer, ANSWER_SOURCE)
     var time = this.anim_data.contentDuration + this.anim_data.contentInteral + this.anim_data.subContentDuration
     this.currentAnswerRecord = record
+    this.resetPosterCache()
     this.resetShareImageCache()
 
     this.setData({
@@ -1181,58 +1176,114 @@ Page({
 
   onTapSavePosterAction: function () {
     if (this.data.state == State.waiting && this.getCurrentAnswer() && this.data.canSavePoster){
-      this.requestAlbumPermission(function () {
-        this.startSaveFlow()
-      }.bind(this))
+      this.ensureAlbumPermission()
+        .then(function () {
+          this.startSaveFlow()
+        }.bind(this))
+        .catch(function () {})
     }
   },
 
-  requestAlbumPermission: function (onSuccess) {
-    wx.authorize({
-      scope: ALBUM_SCOPE,
-      success: onSuccess,
-      fail: function () {
-        wx.showModal({
-          title: "需要相册权限",
-          content: "保存图片到系统相册前，需要先允许访问相册。",
-          confirmText: "去设置",
-          success: function (res) {
-            if (!res.confirm) {
-              wx.showToast({
-                title: "未获得相册权限",
-                icon: "none",
-                duration: 1500,
-              })
-              return
-            }
-
-            wx.openSetting({
-              success: function (settingRes) {
-                if (settingRes.authSetting[ALBUM_SCOPE]) {
-                  onSuccess()
-                } else {
-                  wx.showToast({
-                    title: "未获得相册权限",
-                    icon: "none",
-                    duration: 1500,
-                  })
-                }
-              },
-              fail: function () {
-                wx.showToast({
-                  title: "打开设置失败",
-                  icon: "none",
-                  duration: 1500,
-                })
-              }
-            })
-          }
-        })
-      }
+  getAlbumPermissionSnapshot: function () {
+    return new Promise(function (resolve) {
+      wx.getSetting({
+        success: function (res) {
+          var authSetting = res && res.authSetting ? res.authSetting : {}
+          var scopeSetting = authSetting[ALBUM_SCOPE]
+          resolve({
+            authSetting: authSetting,
+            scopeAuthorized: scopeSetting === true,
+            scopeDenied: scopeSetting === false,
+            scopeUndetermined: typeof scopeSetting === "undefined",
+          })
+        },
+        fail: function () {
+          resolve({
+            authSetting: {},
+            scopeAuthorized: false,
+            scopeDenied: false,
+            scopeUndetermined: true,
+          })
+        }
+      })
     })
   },
 
+  showAlbumPermissionDeniedToast: function () {
+    wx.showToast({
+      title: "未获得相册权限",
+      icon: "none",
+      duration: 1500,
+    })
+  },
+
+  openAlbumPermissionSetting: function () {
+    return new Promise(function (resolve, reject) {
+      wx.showModal({
+        title: "需要相册权限",
+        content: "保存图片到系统相册前，需要先允许访问相册。",
+        confirmText: "去设置",
+        success: function (res) {
+          if (!res.confirm) {
+            this.showAlbumPermissionDeniedToast()
+            reject(new Error("album permission denied by user"))
+            return
+          }
+
+          wx.openSetting({
+            success: function (settingRes) {
+              var authSetting = settingRes && settingRes.authSetting ? settingRes.authSetting : {}
+              if (authSetting[ALBUM_SCOPE]) {
+                resolve()
+                return
+              }
+
+              this.showAlbumPermissionDeniedToast()
+              reject(new Error("album permission still denied"))
+            }.bind(this),
+            fail: function (error) {
+              wx.showToast({
+                title: "打开设置失败",
+                icon: "none",
+                duration: 1500,
+              })
+              reject(error || new Error("open setting failed"))
+            }
+          })
+        }.bind(this),
+        fail: function (error) {
+          reject(error || new Error("show permission modal failed"))
+        }
+      })
+    }.bind(this))
+  },
+
+  ensureAlbumPermission: function () {
+    return this.getAlbumPermissionSnapshot().then(function (snapshot) {
+      if (snapshot.scopeAuthorized) {
+        return null
+      }
+
+      if (snapshot.scopeUndetermined) {
+        return new Promise(function (resolve, reject) {
+          wx.authorize({
+            scope: ALBUM_SCOPE,
+            success: resolve,
+            fail: function () {
+              this.openAlbumPermissionSetting().then(resolve).catch(reject)
+            }.bind(this)
+          })
+        }.bind(this))
+      }
+
+      return this.openAlbumPermissionSetting()
+    }.bind(this))
+  },
+
   startSaveFlow: function () {
+    var answer = this.getLastAnswer()
+    var shouldReusePoster = this.shouldReusePosterSnapshot(answer)
+
     this.closePosterErrorDialog()
     wx.showLoading({
       title: "保存中",
@@ -1243,15 +1294,16 @@ Page({
       state: State.saving,
     })
 
-    if (this.isScreenshotDrew) {
+    if (shouldReusePoster) {
       this.continuePosterSaveFlow()
       return
     }
 
-    var answer = this.getLastAnswer()
+    this.resetPosterCache()
     this.drawPoster(answer)
       .then(function () {
         this.isScreenshotDrew = true
+        this.lastPosterRenderSignature = this.buildPosterRenderSignature(answer)
         return this.continuePosterSaveFlow()
       }.bind(this))
       .catch(function (error) {
@@ -1337,19 +1389,6 @@ Page({
     }.bind(this))
   },
 
-  drawPosterQrCode: function (ctx, qrImage) {
-    var cardWidth = 138
-    var cardHeight = 138
-    var cardX = POSTER_WIDTH - cardWidth - 38
-    var cardY = POSTER_HEIGHT - cardHeight - 52
-
-    ctx.save()
-    ctx.fillStyle = "rgba(255,255,255,0.9)"
-    ctx.fillRect(cardX, cardY, cardWidth, cardHeight)
-    ctx.drawImage(qrImage, cardX, cardY, cardWidth, cardHeight)
-    ctx.restore()
-  },
-
   drawPoster: function (answer) {
     return Promise.all([
       this.loadPosterImage(POSTER_BG),
@@ -1362,18 +1401,59 @@ Page({
       var qrImage = assets[1]
       var ctx = this.posterCtx
 
-      ctx.clearRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT)
-      ctx.drawImage(bgImage, 0, 0, POSTER_WIDTH, POSTER_HEIGHT)
-      ctx.textAlign = "center"
-      ctx.textBaseline = "middle"
-      ctx.fillStyle = "white"
-      ctx.font = "55px sans-serif"
-      this.drawPosterTextBlock(ctx, answer.content, POSTER_WIDTH / 2, POSTER_CONTENT_Y, POSTER_CONTENT_MAX_WIDTH, POSTER_CONTENT_LINE_HEIGHT, POSTER_MAX_LINES)
-      ctx.font = "25px sans-serif"
-      this.drawPosterTextBlock(ctx, answer.subContent, POSTER_WIDTH / 2, POSTER_SUB_CONTENT_Y, POSTER_SUB_CONTENT_MAX_WIDTH, POSTER_SUB_CONTENT_LINE_HEIGHT, POSTER_MAX_LINES)
-      if (qrImage) {
-        this.drawPosterQrCode(ctx, qrImage)
-      }
+      shareImage.drawQuoteShareImage(ctx, {
+        width: POSTER_WIDTH,
+        height: POSTER_HEIGHT,
+        layoutVariant: "poster",
+        heading: "",
+        answer: answer.content,
+        subContent: answer.subContent,
+        exp: answer.exp,
+        footer: "默想一个问题，等待太阳给出答案",
+        qrImage: qrImage,
+        backgroundImage: bgImage,
+        showDetail: true,
+        detailTitle: answer.detailTitle,
+        detailSummary: answer.detailSummary,
+        detailMeaning: answer.detailMeaning,
+        detailAdvice: answer.detailAdvice,
+        detailRisk: answer.detailRisk,
+        detailQuestion: answer.detailQuestion,
+        theme: {
+          backgroundColors: [
+            { stop: 0, color: "#F6A45F" },
+            { stop: 1, color: "#D75862" },
+          ],
+          accentColor: "#FFF1D7",
+          cardColor: "rgba(255,250,244,0.78)",
+          labelBg: "rgba(228,120,88,0.16)",
+          labelText: "#B1535D",
+          headingText: "#AD5260",
+          answerText: "#8F375D",
+          bodyText: "#A4495F",
+          mutedText: "rgba(143,55,93,0.76)",
+          dividerColor: "rgba(173,82,96,0.2)",
+          footerText: "rgba(143,55,93,0.72)",
+          metaCardBg: "rgba(255,248,244,0.34)",
+          metaCardBorder: "rgba(177,83,93,0.10)",
+          metaBadgeBg: "rgba(177,83,93,0.12)",
+          metaBadgeText: "#A04A57",
+          metaSecondaryBadgeBg: "rgba(143,55,93,0.05)",
+          metaSecondaryBadgeText: "rgba(143,55,93,0.50)",
+          metaDividerColor: "rgba(177,83,93,0.10)",
+          metaBodyText: "#9B4560",
+          metaMutedText: "rgba(143,55,93,0.56)",
+          detailCardBg: "rgba(255,247,241,0.82)",
+          detailLabelText: "#B1535D",
+          detailBadgeBg: "rgba(177,83,93,0.14)",
+          detailBadgeText: "#A04A57",
+          detailSoftCardBg: "rgba(255,255,255,0.42)",
+          detailSoftCardBorder: "rgba(177,83,93,0.10)",
+          detailTitleText: "#8F375D",
+          detailBodyText: "#9B4560",
+          detailDividerColor: "rgba(173,82,96,0.18)",
+        },
+      })
     }.bind(this))
   },
 
@@ -1387,11 +1467,13 @@ Page({
 
     return filePathPromise
       .then(function (filePath) {
-        return this.savePosterTempFile(filePath)
+        return this.ensureAlbumPermission().then(function () {
+          return this.savePosterTempFile(filePath)
+        }.bind(this))
       }.bind(this))
       .then(this.finishPosterSaveSuccess.bind(this))
       .catch(function (error) {
-        this.handlePosterFlowError(error && error.posterStage ? error.posterStage : "save", error)
+        return this.handlePosterSaveFailure(error)
       }.bind(this))
   },
 
@@ -1438,6 +1520,54 @@ Page({
     })
   },
 
+  resolvePosterSaveFailureOptions: function (error) {
+    var errorMessage = error && (error.errMsg || error.message) ? (error.errMsg || error.message) : ""
+
+    return this.getAlbumPermissionSnapshot().then(function (snapshot) {
+      var options = {
+        title: "保存到相册失败",
+        message: "图片已经生成，但写入系统相册时没有成功。",
+        supportText: "你可以先重新保存；如果暂时不方便，也可以先复制答案内容。",
+        retryText: "重新保存",
+        retryAction: "save-temp-file",
+      }
+
+      if (!snapshot.scopeAuthorized || /auth deny|auth denied|permission/i.test(errorMessage)) {
+        options.title = "需要相册权限"
+        options.message = "当前没有保存到相册的小程序权限，请先授权后再继续保存。"
+        options.supportText = "授权完成后可以继续保存海报；如果现在不想授权，也可以先复制答案。"
+        options.retryText = "去设置"
+        options.retryAction = "request-permission-and-save"
+        return options
+      }
+
+      if (/file|path/i.test(errorMessage)) {
+        options.message = "临时图片似乎已经失效，重新导出一张再保存会更稳一些。"
+        options.supportText = "临时文件在切后台或等待较久后可能失效，重新导出通常就能恢复。"
+        options.retryText = "重新导出"
+        options.retryAction = "export-and-save"
+      }
+
+      return options
+    }.bind(this))
+  },
+
+  handlePosterSaveFailure: function (error) {
+    return this.resolvePosterSaveFailureOptions(error)
+      .then(function (options) {
+        wx.hideLoading()
+        this.hidScreenshot()
+        this.showPosterErrorDialog(
+          options.title,
+          options.message,
+          options.retryText,
+          options.retryAction,
+          options.supportText
+        )
+        console.error("poster flow failed", "save", error)
+      }.bind(this))
+  },
+
   finishPosterSaveSuccess: function () {
     wx.hideLoading()
     wx.showToast({
@@ -1459,7 +1589,6 @@ Page({
   },
 
   handlePosterFlowError: function (stage, error) {
-    var errorMessage = error && (error.errMsg || error.message) ? (error.errMsg || error.message) : ""
     var title = "海报生成失败"
     var message = "这次没有成功完成海报操作，你可以再试一次。"
     var supportText = "如果连续失败，也可以先复制当前答案，稍后再回来保存海报。"
@@ -1478,25 +1607,6 @@ Page({
       supportText = "如果在开发者工具里连续失败，真机里通常会更稳定一些，也可以先截图留存结果。"
       retryText = "重新导出"
       retryAction = "export-and-save"
-    } else if (stage === "save") {
-      title = "保存到相册失败"
-      message = "图片已经生成，但写入系统相册时没有成功。"
-      supportText = "你可以先重新保存；如果暂时不方便，也可以先复制答案内容。"
-      retryText = "重新保存"
-      retryAction = "save-temp-file"
-
-      if (/auth deny|auth denied|permission/i.test(errorMessage)) {
-        title = "需要相册权限"
-        message = "当前没有保存到相册的权限，请先授权后再继续保存。"
-        supportText = "授权完成后可以继续保存海报；如果现在不想授权，也可以先复制答案。"
-        retryText = "去设置"
-        retryAction = "request-permission-and-save"
-      } else if (/file|path/i.test(errorMessage)) {
-        message = "临时图片似乎已经失效，重新导出一张再保存会更稳一些。"
-        supportText = "临时文件在切后台或等待较久后可能失效，重新导出通常就能恢复。"
-        retryText = "重新导出"
-        retryAction = "export-and-save"
-      }
     }
 
     wx.hideLoading()
@@ -1529,9 +1639,11 @@ Page({
     this.closePosterErrorDialog()
 
     if (retryAction === "request-permission-and-save") {
-      this.requestAlbumPermission(function () {
-        this.onTapPosterRetryWithAction("save-temp-file")
-      }.bind(this))
+      this.ensureAlbumPermission()
+        .then(function () {
+          this.onTapPosterRetryWithAction("restart-save")
+        }.bind(this))
+        .catch(function () {})
       return
     }
 
@@ -1540,8 +1652,7 @@ Page({
 
   onTapPosterRetryWithAction: function (retryAction) {
     if (retryAction === "restart-save") {
-      this.isScreenshotDrew = false
-      this.lastPosterTempFilePath = ""
+      this.resetPosterCache()
       this.startSaveFlow()
       return
     }
@@ -1561,16 +1672,18 @@ Page({
     }
 
     if (retryAction === "save-temp-file" && this.lastPosterTempFilePath) {
-      this.savePosterTempFile(this.lastPosterTempFilePath)
+      this.ensureAlbumPermission()
+        .then(function () {
+          return this.savePosterTempFile(this.lastPosterTempFilePath)
+        }.bind(this))
         .then(this.finishPosterSaveSuccess.bind(this))
         .catch(function (error) {
-          this.handlePosterFlowError("save", error)
+          this.handlePosterSaveFailure(error)
         }.bind(this))
       return
     }
 
-    this.isScreenshotDrew = false
-    this.lastPosterTempFilePath = ""
+    this.resetPosterCache()
     this.startSaveFlow()
   },
 
@@ -1592,58 +1705,23 @@ Page({
     })
   },
 
-  getWrappedPosterLines: function (ctx, text, maxWidth, maxLines) {
-    var content = text || ""
-    var lines = []
-    var currentLine = ""
-
-    for (var i = 0; i < content.length; i++) {
-      var nextLine = currentLine + content[i]
-      if (ctx.measureText(nextLine).width <= maxWidth || currentLine === "") {
-        currentLine = nextLine
-      } else {
-        lines.push(currentLine)
-        currentLine = content[i]
-      }
-
-      if (lines.length === maxLines) {
-        break
-      }
-    }
-
-    if (lines.length < maxLines && currentLine) {
-      lines.push(currentLine)
-    }
-
-    if (lines.length > maxLines) {
-      lines = lines.slice(0, maxLines)
-    }
-
-    if (content.length && lines.length === maxLines) {
-      var joinedLength = lines.join("").length
-      if (joinedLength < content.length) {
-        lines[maxLines - 1] = this.fitPosterLineWithEllipsis(ctx, lines[maxLines - 1], maxWidth)
-      }
-    }
-
-    return lines
+  resetPosterCache: function () {
+    this.isScreenshotDrew = false
+    this.lastPosterTempFilePath = ""
+    this.lastPosterRenderSignature = ""
   },
 
-  fitPosterLineWithEllipsis: function (ctx, text, maxWidth) {
-    var line = text
-    while (line && ctx.measureText(line + "…").width > maxWidth) {
-      line = line.slice(0, -1)
-    }
-    return line + "…"
+  buildPosterRenderSignature: function (answer) {
+    var answerSignature = answer && answer.signature ? answer.signature : answerStore.getAnswerSignature(answer || {})
+    return POSTER_LAYOUT_VERSION + "::" + answerSignature
   },
 
-  drawPosterTextBlock: function (ctx, text, centerX, centerY, maxWidth, lineHeight, maxLines) {
-    var lines = this.getWrappedPosterLines(ctx, text, maxWidth, maxLines)
-    var startY = centerY - ((lines.length - 1) * lineHeight) / 2
+  shouldReusePosterSnapshot: function (answer) {
+    if (!this.isScreenshotDrew) {
+      return false
+    }
 
-    lines.forEach(function (line, index) {
-      ctx.fillText(line, centerX, startY + index * lineHeight)
-    })
+    return this.lastPosterRenderSignature === this.buildPosterRenderSignature(answer)
   },
 
   triggerSuccessFeedback: function () {
@@ -1726,8 +1804,7 @@ Page({
 
   applySelectedAnswerRecord: function (record) {
     this.currentAnswerRecord = answerStore.recordAnswer(record, record.source || ANSWER_SOURCE)
-    this.isScreenshotDrew = false
-    this.lastPosterTempFilePath = ""
+    this.resetPosterCache()
     this.resetShareImageCache()
     this.expShowable = true
     this.hidePressCue()
