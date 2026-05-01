@@ -30,7 +30,6 @@ var POSTER_ASSET_TIMEOUT = 8000
 var OPTIONAL_ASSET_TIMEOUT = 1600
 var POSTER_LAYOUT_VERSION = "poster-detail-card-v1"
 var ANSWER_SOURCE = "sun_rise"
-var ANSWERS_PAGE_PATH = "/pages/answers/answers"
 var SUN_RISE_PAGE_PATH = "/pages/sun_rise/sun_rise"
 var SUN_RISE_SHARE_IMAGE = "/assets/sun_rise/save_bg.png"
 var AUDIO_SRC = "/assets/audio_001.mp3"
@@ -38,7 +37,6 @@ var AUDIO_START_TIME = 5
 var SHARE_SCENE_APP_MESSAGE = "appMessage"
 var SHARE_SCENE_TIMELINE = "timeline"
 var SHARE_QUERY_FROM_SHARE = "fromShare"
-var SHARE_QUERY_MODE = "mode"
 var SHARE_QUERY_SCENE = "shareScene"
 var DESIGN_WIDTH = 750
 var MOUNTAIN_HEIGHT = 422
@@ -64,15 +62,6 @@ function buildQueryString(params) {
       return encodeURIComponent(key) + "=" + encodeURIComponent(String(params[key]))
     })
     .join("&")
-}
-
-function buildAmbientAudioActionState(enabled) {
-  return {
-    ambientAudioEnabled: !!enabled,
-    ambientAudioActionLabel: "环境音开关",
-    ambientAudioActionDesc: enabled ? "环境音已开启，点一下关闭" : "当前默认静音，点一下开启环境音",
-    ambientAudioActionMeta: enabled ? "已开" : "已关",
-  }
 }
 
 Page({
@@ -140,17 +129,12 @@ Page({
     resultActionThemeClass: "result-action-bar--sunrise",
     resultActionMenuThemeClass: "result-action-menu--sunrise",
     resultPanelThemeClass: "result-theme--sunrise",
-    showAmbientAudioAction: true,
     detailPanelStyle: "",
     posterErrorVisible: false,
     posterErrorTitle: "",
     posterErrorMessage: "",
     posterErrorSupportText: "",
     posterErrorRetryText: "重新尝试",
-    ambientAudioEnabled: false,
-    ambientAudioActionLabel: "环境音开关",
-    ambientAudioActionDesc: "当前默认静音，点一下开启环境音",
-    ambientAudioActionMeta: "已关",
   },
 
   touchStartTime: 0,
@@ -177,7 +161,6 @@ Page({
   shareImageCache: null,
   shareImageTask: null,
   audioCtx: null,
-  shouldResumeAudioOnShow: false,
   longPressDetectTimeout: null,
   pressCueHoldDelayTimeout: null,
   pressCueResetTimeout: null,
@@ -198,10 +181,6 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    if (this.handleShareEntryRedirect(options)) {
-      return
-    }
-
     this.answer_data = new answer_data()
     this.anim_data = new anim_data()
     this.anim_sun_rise = new anim_sun_rise()
@@ -229,7 +208,6 @@ Page({
     this.isPageReady = true
     this.isPageHidden = false
     this.initial()
-    this.playBackgroundAudio()
   },
 
   /**
@@ -242,9 +220,6 @@ Page({
       this.initial()
     } else if (this.isPageReady && this.data.state === State.waiting && !this.data.isShowTutorialTxt) {
       this.startCloudFloatAnimations()
-    }
-    if (this.shouldResumeAudioOnShow) {
-      this.playBackgroundAudio()
     }
     this.refreshAnswerRecords()
     if (this.isPageReady && !this.data.isShowTutorialTxt && this.data.state == State.waiting) {
@@ -610,13 +585,10 @@ Page({
     this.audioCtx = wx.createInnerAudioContext()
     this.audioCtx.src = AUDIO_SRC
     this.audioCtx.startTime = AUDIO_START_TIME
-    this.audioCtx.loop = true
+    this.audioCtx.loop = false
     if (typeof this.audioCtx.obeyMuteSwitch === "boolean") {
       this.audioCtx.obeyMuteSwitch = true
     }
-    this.audioCtx.onPlay(function () {
-      this.shouldResumeAudioOnShow = !!this.data.ambientAudioEnabled
-    }.bind(this))
     this.audioCtx.onError(function (error) {
       console.error("sunrise background audio failed", error)
     })
@@ -629,7 +601,7 @@ Page({
     }
 
     this.audioInterruptionBeginHandler = function () {
-      this.shouldResumeAudioAfterInterruption = !!(this.audioCtx && !this.audioCtx.paused && this.data.ambientAudioEnabled)
+      this.shouldResumeAudioAfterInterruption = !!(this.audioCtx && !this.audioCtx.paused)
       if (this.shouldResumeAudioAfterInterruption && this.audioCtx) {
         this.audioCtx.pause()
       }
@@ -661,11 +633,10 @@ Page({
   },
 
   playBackgroundAudio: function () {
-    if (!this.audioCtx || !this.data.ambientAudioEnabled) {
+    if (!this.audioCtx) {
       return
     }
 
-    this.shouldResumeAudioOnShow = true
     this.audioCtx.play()
   },
 
@@ -674,48 +645,31 @@ Page({
       return
     }
 
-    this.shouldResumeAudioOnShow = !!this.data.ambientAudioEnabled
     this.audioCtx.pause()
   },
 
-  ensureBackgroundAudioStarted: function () {
-    if (!this.data.ambientAudioEnabled) {
-      return
-    }
-
+  playSunRiseAudio: function () {
     if (!this.audioCtx) {
       this.initBackgroundAudio()
     }
 
-    this.playBackgroundAudio()
-  },
-
-  setAmbientAudioEnabled: function (enabled) {
-    var nextEnabled = !!enabled
-    this.shouldResumeAudioOnShow = nextEnabled
-    this.shouldResumeAudioAfterInterruption = false
-    this.setData(buildAmbientAudioActionState(nextEnabled))
-
-    if (nextEnabled) {
-      this.ensureBackgroundAudioStarted()
-      wx.showToast({
-        title: "环境音已开启",
-        icon: "none",
-        duration: 1200,
-      })
+    if (!this.audioCtx) {
       return
     }
 
-    this.pauseBackgroundAudio()
-    wx.showToast({
-      title: "环境音已关闭",
-      icon: "none",
-      duration: 1200,
-    })
-  },
-
-  onTapToggleAmbientAudioAction: function () {
-    this.setAmbientAudioEnabled(!this.data.ambientAudioEnabled)
+    this.shouldResumeAudioAfterInterruption = false
+    if (typeof this.audioCtx.stop === "function") {
+      this.audioCtx.stop()
+    } else {
+      this.audioCtx.pause()
+    }
+    this.audioCtx.startTime = AUDIO_START_TIME
+    if (typeof this.audioCtx.seek === "function") {
+      try {
+        this.audioCtx.seek(AUDIO_START_TIME)
+      } catch (error) {}
+    }
+    this.audioCtx.play()
   },
 
   destroyBackgroundAudio: function () {
@@ -724,7 +678,7 @@ Page({
       return
     }
 
-    this.shouldResumeAudioOnShow = false
+    this.shouldResumeAudioAfterInterruption = false
     this.audioCtx.destroy()
     this.audioCtx = null
   },
@@ -918,7 +872,6 @@ Page({
       this.touchStartTime = touchStartTime
     }
 
-    this.ensureBackgroundAudioStarted()
     this.scheduleMountainTapSuppression()
     this.hideRepeatHint()
     this.showPressCue("revealing", 0, 720)
@@ -955,6 +908,7 @@ Page({
     this.isExpShow = false
 
     this.sunRiseStartTimeout = setTimeout(function () {
+      this.playSunRiseAudio()
       this.setData({
         _anim_sun_rise: this.anim_sun_rise.moveUp(time).export(),
         _anim_cloud_3: this.anim_sun_cloud.move(time).export(),
@@ -1068,7 +1022,6 @@ Page({
       return
     }
 
-    this.ensureBackgroundAudioStarted()
     if (this.data.state == State.waiting && this.expShowable)
     {
       this.setExpBubbleVisible(!this.isExpShow)
@@ -1944,29 +1897,15 @@ Page({
     }
   },
 
-  getPageMode: function () {
-    return ANSWER_SOURCE
-  },
-
-  buildShareQuery: function (scene, mode) {
+  buildShareQuery: function (scene) {
     var params = {}
     params[SHARE_QUERY_FROM_SHARE] = 1
-    params[SHARE_QUERY_MODE] = mode || this.getPageMode()
     params[SHARE_QUERY_SCENE] = scene || ""
     return buildQueryString(params)
   },
 
-  buildSharePath: function (scene, mode) {
-    return SUN_RISE_PAGE_PATH + "?" + this.buildShareQuery(scene, mode)
-  },
-
-  handleShareEntryRedirect: function (options) {
-    var mode = options && options[SHARE_QUERY_MODE]
-    if (!mode || mode === this.getPageMode()) {
-      return false
-    }
-
-    return false
+  buildSharePath: function (scene) {
+    return SUN_RISE_PAGE_PATH + "?" + this.buildShareQuery(scene)
   },
 
   buildShareData: function () {
@@ -1985,12 +1924,6 @@ Page({
       query: this.buildShareQuery(SHARE_SCENE_TIMELINE),
       imageUrl: SUN_RISE_SHARE_IMAGE,
     }
-  },
-
-  onTapSwitchMode: function () {
-    wx.navigateTo({
-      url: ANSWERS_PAGE_PATH,
-    })
   },
 
   getCurrentAnswer: function () {
@@ -2193,7 +2126,6 @@ Page({
           shareImage.drawQuoteShareImage(this.shareCtx, {
             width: size.width,
             height: size.height,
-            modeLabel: "日出模式",
             heading: "太阳给你的答案",
             answer: answer.content,
             subContent: answer.subContent,

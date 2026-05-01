@@ -2,7 +2,7 @@
 
 Use this checklist before submitting a new build of `the-book-of-answers`.
 
-The goal is to validate the real-device sunrise experience, especially the opt-in background-audio behavior, the poster export path, the hidden-classic-mode fallback redirect, and the responsive layout changes added in the recent iterations.
+The goal is to validate the real-device sunrise experience, especially sunrise-triggered audio playback, poster export, sharing, and responsive layout behavior.
 
 ## Recommended Device Coverage
 
@@ -23,26 +23,23 @@ The goal is to validate the real-device sunrise experience, especially the opt-i
 
 - [ ] Open the Mini Program from a cold start on a full-screen device.
 - [ ] Confirm the app opens without white screen, timeout, or stuck loading state.
-- [ ] Confirm the initial page layout is complete and no hidden legacy navigation appears.
+- [ ] Confirm the initial page layout is complete and no obsolete navigation or mode-specific UI appears.
 - [ ] Confirm there is no obvious overlap between content, bottom controls, and the safe area.
 
-### 2. Legacy Classic Mode Redirect
-
-- [ ] Open `pages/answers` manually through DevTools or an old internal path.
-- [ ] Confirm the Mini Program immediately redirects to `pages/sun_rise`.
-- [ ] Confirm the redirect does not flash a long white screen or leave the app in a broken state.
-
-### 3. Sunrise Mode First-Time Experience
+### 2. Sunrise First-Time Experience
 
 - [ ] Enter `pages/sun_rise` from a normal app launch.
 - [ ] Confirm the tutorial text and visual guidance appear correctly on first entry.
-- [ ] Confirm the sunrise page stays silent on first entry by default.
-- [ ] Open `More` and confirm the ambient audio toggle is visible and defaults to `Off`.
-- [ ] Enable ambient audio from `More` and confirm background music starts on the sunrise page.
-- [ ] Keep the page idle briefly, then generate an answer and open `More` again to confirm background music stays stable during normal use.
-- [ ] Disable ambient audio from `More` and confirm the background music stops promptly.
+- [ ] Confirm the idle page is silent before the sunrise interaction starts.
 - [ ] Long-press the mountain and confirm the answer reveal finishes normally.
+- [ ] Confirm the bundled audio begins when the sunrise starts, not before and not long after.
 - [ ] Confirm the result action chips, `More` menu, `WeChat Share`, explanation bubble, and `Detailed Reading` panel can all be discovered and used.
+
+### 3. Repeat Interaction Stability
+
+- [ ] Generate multiple answers in one session.
+- [ ] Confirm repeated long-press interactions do not stack or duplicate audio playback.
+- [ ] Confirm repeated interactions do not leave stale tutorial text, stale poster state, or broken action buttons.
 
 ### 4. Sunrise Poster Save Happy Path
 
@@ -50,13 +47,14 @@ The goal is to validate the real-device sunrise experience, especially the opt-i
 - [ ] Grant photo album permission if prompted.
 - [ ] Confirm poster export completes and the image is written to the system album.
 - [ ] Open the saved image from the album and confirm the poster text is centered, wrapped correctly, and not clipped.
+- [ ] Confirm the saved poster includes the detailed-reading content and does not show removed mode labels.
 
 ### 5. Sunrise Poster Permission Recovery
 
 - [ ] Revoke album permission from system settings or WeChat settings.
 - [ ] Return to the Mini Program, open `More`, and tap `Save Poster` again.
 - [ ] Confirm the permission guidance flow appears.
-- [ ] Re-authorize permission through settings and confirm the save flow can complete afterward.
+- [ ] Re-authorize permission through the appropriate settings path and confirm the save flow can complete afterward.
 
 ### 6. Sunrise Poster Failure Retry UX
 
@@ -76,7 +74,7 @@ The goal is to validate the real-device sunrise experience, especially the opt-i
 ### 8. Copy And Result Continuity
 
 - [ ] Use `Copy` and confirm the clipboard contains both the short answer and the richer interpretation text.
-- [ ] After copying and after continuing to use the long-press draw interaction again, confirm the rest of the page state remains stable and interactive.
+- [ ] After copying and after continuing to use the long-press interaction again, confirm the rest of the page state remains stable and interactive.
 
 ### 9. Share Behavior
 
@@ -84,17 +82,16 @@ The goal is to validate the real-device sunrise experience, especially the opt-i
 - [ ] Open `More` and tap `WeChat Share`, then confirm the native WeChat share panel opens.
 - [ ] Confirm the share title reflects the current answer when applicable.
 - [ ] Confirm the share card thumbnail reflects the current answer instead of only using a static fallback image.
-- [ ] Open the shared chat card from the sunrise mode and confirm the Mini Program re-enters `pages/sun_rise`.
+- [ ] Open the shared chat card and confirm the Mini Program re-enters `pages/sun_rise`.
 - [ ] Trigger `Share to Timeline` on a device that supports it.
-- [ ] Open the shared timeline entry from the sunrise mode and confirm the Mini Program re-enters `pages/sun_rise`.
+- [ ] Open the shared timeline entry and confirm the Mini Program re-enters `pages/sun_rise`.
 - [ ] Confirm the Mini Program still opens to the sunrise flow after returning from share.
-- [ ] If testing an older classic-mode share, confirm it falls back into `pages/sun_rise` instead of exposing the hidden classic page.
 
 ### 10. Background And Foreground Lifecycle
 
-- [ ] While the sunrise mode is idle, background and foreground the Mini Program.
-- [ ] With ambient audio enabled, background and foreground the Mini Program and confirm the music state remains consistent after return.
-- [ ] While the sunrise poster flow is active, background the app and return.
+- [ ] While the sunrise page is idle, background and foreground the Mini Program.
+- [ ] While the sunrise animation is playing, background the Mini Program and return.
+- [ ] While the sunrise poster flow is active, background the Mini Program and return.
 - [ ] Confirm there are no duplicate animations, missing controls, broken save states, or unexpected/duplicated audio playback after resume.
 
 ### 11. Responsive Layout Sweep

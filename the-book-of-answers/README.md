@@ -16,10 +16,9 @@ This repository is prepared as a lightweight GitHub-friendly project:
 - A structured detailed-interpretation layer used by the public sunrise flow
 - Manually written detailed readings for all 156 bundled answers
 - Answer-aware sharing with dynamic share images for chat and timeline
-- A `More` menu with WeChat share, poster save, revisit actions, and an ambient audio toggle
-- Mode-preserving share re-entry through share path and query parameters
+- A `More` menu with WeChat share, poster save, history, and favorites
 - Canvas 2D poster generation and save-to-album flow
-- Optional sunrise background audio using the bundled `audio_001.mp3`, muted by default and controlled through an ambient audio toggle in `More`
+- A bundled sunrise audio cue that plays when the sun rises
 - Compatibility handling for modern WeChat base libraries
 - Safe-area layout adjustments for HarmonyOS and full-screen devices
 
@@ -33,6 +32,7 @@ This repository is prepared as a lightweight GitHub-friendly project:
 ├── assets/
 ├── pages/
 │   ├── answers/
+│   │   └── answer_data.js
 │   └── sun_rise/
 ├── scripts/
 │   └── validate.js
@@ -79,20 +79,19 @@ The same validation is executed by GitHub Actions on pushes and pull requests.
 - The app collects runtime device and window information through `wx.getDeviceInfo()` and `wx.getWindowInfo()`.
 - HarmonyOS layout compatibility is handled through safe-area aware spacing.
 - Poster export on the sunrise page uses Canvas 2D APIs instead of the legacy canvas flow.
-- Sunrise ambient audio is opt-in through the `More` menu, defaults to muted, and behaves as page-level background audio after the user enables it.
+- The sunrise audio cue starts when the sun rise animation begins.
 - Share behavior follows the current WeChat `Page` API contract:
   - an in-page `button open-type="share"` entry is exposed through the `More` menu
   - `onShareAppMessage` uses `path` plus dynamic `imageUrl`
   - `onShareTimeline` uses `query` plus dynamic `imageUrl`
-  - the public sunrise flow preserves its re-entry state through share parameters
-  - older classic-mode entry paths are redirected back into the sunrise flow during the transition period
+  - the public sunrise flow re-enters `pages/sun_rise` through share parameters
 
 ## Data and Privacy
 
 - The project does not depend on a custom backend service.
 - Answer content is bundled locally in the app package.
 - The save feature requests photo album permission only when the user explicitly exports a poster.
-- The legacy classic-mode page is still kept in the codebase temporarily for rollback safety, but it is no longer exposed in the active user flow.
+- The public product experience now stays entirely inside the sunrise flow.
 
 ## Collaboration Files
 

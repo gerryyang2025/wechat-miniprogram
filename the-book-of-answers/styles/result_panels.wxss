@@ -35,16 +35,8 @@
   padding: 36rpx 32rpx 40rpx;
 }
 
-.result-theme--answers.result-sheet--record{
-  background: linear-gradient(180deg, rgba(111, 9, 28, 0.98), rgba(58, 8, 23, 0.96));
-}
-
 .result-theme--sunrise.result-sheet--record{
   background: linear-gradient(180deg, rgba(250, 145, 101, 0.97), rgba(136, 37, 90, 0.98));
-}
-
-.result-theme--answers.result-sheet--detail{
-  background: linear-gradient(180deg, rgba(255, 245, 244, 0.98), rgba(251, 228, 229, 0.98));
 }
 
 .result-theme--sunrise.result-sheet--detail{
@@ -75,10 +67,6 @@
 
 .result-sheet--record .result-sheet-close{
   color: rgba(255, 255, 255, 0.82);
-}
-
-.result-theme--answers .result-sheet-close{
-  color: rgba(125, 17, 44, 0.7);
 }
 
 .result-theme--sunrise .result-sheet-close{
@@ -146,10 +134,6 @@
   letter-spacing: 2rpx;
 }
 
-.result-theme--answers .result-sheet-eyebrow{
-  color: rgba(154, 23, 48, 0.72);
-}
-
 .result-theme--sunrise .result-sheet-eyebrow{
   color: rgba(173, 82, 96, 0.74);
 }
@@ -158,10 +142,6 @@
   font-size: 36rpx;
   line-height: 1.4;
   font-weight: 600;
-}
-
-.result-theme--answers .result-sheet-detail-title{
-  color: #7d112c;
 }
 
 .result-theme--sunrise .result-sheet-detail-title{
@@ -177,10 +157,6 @@
   padding: 22rpx 0;
 }
 
-.result-theme--answers .result-sheet-section{
-  border-bottom: 1px solid rgba(125, 17, 44, 0.08);
-}
-
 .result-theme--sunrise .result-sheet-section{
   border-bottom: 1px solid rgba(143, 55, 93, 0.08);
 }
@@ -189,10 +165,6 @@
   display: block;
   font-size: 22rpx;
   letter-spacing: 2rpx;
-}
-
-.result-theme--answers .result-sheet-section-label{
-  color: rgba(154, 23, 48, 0.78);
 }
 
 .result-theme--sunrise .result-sheet-section-label{
@@ -204,10 +176,6 @@
   margin-top: 10rpx;
   font-size: 28rpx;
   line-height: 1.8;
-}
-
-.result-theme--answers .result-sheet-section-text{
-  color: #5f0d24;
 }
 
 .result-theme--sunrise .result-sheet-section-text{

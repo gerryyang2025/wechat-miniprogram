@@ -67,7 +67,7 @@ function normalizeRecord(answer, source, createdAt) {
     signature: getAnswerSignature(enriched),
     legacySignature: getLegacyAnswerSignature(enriched),
     id: resolvedId,
-    source: source || (answer && answer.source) || "answers",
+    source: source || (answer && answer.source) || "sun_rise",
     content: enriched.content || "",
     subContent: enriched.subContent || "",
     exp: enriched.exp || "",

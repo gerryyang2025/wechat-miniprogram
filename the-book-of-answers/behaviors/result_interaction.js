@@ -2,10 +2,6 @@ var answerDetail = require("../utils/answer_detail.js")
 var answerStore = require("../utils/answer_store.js")
 var util = require("../utils/util.js")
 
-function getSourceLabel(source) {
-  return source === "sun_rise" ? "日出模式" : "经典模式"
-}
-
 module.exports = Behavior({
   data: {
     historyCount: 0,
@@ -49,9 +45,6 @@ module.exports = Behavior({
         return
       }
 
-      if (action === "switchMode" && typeof this.onTapSwitchMode === "function") {
-        this.onTapSwitchMode()
-      }
     },
 
     refreshAnswerRecords: function () {
@@ -74,7 +67,7 @@ module.exports = Behavior({
           signature: answerStore.getAnswerSignature(enriched),
           legacySignature: answerStore.getLegacyAnswerSignature(enriched),
           createdAt: createdAt,
-          displayMeta: getSourceLabel(enriched.source) + " · " + util.formatTime(new Date(createdAt)),
+          displayMeta: util.formatTime(new Date(createdAt)),
         })
       })
     },
@@ -141,11 +134,6 @@ module.exports = Behavior({
 
       if (action === "copy") {
         this.onTapCopyResult()
-        return
-      }
-
-      if (action === "toggleAmbientAudio" && typeof this.onTapToggleAmbientAudioAction === "function") {
-        this.onTapToggleAmbientAudioAction()
         return
       }
 
@@ -232,7 +220,7 @@ module.exports = Behavior({
         return
       }
 
-      var source = typeof this.getPageMode === "function" ? this.getPageMode() : (answer.source || "answers")
+      var source = answer.source || "sun_rise"
       var isFavorite = answerStore.toggleFavorite(answer, source)
       this.setData({
         isCurrentFavorite: isFavorite,
