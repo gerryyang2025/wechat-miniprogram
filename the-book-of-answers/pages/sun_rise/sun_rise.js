@@ -1184,29 +1184,135 @@ Page({
     }
   },
 
+  getRuntimePlatform: function () {
+    try {
+      if (typeof wx.getDeviceInfo === "function") {
+        var deviceInfo = wx.getDeviceInfo() || {}
+        if (deviceInfo.platform) {
+          return String(deviceInfo.platform).toLowerCase()
+        }
+      }
+    } catch (error) {}
+
+    try {
+      var systemInfo = wx.getSystemInfoSync() || {}
+      if (systemInfo.platform) {
+        return String(systemInfo.platform).toLowerCase()
+      }
+    } catch (error) {}
+
+    return ""
+  },
+
+  isIOSPlatform: function (platform) {
+    return platform === "ios" || platform === "iphone" || platform === "ipad"
+  },
+
+  normalizeAlbumAuthorizationStatus: function (status) {
+    if (!status) {
+      return ""
+    }
+
+    var normalized = String(status).toLowerCase()
+    if (normalized === "non determined") {
+      return "not determined"
+    }
+
+    return normalized
+  },
+
+  getPosterErrorMessage: function (error) {
+    if (!error) {
+      return ""
+    }
+
+    return error.errMsg || error.message || ""
+  },
+
+  isTemporaryPosterFileError: function (errorMessage) {
+    return /file|path|temp|wxfile|no such file|not exist|invalid file/i.test(errorMessage || "")
+  },
+
+  isExplicitHostAlbumPermissionError: function (snapshot, errorMessage) {
+    var normalizedErrorMessage = String(errorMessage || "")
+
+    if (this.needsHostAlbumPermissionSetting(snapshot, false)) {
+      return true
+    }
+
+    if (this.isIOSPlatform(snapshot && snapshot.platform)) {
+      return /photos|photo library|album access|system permission/i.test(normalizedErrorMessage)
+    }
+
+    return /write external storage|read external storage|storage permission|media permission|system permission denied|album permission denied|android\.permission/i.test(normalizedErrorMessage)
+  },
+
+  logPosterSaveFailureDiagnostic: function (snapshot, errorMessage) {
+    console.warn("poster save diagnostic", {
+      platform: snapshot && snapshot.platform ? snapshot.platform : "",
+      scopeAuthorized: !!(snapshot && snapshot.scopeAuthorized),
+      hostAlbumAuthorized: snapshot && snapshot.hostAlbumAuthorized ? snapshot.hostAlbumAuthorized : "",
+      errMsg: errorMessage || "",
+    })
+  },
+
   getAlbumPermissionSnapshot: function () {
     return new Promise(function (resolve) {
       wx.getSetting({
         success: function (res) {
           var authSetting = res && res.authSetting ? res.authSetting : {}
           var scopeSetting = authSetting[ALBUM_SCOPE]
+          var platform = this.getRuntimePlatform()
+          var hostAlbumAuthorized = ""
+          if (this.isIOSPlatform(platform) && typeof wx.getAppAuthorizeSetting === "function") {
+            try {
+              var appAuthorizeSetting = wx.getAppAuthorizeSetting() || {}
+              hostAlbumAuthorized = this.normalizeAlbumAuthorizationStatus(appAuthorizeSetting.albumAuthorized)
+            } catch (error) {}
+          }
           resolve({
             authSetting: authSetting,
+            platform: platform,
             scopeAuthorized: scopeSetting === true,
             scopeDenied: scopeSetting === false,
             scopeUndetermined: typeof scopeSetting === "undefined",
+            hostAlbumAuthorized: hostAlbumAuthorized,
+            canOpenAppAuthorizeSetting: typeof wx.openAppAuthorizeSetting === "function",
           })
-        },
+        }.bind(this),
         fail: function () {
+          var platform = this.getRuntimePlatform()
+          var hostAlbumAuthorized = ""
+          if (this.isIOSPlatform(platform) && typeof wx.getAppAuthorizeSetting === "function") {
+            try {
+              var appAuthorizeSetting = wx.getAppAuthorizeSetting() || {}
+              hostAlbumAuthorized = this.normalizeAlbumAuthorizationStatus(appAuthorizeSetting.albumAuthorized)
+            } catch (error) {}
+          }
           resolve({
             authSetting: {},
+            platform: platform,
             scopeAuthorized: false,
             scopeDenied: false,
             scopeUndetermined: true,
+            hostAlbumAuthorized: hostAlbumAuthorized,
+            canOpenAppAuthorizeSetting: typeof wx.openAppAuthorizeSetting === "function",
           })
-        }
+        }.bind(this)
       })
-    })
+    }.bind(this))
+  },
+
+  needsHostAlbumPermissionSetting: function (snapshot, includeUndetermined) {
+    if (!snapshot || !this.isIOSPlatform(snapshot.platform)) {
+      return false
+    }
+
+    if (snapshot.hostAlbumAuthorized === "denied") {
+      return true
+    }
+
+    return !!includeUndetermined && snapshot.hostAlbumAuthorized === "not determined"
   },
 
   showAlbumPermissionDeniedToast: function () {
@@ -1217,7 +1323,7 @@ Page({
     })
   },
 
-  openAlbumPermissionSetting: function () {
+  openMiniProgramAlbumPermissionSetting: function () {
     return new Promise(function (resolve, reject) {
       wx.showModal({
         title: "需要相册权限",
@@ -1258,9 +1364,70 @@ Page({
     }.bind(this))
   },
 
+  openHostAlbumPermissionSetting: function (snapshot) {
+    var isIOS = this.isIOSPlatform(snapshot && snapshot.platform)
+    var content = isIOS
+      ? "当前微信还没有系统照片权限。请前往系统设置，允许微信访问“照片”后再回来保存。"
+      : "当前微信或系统没有允许写入相册。请前往系统设置或微信权限管理，开启照片与视频或存储权限后再回来保存。"
+
+    return new Promise(function (resolve, reject) {
+      wx.showModal({
+        title: "需要系统相册权限",
+        content: content,
+        confirmText: "去设置",
+        success: function (res) {
+          if (!res.confirm) {
+            this.showAlbumPermissionDeniedToast()
+            reject(new Error("host album permission denied by user"))
+            return
+          }
+
+          if (typeof wx.openAppAuthorizeSetting !== "function") {
+            wx.showToast({
+              title: isIOS ? "请到设置里允许微信访问照片" : "请到系统设置里开启相册权限",
+              icon: "none",
+              duration: 1800,
+            })
+            reject(new Error("open app authorize setting unsupported"))
+            return
+          }
+
+          wx.openAppAuthorizeSetting({
+            success: function () {
+              this.getAlbumPermissionSnapshot().then(function (updatedSnapshot) {
+                if (this.needsHostAlbumPermissionSetting(updatedSnapshot, false)) {
+                  this.showAlbumPermissionDeniedToast()
+                  reject(new Error("host album permission still denied"))
+                  return
+                }
+
+                resolve()
+              }.bind(this))
+            }.bind(this),
+            fail: function (error) {
+              wx.showToast({
+                title: "打开设置失败",
+                icon: "none",
+                duration: 1500,
+              })
+              reject(error || new Error("open app authorize setting failed"))
+            }
+          })
+        }.bind(this),
+        fail: function (error) {
+          reject(error || new Error("show host permission modal failed"))
+        }
+      })
+    }.bind(this))
+  },
+
   ensureAlbumPermission: function () {
     return this.getAlbumPermissionSnapshot().then(function (snapshot) {
       if (snapshot.scopeAuthorized) {
+        if (this.needsHostAlbumPermissionSetting(snapshot, false)) {
+          return this.openHostAlbumPermissionSetting(snapshot)
+        }
+
         return null
       }
 
@@ -1270,13 +1437,25 @@ Page({
             scope: ALBUM_SCOPE,
             success: resolve,
             fail: function () {
-              this.openAlbumPermissionSetting().then(resolve).catch(reject)
+              this.getAlbumPermissionSnapshot().then(function (nextSnapshot) {
+                if (nextSnapshot.scopeDenied) {
+                  this.openMiniProgramAlbumPermissionSetting().then(resolve).catch(reject)
+                  return
+                }
+
+                if (this.needsHostAlbumPermissionSetting(nextSnapshot, true)) {
+                  this.openHostAlbumPermissionSetting(nextSnapshot).then(resolve).catch(reject)
+                  return
+                }
+
+                this.openMiniProgramAlbumPermissionSetting().then(resolve).catch(reject)
+              }.bind(this))
             }.bind(this)
           })
         }.bind(this))
       }
 
-      return this.openAlbumPermissionSetting()
+      return this.openMiniProgramAlbumPermissionSetting()
     }.bind(this))
   },
 
@@ -1521,18 +1700,20 @@ Page({
   },
 
   resolvePosterSaveFailureOptions: function (error) {
-    var errorMessage = error && (error.errMsg || error.message) ? (error.errMsg || error.message) : ""
+    var errorMessage = this.getPosterErrorMessage(error)
 
     return this.getAlbumPermissionSnapshot().then(function (snapshot) {
+      this.logPosterSaveFailureDiagnostic(snapshot, errorMessage)
+
       var options = {
         title: "保存到相册失败",
-        message: "图片已经生成，但写入系统相册时没有成功。",
-        supportText: "你可以先重新保存；如果暂时不方便，也可以先复制答案内容。",
-        retryText: "重新保存",
-        retryAction: "save-temp-file",
+        message: "图片已经生成，但写入系统相册时没有成功。重新导出一张再保存会更稳一些。",
+        supportText: "如果相册权限已经开启，通常是临时图片失效或系统保存流程中断，重新导出后更容易成功。",
+        retryText: "重新导出",
+        retryAction: "export-and-save",
       }
 
-      if (!snapshot.scopeAuthorized || /auth deny|auth denied|permission/i.test(errorMessage)) {
+      if (!snapshot.scopeAuthorized) {
         options.title = "需要相册权限"
         options.message = "当前没有保存到相册的小程序权限，请先授权后再继续保存。"
         options.supportText = "授权完成后可以继续保存海报；如果现在不想授权，也可以先复制答案。"
@@ -1541,7 +1722,20 @@ Page({
         return options
       }
 
-      if (/file|path/i.test(errorMessage)) {
+      if (this.isExplicitHostAlbumPermissionError(snapshot, errorMessage)) {
+        options.title = "需要系统相册权限"
+        options.message = this.isIOSPlatform(snapshot.platform)
+          ? "当前微信还没有系统照片权限，请先允许微信访问“照片”后再继续保存。"
+          : "当前微信或系统还没有写入相册的权限，请先在系统设置里开启后再继续保存。"
+        options.supportText = this.isIOSPlatform(snapshot.platform)
+          ? "如果设置页里没有“小程序相册”开关，通常说明缺的是 iPhone 上微信本身的照片权限。"
+          : "如果小程序相册权限已经开了，但仍然保存失败，通常还需要检查微信或系统的媒体存储权限。"
+        options.retryText = "去设置"
+        options.retryAction = "request-host-permission-and-save"
+        return options
+      }
+
+      if (this.isTemporaryPosterFileError(errorMessage)) {
         options.message = "临时图片似乎已经失效，重新导出一张再保存会更稳一些。"
         options.supportText = "临时文件在切后台或等待较久后可能失效，重新导出通常就能恢复。"
         options.retryText = "重新导出"
@@ -1640,6 +1834,18 @@ Page({
 
     if (retryAction === "request-permission-and-save") {
       this.ensureAlbumPermission()
+        .then(function () {
+          this.onTapPosterRetryWithAction("restart-save")
+        }.bind(this))
+        .catch(function () {})
+      return
+    }
+
+    if (retryAction === "request-host-permission-and-save") {
+      this.getAlbumPermissionSnapshot()
+        .then(function (snapshot) {
+          return this.openHostAlbumPermissionSetting(snapshot)
+        }.bind(this))
         .then(function () {
           this.onTapPosterRetryWithAction("restart-save")
         }.bind(this))
