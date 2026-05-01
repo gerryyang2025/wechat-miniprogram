@@ -333,7 +333,7 @@ function buildMetaRows(options) {
       label: "改自",
       text: trimLeadingPrefix(options.subContent, ["改自：", "改自:"]),
       tone: "body",
-      maxLines: 2,
+      maxLines: 3,
     })
   }
 
@@ -342,7 +342,7 @@ function buildMetaRows(options) {
       label: "释义",
       text: options.exp,
       tone: "muted",
-      maxLines: 3,
+      maxLines: 2,
     })
   }
 
@@ -359,20 +359,21 @@ function getMetaPanelLayoutMetrics(compact, dense) {
     badgeGap: compact ? 7 : (dense ? 9 : 8),
     textGap: compact ? 8 : (dense ? 9 : 10),
     lineHeight: compact ? 22 : (dense ? 24 : 26),
+    secondaryLineHeight: compact ? 20 : (dense ? 22 : 24),
     titleRadius: compact ? 14 : 18,
     bodyFont: compact ? "18px sans-serif" : (dense ? "20px sans-serif" : "22px sans-serif"),
-    mutedFont: compact ? "16px sans-serif" : (dense ? "18px sans-serif" : "19px sans-serif"),
+    mutedFont: compact ? "15px sans-serif" : (dense ? "17px sans-serif" : "18px sans-serif"),
     columnGap: compact ? 12 : (dense ? 18 : 16),
   }
 }
 
 function getMetaPanelColumnLayout(width, metrics) {
   var contentWidth = width - metrics.paddingX * 2
-  var leftWidth = Math.round(contentWidth * 0.36)
+  var leftWidth = Math.round(contentWidth * 0.6)
   var rightWidth = contentWidth - leftWidth - metrics.columnGap
 
-  if (rightWidth < 140) {
-    rightWidth = 140
+  if (rightWidth < 104) {
+    rightWidth = 104
     leftWidth = contentWidth - metrics.columnGap - rightWidth
   }
 
@@ -398,7 +399,7 @@ function measureMetaPanelHeight(ctx, options) {
     var leftBadgeMetrics = getDetailBadgeMetrics(ctx, leftRow.label, compact, dense)
     var rightBadgeMetrics = getDetailBadgeMetrics(ctx, rightRow.label, compact, dense)
     var leftBodyHeight = measureTextBlockHeight(ctx, leftRow.text, columnLayout.leftWidth, leftRow.maxLines || 2, metrics.lineHeight, metrics.bodyFont)
-    var rightBodyHeight = measureTextBlockHeight(ctx, rightRow.text, columnLayout.rightWidth, rightRow.maxLines || 2, metrics.lineHeight, metrics.mutedFont)
+    var rightBodyHeight = measureTextBlockHeight(ctx, rightRow.text, columnLayout.rightWidth, rightRow.maxLines || 2, metrics.secondaryLineHeight, metrics.mutedFont)
 
     totalHeight += Math.max(
       leftBadgeMetrics.height + metrics.badgeGap + leftBodyHeight,
@@ -498,7 +499,7 @@ function drawMetaPanel(ctx, options) {
       y: rightTextY,
       maxWidth: columnLayout.rightWidth,
       maxLines: rightRow.maxLines || 2,
-      lineHeight: metrics.lineHeight,
+      lineHeight: metrics.secondaryLineHeight,
       font: metrics.mutedFont,
       fillStyle: theme.metaMutedText || theme.mutedText,
       text: rightRow.text,
