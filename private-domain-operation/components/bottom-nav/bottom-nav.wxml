@@ -1,0 +1,61 @@
+<view class="bottom-nav">
+  <view class="bottom-nav-inner">
+    <view
+      class="nav-item {{current === 'home' ? 'is-active' : ''}}"
+      data-page="home"
+      bindtap="handleNavigate"
+    >
+      <image
+        wx:if="{{current === 'home'}}"
+        class="nav-icon"
+        src="/assets/tabbar/home-active.svg"
+        mode="aspectFit"
+      />
+      <image
+        wx:else
+        class="nav-icon"
+        src="/assets/tabbar/home.svg"
+        mode="aspectFit"
+      />
+      <text class="nav-label">首页</text>
+    </view>
+    <view
+      class="nav-item {{current === 'learning' ? 'is-active' : ''}}"
+      data-page="learning"
+      bindtap="handleNavigate"
+    >
+      <image
+        wx:if="{{current === 'learning'}}"
+        class="nav-icon"
+        src="/assets/tabbar/learning-active.svg"
+        mode="aspectFit"
+      />
+      <image
+        wx:else
+        class="nav-icon"
+        src="/assets/tabbar/learning.svg"
+        mode="aspectFit"
+      />
+      <text class="nav-label">学习</text>
+    </view>
+    <view
+      class="nav-item {{current === 'profile' ? 'is-active' : ''}}"
+      data-page="profile"
+      bindtap="handleNavigate"
+    >
+      <image
+        wx:if="{{current === 'profile'}}"
+        class="nav-icon"
+        src="/assets/tabbar/profile-active.svg"
+        mode="aspectFit"
+      />
+      <image
+        wx:else
+        class="nav-icon"
+        src="/assets/tabbar/profile.svg"
+        mode="aspectFit"
+      />
+      <text class="nav-label">我的</text>
+    </view>
+  </view>
+</view>

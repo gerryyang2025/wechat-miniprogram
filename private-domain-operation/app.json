@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/learning/learning",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#f4f7ff",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

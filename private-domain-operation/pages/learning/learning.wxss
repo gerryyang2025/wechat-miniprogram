@@ -1,0 +1,158 @@
+.learning-scroll {
+  min-height: 100vh;
+  padding: calc(108rpx + env(safe-area-inset-top)) 28rpx 0;
+  box-sizing: border-box;
+}
+
+.learning-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding-bottom: 28rpx;
+}
+
+.learning-title {
+  font-size: 62rpx;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.learning-subtitle {
+  width: 78%;
+  font-size: 26rpx;
+  line-height: 1.65;
+  color: rgba(241, 244, 255, 0.84);
+}
+
+.metrics-row {
+  display: flex;
+  gap: 18rpx;
+}
+
+.metric-card {
+  flex: 1;
+  min-width: 0;
+  padding: 28rpx 20rpx;
+}
+
+.metric-value {
+  font-size: 32rpx;
+  line-height: 1.25;
+  color: #232845;
+  font-weight: 800;
+}
+
+.metric-label {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #8790b1;
+}
+
+.learning-search {
+  margin-top: 24rpx;
+  height: 84rpx;
+  padding: 0 28rpx;
+  border-radius: 26rpx;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 14rpx 34rpx rgba(47, 60, 138, 0.1);
+}
+
+.learning-search-text {
+  font-size: 28rpx;
+  color: #9da6c5;
+}
+
+.learning-search-icon {
+  font-size: 38rpx;
+  color: #50587b;
+}
+
+.learning-list {
+  margin-top: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.learning-card {
+  padding: 22rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.learning-cover {
+  flex-shrink: 0;
+  width: 168rpx;
+  height: 168rpx;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: flex-end;
+  padding: 18rpx;
+  box-sizing: border-box;
+}
+
+.learning-cover--purple {
+  background: linear-gradient(145deg, #7059ff 0%, #4b8eff 100%);
+}
+
+.learning-cover--blue {
+  background: linear-gradient(145deg, #3f98ff 0%, #6ad3ff 100%);
+}
+
+.learning-cover--indigo {
+  background: linear-gradient(145deg, #4a53d6 0%, #7f76ff 100%);
+}
+
+.learning-type {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+.learning-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.learning-item-title {
+  font-size: 30rpx;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #1f2441;
+}
+
+.learning-progress {
+  font-size: 24rpx;
+  color: #6278f4;
+  font-weight: 600;
+}
+
+.learning-last {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #7f89ab;
+}
+
+.learning-action {
+  margin-top: 6rpx;
+  align-self: flex-start;
+  height: 56rpx;
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

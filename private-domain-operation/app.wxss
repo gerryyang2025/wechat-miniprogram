@@ -1,0 +1,53 @@
+page {
+  background: #f4f7ff;
+  color: #1f2442;
+  font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+.page-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(133, 103, 255, 0.3), transparent 42%),
+    linear-gradient(180deg, #6b54ff 0%, #8d72ff 16%, #f4f7ff 36%, #f7f9ff 100%);
+}
+
+.content-safe-bottom {
+  padding-bottom: calc(132rpx + env(safe-area-inset-bottom));
+}
+
+.card-surface {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 32rpx;
+  box-shadow: 0 24rpx 80rpx rgba(59, 74, 152, 0.12);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #20253f;
+}
+
+.section-title::before {
+  content: "";
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #4d78ff 0%, #7a56ff 100%);
+  box-shadow: 0 0 0 10rpx rgba(94, 119, 255, 0.12);
+}
+
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  background: rgba(90, 108, 255, 0.1);
+  color: #4f67f8;
+  font-size: 24rpx;
+  font-weight: 600;
+}

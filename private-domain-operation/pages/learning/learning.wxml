@@ -1,0 +1,36 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="learning-scroll content-safe-bottom">
+    <view class="learning-head">
+      <text class="learning-title">学习</text>
+      <text class="learning-subtitle">继续查看已购课程、训练营与直播回放。</text>
+    </view>
+
+    <view class="metrics-row">
+      <view wx:for="{{metrics}}" wx:key="label" class="metric-card card-surface">
+        <text class="metric-value">{{item.value}}</text>
+        <text class="metric-label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="learning-search" bindtap="onSearchTap">
+      <text class="learning-search-text">搜索已购课程</text>
+      <text class="learning-search-icon">⌕</text>
+    </view>
+
+    <view class="learning-list">
+      <view wx:for="{{learningList}}" wx:key="id" class="learning-card card-surface">
+        <view class="learning-cover learning-cover--{{item.theme}}">
+          <text class="learning-type">{{item.type}}</text>
+        </view>
+        <view class="learning-body">
+          <text class="learning-item-title">{{item.title}}</text>
+          <text class="learning-progress">{{item.progress}}</text>
+          <text class="learning-last">{{item.last}}</text>
+          <view class="learning-action" bindtap="onContinueTap">继续学习</view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <bottom-nav current="learning"></bottom-nav>
+</view>

@@ -1,0 +1,124 @@
+<view class="page-shell home-page">
+  <scroll-view scroll-y class="home-scroll content-safe-bottom home-content-safe-bottom">
+    <view class="hero-panel">
+      <view class="hero-top">
+        <view class="brand-copy">
+          <text class="hero-badge">个人 IP 私域运营</text>
+          <text class="hero-title">时昕有点懒</text>
+          <text class="hero-subtitle">围绕课程、训练营和直播，搭一个能长期运营的内容阵地。</text>
+        </view>
+      </view>
+
+      <view class="search-bar" bindtap="onSearchTap">
+        <text class="search-placeholder">搜索课程 / 训练营 / 直播</text>
+        <text class="search-icon">⌕</text>
+      </view>
+    </view>
+
+    <view class="main-content">
+      <view class="banner-block card-surface">
+        <swiper
+          class="banner-swiper"
+          circular
+          autoplay
+          interval="4500"
+          duration="360"
+          current="{{currentBannerIndex}}"
+          bindchange="onBannerChange"
+        >
+          <swiper-item wx:for="{{bannerList}}" wx:key="id">
+            <view class="banner-slide">
+              <image
+                class="banner-image"
+                src="{{item.src}}"
+                mode="aspectFill"
+              />
+              <view class="banner-shadow"></view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <view class="banner-indicators">
+        <view
+          wx:for="{{bannerList}}"
+          wx:key="id"
+          class="indicator {{index === currentBannerIndex ? 'is-active' : ''}}"
+        ></view>
+      </view>
+
+      <view class="owned-section card-surface">
+        <view class="section-head">
+          <view class="section-title-wrap">
+            <text class="section-title-text">已购课程</text>
+            <text class="section-subtitle">已拥有内容摘要</text>
+          </view>
+          <view class="ghost-button" bindtap="onViewAllOwned">查看全部</view>
+        </view>
+
+        <scroll-view scroll-x class="owned-scroll" enable-flex="true">
+          <view class="owned-row">
+            <view
+              wx:for="{{purchasedCourses}}"
+              wx:key="id"
+              class="owned-card owned-card--{{item.theme}}"
+              bindtap="onViewAllOwned"
+            >
+              <text class="owned-badge">{{item.badge}}</text>
+              <text class="owned-title">{{item.title}}</text>
+              <text class="owned-meta">{{item.meta}}</text>
+              <text class="owned-summary">{{item.summary}}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="recommend-section">
+        <view class="recommend-header">
+          <view class="section-title">
+            <text>课程推荐</text>
+          </view>
+          <text class="recommend-note">精选内容示例</text>
+        </view>
+
+        <view
+          wx:for="{{recommendedCourses}}"
+          wx:key="id"
+          class="course-card card-surface"
+          bindtap="onCardTap"
+        >
+          <view class="course-cover {{item.coverTheme}}">
+            <text class="course-cover-tag">{{item.tag}}</text>
+            <text class="course-cover-title">{{item.hint}}</text>
+          </view>
+          <view class="course-body">
+            <text class="course-title">{{item.title}}</text>
+            <text class="course-author">讲师 · {{item.author}}</text>
+            <text class="course-meta">{{item.meta}}</text>
+            <view class="course-foot">
+              <text class="course-price">{{item.price}}</text>
+              <view class="course-action">查看详情</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="feature-stack">
+        <view
+          wx:for="{{featureCards}}"
+          wx:key="id"
+          class="feature-card feature-card--{{item.type}} card-surface"
+        >
+          <view class="feature-copy">
+            <text class="feature-eyebrow">{{item.eyebrow}}</text>
+            <text class="feature-title">{{item.title}}</text>
+            <text class="feature-desc">{{item.desc}}</text>
+          </view>
+          <view class="ghost-button" data-label="{{item.action}}" bindtap="onFeatureTap">{{item.action}}</view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <bottom-nav current="home"></bottom-nav>
+</view>

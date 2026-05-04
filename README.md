@@ -14,6 +14,7 @@ Each mini program lives in its own subdirectory and is expected to keep its own:
 | Project | Description | Status |
 | --- | --- | --- |
 | [`the-book-of-answers`](./the-book-of-answers/README.md) | A quote-based answer mini program with classic and sunrise interaction flows, dynamic share images, and poster export. | Active |
+| [`private-domain-operation`](./private-domain-operation/README.md) | A personal-IP and private-domain-operation mini program focused on course delivery, training camps, live sessions, and merchant operations. The current phase emphasizes product design docs and a WeChat Mini Program prototype. | Active Prototype |
 
 ## Working with a Project
 

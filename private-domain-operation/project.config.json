@@ -1,0 +1,111 @@
+{
+  "description": "Private Domain Operation Mini Program",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "compileWorklet": false,
+    "enhance": false,
+    "packNpmManually": false,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "ignoreDevUnusedFiles": true,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmRelationList": [],
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.15.1",
+  "appid": "wx5005159f4c16da8b",
+  "projectname": "private-domain-operation",
+  "condition": {
+    "search": {
+      "current": -1,
+      "list": []
+    },
+    "conversation": {
+      "current": -1,
+      "list": []
+    },
+    "miniprogram": {
+      "current": -1,
+      "list": []
+    }
+  },
+  "packOptions": {
+    "ignore": [
+      {
+        "value": ".git",
+        "type": "folder"
+      },
+      {
+        "value": ".github",
+        "type": "folder"
+      },
+      {
+        "value": "prototype-images",
+        "type": "folder"
+      },
+      {
+        "value": "project.private.config.json",
+        "type": "file"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": "DESIGN.md",
+        "type": "file"
+      },
+      {
+        "value": "CORE_REQUIREMENTS.md",
+        "type": "file"
+      },
+      {
+        "value": "MVP_FEATURES.md",
+        "type": "file"
+      },
+      {
+        "value": "IA_PAGES.md",
+        "type": "file"
+      },
+      {
+        "value": "FRONTEND_TECH.md",
+        "type": "file"
+      },
+      {
+        "value": "BACKEND_TECH.md",
+        "type": "file"
+      },
+      {
+        "value": "REFERENCE.md",
+        "type": "file"
+      },
+      {
+        "value": "GLOSSARY.md",
+        "type": "file"
+      },
+      {
+        "value": "PROTOTYPE_PROMPTS.md",
+        "type": "file"
+      }
+    ],
+    "include": []
+  },
+  "editorSetting": {},
+  "simulatorPluginLibVersion": {}
+}

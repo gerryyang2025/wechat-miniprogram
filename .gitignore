@@ -1,0 +1,13 @@
+.DS_Store
+Thumbs.db
+
+.idea/
+.vscode/
+
+project.private.config.json
+project.local.config.json
+
+*.log
+*.tmp
+*.swp
+*.swo

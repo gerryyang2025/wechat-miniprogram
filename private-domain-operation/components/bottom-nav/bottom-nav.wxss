@@ -1,0 +1,50 @@
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -10rpx 30rpx rgba(59, 74, 152, 0.08);
+  z-index: 30;
+}
+
+.bottom-nav-inner {
+  height: 104rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28rpx;
+  max-width: 660rpx;
+  margin: 0 auto;
+}
+
+.nav-item {
+  min-width: 172rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 0 10rpx;
+  box-sizing: border-box;
+}
+
+.nav-icon {
+  width: 44rpx;
+  height: 44rpx;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  font-size: 25rpx;
+  line-height: 1;
+  color: #8f97b6;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nav-item.is-active .nav-label {
+  color: #7b59f6;
+  font-weight: 700;
+}
