@@ -4,12 +4,12 @@
       <view class="player-back" bindtap="onBackTap">‹</view>
       <view class="player-nav-copy">
         <text class="player-nav-title">课程播放</text>
-        <text class="player-nav-subtitle">已购课程示例</text>
+        <text class="player-nav-subtitle">{{pageSubtitle}}</text>
       </view>
     </view>
 
     <view class="player-stage card-surface">
-      <text class="player-tag">课程示例</text>
+      <text class="player-tag">{{pageTag}}</text>
       <text class="player-title">{{title}}</text>
       <text class="player-description">{{description}}</text>
 
@@ -31,11 +31,11 @@
       </view>
 
       <view class="player-meta">
-        <text class="player-meta-item">时长 {{duration}}</text>
-        <text class="player-meta-item">来源 {{sourceLabel}}</text>
-        <text wx:if="{{currentLessonTitle}}" class="player-meta-item">当前 {{currentLessonTitle}}</text>
-        <text wx:if="{{currentLessonDuration}}" class="player-meta-item">课节时长 {{currentLessonDuration}}</text>
-        <text wx:if="{{isFallbackCover}}" class="player-meta-item">封面已使用默认图</text>
+        <text wx:if="{{duration}}" class="player-meta-item">{{duration}}</text>
+        <text wx:if="{{sourceLabel}}" class="player-meta-item">{{sourceLabel}}</text>
+        <text wx:if="{{currentLessonTitle}}" class="player-meta-item">本节 {{currentLessonTitle}}</text>
+        <text wx:if="{{currentLessonDuration}}" class="player-meta-item">时长 {{currentLessonDuration}}</text>
+        <text wx:if="{{isFallbackCover}}" class="player-meta-item">默认封面</text>
       </view>
     </view>
 
@@ -58,25 +58,25 @@
     </view>
 
     <view class="player-outline card-surface">
-      <text class="player-outline-title">本节内容</text>
+      <text class="player-outline-title">学习提示</text>
       <text class="player-outline-text">{{outlineText}}</text>
     </view>
 
     <view wx:if="{{previousLessonId || nextLessonId}}" class="player-lesson-actions card-surface">
       <view class="player-lesson-button {{previousLessonId ? '' : 'player-lesson-button--disabled'}}" bindtap="onPreviousLessonTap">
         <text class="player-lesson-button-label">上一节</text>
-        <text class="player-lesson-button-title">{{previousLessonTitle || '已经是第一节'}}</text>
+        <text class="player-lesson-button-title">{{previousLessonTitle || '已到第一节'}}</text>
       </view>
       <view class="player-lesson-button {{nextLessonId ? '' : 'player-lesson-button--disabled'}}" bindtap="onNextLessonTap">
         <text class="player-lesson-button-label">下一节</text>
-        <text class="player-lesson-button-title">{{nextLessonTitle || '当前已是最后一节'}}</text>
+        <text class="player-lesson-button-title">{{nextLessonTitle || '已到最后一节'}}</text>
       </view>
     </view>
 
     <view wx:if="{{chapters.length}}" class="player-directory card-surface">
       <view class="player-directory-head">
         <text class="player-outline-title">课程目录</text>
-        <text class="player-directory-note">当前课节与后续内容</text>
+        <text class="player-directory-note">点击切换课节</text>
       </view>
       <view class="player-chapter-list">
         <view wx:for="{{chapters}}" wx:key="id" class="player-chapter-item">
@@ -94,16 +94,11 @@
                 <text class="player-lesson-title">{{item.title}}</text>
                 <text class="player-lesson-duration">{{item.duration}}</text>
               </view>
-              <text class="player-lesson-state player-lesson-state--{{item.renderedStatus}}">{{item.renderedStatus === "completed" ? "已完成" : item.renderedStatus === "current" ? "当前播放" : item.renderedStatus === "preview" ? "可试看" : item.renderedStatus === "locked" ? "待解锁" : "待学习"}}</text>
+              <text class="player-lesson-state player-lesson-state--{{item.renderedStatus}}">{{item.renderedStatus === "completed" ? "已完成" : item.renderedStatus === "current" ? "学习中" : item.renderedStatus === "preview" ? "试看" : item.renderedStatus === "locked" ? "待解锁" : "待学习"}}</text>
             </view>
           </view>
         </view>
       </view>
-    </view>
-
-    <view wx:if="{{statusType !== 'ready'}}" class="player-status card-surface">
-      <text class="player-status-title">{{statusTitle}}</text>
-      <text class="player-status-text">{{statusText}}</text>
     </view>
   </scroll-view>
 </view>

@@ -51,7 +51,7 @@
         <view class="section-head">
           <view class="section-title-wrap">
             <text class="section-title-text">已购课程</text>
-            <text class="section-subtitle">已拥有内容摘要</text>
+            <text class="section-subtitle">最近学习摘要</text>
           </view>
           <view class="ghost-button" bindtap="onViewAllOwned">查看全部</view>
         </view>
@@ -68,10 +68,12 @@
               <text class="owned-mark-text">{{item.monogram}}</text>
             </view>
             <view class="owned-info">
-              <text class="owned-badge">{{item.badge}}</text>
-              <text class="owned-title">{{item.title}}</text>
+              <view class="owned-title-row">
+                <text class="owned-title">{{item.title}}</text>
+                <text class="owned-badge">{{item.badge}}</text>
+              </view>
               <text class="owned-meta">{{item.meta}}</text>
-              <text class="owned-summary">{{item.summary}}</text>
+              <text class="owned-summary">最近学习 · {{item.summary}}</text>
             </view>
             <view class="owned-action">{{item.action}}</view>
           </view>

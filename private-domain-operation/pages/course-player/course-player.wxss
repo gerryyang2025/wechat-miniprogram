@@ -133,8 +133,7 @@
 .player-progress,
 .player-outline,
 .player-lesson-actions,
-.player-directory,
-.player-status {
+.player-directory {
   margin-top: 24rpx;
   padding: 28rpx 30rpx;
   display: flex;
@@ -151,8 +150,7 @@
 }
 
 .player-progress-title,
-.player-outline-title,
-.player-status-title {
+.player-outline-title {
   font-size: 30rpx;
   font-weight: 800;
   color: #222946;
@@ -207,8 +205,7 @@
   gap: 8rpx;
 }
 
-.player-outline-text,
-.player-status-text {
+.player-outline-text {
   font-size: 24rpx;
   line-height: 1.7;
   color: #7f89ab;

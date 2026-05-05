@@ -15,8 +15,8 @@ function buildPlayerStatus(videoUrl = "", hasVideoError = false) {
   if (hasVideoError) {
     return {
       statusType: "error",
-      statusTitle: "视频暂时无法播放",
-      statusText: "请检查媒体域名配置或当前网络状态，也可以稍后重新加载。",
+      statusTitle: "暂时无法播放",
+      statusText: "当前视频加载失败，可重新加载或咨询课程。",
       statusActionText: "重新加载"
     };
   }
@@ -24,8 +24,8 @@ function buildPlayerStatus(videoUrl = "", hasVideoError = false) {
   if (!videoUrl) {
     return {
       statusType: "preparing",
-      statusTitle: "资源准备中",
-      statusText: "当前课节的视频资源正在整理中，稍后即可继续观看。",
+      statusTitle: "内容准备中",
+      statusText: "当前课节暂未上线，先看看目录和学习进度。",
       statusActionText: "咨询课程"
     };
   }
@@ -33,8 +33,8 @@ function buildPlayerStatus(videoUrl = "", hasVideoError = false) {
   if (!VIDEO_URL_PATTERN.test(videoUrl)) {
     return {
       statusType: "invalid",
-      statusTitle: "资源链接无效",
-      statusText: "当前视频地址格式不正确，建议先咨询课程或稍后再试。",
+      statusTitle: "内容待更新",
+      statusText: "当前资源地址不可用，可先查看目录或咨询课程。",
       statusActionText: "咨询课程"
     };
   }
@@ -130,20 +130,55 @@ function getAdjacentLesson(chapters = [], currentLessonId = "", direction = "nex
   return currentIndex < flatLessons.length - 1 ? flatLessons[currentIndex + 1] : null;
 }
 
-function buildOutlineText(payload = {}, selectedLesson = null, nextLesson = null) {
+function buildOutlineText(payload = {}, selectedLesson = null) {
   if (!selectedLesson) {
     return payload.outlineText || payload.description || "当前课程内容正在整理中。";
   }
 
-  const summary = payload.description || payload.outlineText || "当前课程内容正在整理中。";
-  const nextText = nextLesson ? `下一节：${nextLesson.title}` : "当前已切换到本次目录的最后一节。";
+  const summary = (payload.outlineText || payload.description || "当前课程内容正在整理中。")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  return `当前课节：${selectedLesson.title}，所属 ${selectedLesson.chapterTitle}。${summary} ${nextText}`;
+  return `${selectedLesson.chapterTitle} · ${selectedLesson.title}。${summary}`;
+}
+
+function buildPageTag(payload = {}, statusType = "ready") {
+  if (payload.sourceLabel) {
+    return payload.sourceLabel;
+  }
+
+  if (statusType === "preparing") {
+    return "内容更新中";
+  }
+
+  return "课程学习";
+}
+
+function buildPageSubtitle(payload = {}, statusType = "ready") {
+  if (statusType === "ready") {
+    return "继续学习当前内容";
+  }
+
+  if (payload.sourceLabel === "会员试看") {
+    return "先看试看内容和课程目录";
+  }
+
+  if (payload.sourceLabel === "图文内容") {
+    return "先看图文结构和目录";
+  }
+
+  if (statusType === "preparing") {
+    return "先看目录和学习进度";
+  }
+
+  return "先看目录或咨询课程";
 }
 
 Page({
   data: {
     title: "课程播放",
+    pageSubtitle: "继续学习当前内容",
+    pageTag: "课程学习",
     playerVideoUrl: "",
     videoUrl: "",
     coverUrl: "",
@@ -164,8 +199,8 @@ Page({
     isVideoError: false,
     isVideoReady: false,
     statusType: "preparing",
-    statusTitle: "资源准备中",
-    statusText: "当前课程内容正在整理中。",
+    statusTitle: "内容准备中",
+    statusText: "当前课节暂未上线，先看看目录和学习进度。",
     statusActionText: "咨询课程"
   },
 
@@ -220,9 +255,9 @@ Page({
     const progressSummary = payload.progressSummary
       ? {
           ...payload.progressSummary,
-          currentLessonTitle: selectedLesson ? `当前课节：${selectedLesson.title}` : payload.progressSummary.currentLessonTitle,
-          nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：请先完成当前目录内容",
-          lastPosition: selectedLesson ? `当前定位 ${selectedLesson.title}` : payload.progressSummary.lastPosition
+          currentLessonTitle: selectedLesson ? `本节：${selectedLesson.title}` : payload.progressSummary.currentLessonTitle,
+          nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：当前目录已学完",
+          lastPosition: selectedLesson ? `上次学到：${selectedLesson.title}` : payload.progressSummary.lastPosition
         }
       : null;
 
@@ -230,6 +265,8 @@ Page({
 
     this.setData({
       title: payload.title || "课程播放",
+      pageSubtitle: buildPageSubtitle(payload, status.statusType),
+      pageTag: buildPageTag(payload, status.statusType),
       playerVideoUrl: status.statusType === "ready" ? normalizedVideoUrl : "",
       videoUrl: normalizedVideoUrl,
       coverUrl: normalizedCoverUrl,
@@ -237,7 +274,7 @@ Page({
       duration: payload.duration || "",
       sourceLabel: payload.sourceLabel || "录播课程",
       description: payload.description || "",
-      outlineText: buildOutlineText(payload, selectedLesson, nextLesson),
+      outlineText: buildOutlineText(payload, selectedLesson),
       progressSummary,
       chapters: renderedChapters,
       currentLessonId: selectedLessonId,

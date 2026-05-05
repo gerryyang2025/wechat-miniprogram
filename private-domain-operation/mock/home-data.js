@@ -6,7 +6,7 @@ const purchasedCourseConfig = [
     id: "owned-course-aigc",
     detailCourseId: "course-aigc-video",
     badge: "录播课",
-    action: "去学习",
+    action: "学习",
     theme: "cyan",
     monogram: "AI"
   },
@@ -14,7 +14,7 @@ const purchasedCourseConfig = [
     id: "owned-course-wechat-game",
     detailCourseId: "course-wechat-game",
     badge: "录播课",
-    action: "去学习",
+    action: "学习",
     theme: "indigo",
     monogram: "WX"
   },
@@ -22,7 +22,7 @@ const purchasedCourseConfig = [
     id: "owned-course-1",
     detailCourseId: "course-1",
     badge: "系列课",
-    action: "继续看",
+    action: "学习",
     theme: "purple",
     monogram: "IP"
   }
@@ -112,6 +112,15 @@ const homePrimaryLiveEntry = {
   mode: "upcoming"
 };
 
+function compactOwnedSummary(text = "") {
+  return text
+    .replace(/^最近学习：/, "")
+    .replace(/^最近学习\s*/, "")
+    .replace(/^上次学到：/, "")
+    .replace(/^上次学到\s*/, "")
+    .trim();
+}
+
 function getHomePageData() {
   const purchasedCourses = purchasedCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
@@ -121,7 +130,7 @@ function getHomePageData() {
       badge: item.badge,
       title: courseMeta.title,
       meta: courseMeta.progress,
-      summary: courseMeta.last,
+      summary: compactOwnedSummary(courseMeta.last),
       action: item.action,
       theme: item.theme,
       monogram: item.monogram

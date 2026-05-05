@@ -564,8 +564,8 @@ function buildPlayerProgressSummary(playerCourse = {}, playerCourseId = "") {
     totalLessons: state.totalLessons,
     percent: buildProgressPercent(state.completedLessons, state.totalLessons),
     lastPosition: state.lastPosition,
-    currentLessonTitle: currentLesson ? `当前课节：${currentLesson.title}` : "当前课节：内容准备中",
-    nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：继续查看后续目录"
+    currentLessonTitle: currentLesson ? `本节：${currentLesson.title}` : "本节：内容准备中",
+    nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：当前目录已学完"
   };
 }
 
@@ -629,7 +629,7 @@ function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
     totalLessons: currentState.totalLessons || flatLessons.length,
     completedLessons: Math.max(currentState.completedLessons || 0, selectedIndex + 1),
     currentLessonId: lessonId,
-    lastPosition: `当前定位 ${selectedLesson.title}`
+    lastPosition: `上次学到：${selectedLesson.title}`
   };
 
   return clone(playerCourseProgressState[playerCourseId]);
