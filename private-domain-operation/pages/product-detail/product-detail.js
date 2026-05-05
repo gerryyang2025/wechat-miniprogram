@@ -30,6 +30,13 @@ Page({
   onPrimaryTap() {
     const { product } = this.data;
 
+    if (product.primaryActionType === "player" && product.primaryActionTarget) {
+      wx.navigateTo({
+        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(product.primaryActionTarget)}`
+      });
+      return;
+    }
+
     if (product.primaryActionType === "learning") {
       wx.reLaunch({
         url: "/pages/learning/learning"

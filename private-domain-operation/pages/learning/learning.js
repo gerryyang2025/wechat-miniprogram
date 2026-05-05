@@ -2,6 +2,7 @@ const { getPlayerCourse } = require("../../mock/course-data");
 const {
   getLearningPageData,
   getPlayerCourseIdByLearningId,
+  getDetailCourseIdByLearningId,
   getBootcampIdByLearningId,
   getLiveEntryByLearningId
 } = require("../../mock/learning-data");
@@ -20,6 +21,35 @@ Page({
     wx.navigateTo({
       url: "/pages/live-list/live-list"
     });
+  },
+
+  onItemTap(event) {
+    const { itemId } = event.currentTarget.dataset;
+    const detailCourseId = getDetailCourseIdByLearningId(itemId);
+    const targetBootcampId = getBootcampIdByLearningId(itemId);
+    const targetLive = getLiveEntryByLearningId(itemId);
+
+    if (detailCourseId) {
+      wx.navigateTo({
+        url: `/pages/product-detail/product-detail?courseId=${encodeURIComponent(detailCourseId)}`
+      });
+      return;
+    }
+
+    if (targetBootcampId) {
+      wx.navigateTo({
+        url: `/pages/bootcamp-detail/bootcamp-detail?campId=${encodeURIComponent(targetBootcampId)}`
+      });
+      return;
+    }
+
+    if (targetLive) {
+      wx.navigateTo({
+        url:
+          `/pages/live-detail/live-detail?liveId=${encodeURIComponent(targetLive.liveId)}` +
+          `&mode=${encodeURIComponent(targetLive.mode)}`
+      });
+    }
   },
 
   onContinueTap(event) {

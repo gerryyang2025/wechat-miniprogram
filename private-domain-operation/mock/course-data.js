@@ -1,6 +1,113 @@
 const { clone } = require("./shared");
 
 const detailCourseCatalog = {
+  "course-aigc-video": {
+    id: "course-aigc-video",
+    tag: "录播课",
+    title: "AIGC 视频制作",
+    author: "Gerry",
+    coverTheme: "cover-blue",
+    coverHint: "脚本 / 口播 / 剪辑发布",
+    meta: "5 节课程 · AI 视频入门实践",
+    price: "已购内容",
+    access: "支持随时回看 · 适合快速上手",
+    description:
+      "这是一门围绕 AIGC 视频制作的入门实战课，帮助你从脚本组织、口播表达，到画面生成和剪辑发布，建立一条能快速上手的内容制作流程。",
+    gains: [
+      "理解 AIGC 视频从脚本到成片的核心流程",
+      "掌握口播结构、画面节奏和剪辑思路",
+      "建立适合个人 IP 的短视频内容生产方式"
+    ],
+    suitable: ["AIGC 内容创作者", "想做短视频的讲师", "个人 IP 起步者"],
+    progressSummary: {
+      status: "已购课程",
+      completedLessons: 1,
+      totalLessons: 5,
+      percent: 20,
+      completedDuration: "累计学习 18 分钟",
+      currentLessonTitle: "最近学习：第 2 节 AIGC 视频脚本拆解",
+      nextLessonTitle: "下一节：第 3 节 口播结构与节奏"
+    },
+    chapters: [
+      {
+        id: "course-aigc-chapter-1",
+        title: "模块 1 · 选题与脚本",
+        summary: "先明确题材方向，再搭起可直接拍摄的脚本结构。",
+        lessons: [
+          { id: "course-aigc-l1", title: "第 1 节 AIGC 视频选题方向", duration: "09:24", status: "completed" },
+          { id: "course-aigc-l2", title: "第 2 节 AIGC 视频脚本拆解", duration: "03:22", status: "current" }
+        ]
+      },
+      {
+        id: "course-aigc-chapter-2",
+        title: "模块 2 · 口播与成片",
+        summary: "围绕口播表达、画面节奏与发布动作完成第一条作品。",
+        lessons: [
+          { id: "course-aigc-l3", title: "第 3 节 口播结构与节奏", duration: "08:11", status: "upcoming" },
+          { id: "course-aigc-l4", title: "第 4 节 画面与字幕组织", duration: "06:48", status: "upcoming" },
+          { id: "course-aigc-l5", title: "第 5 节 发布与复盘动作", duration: "07:35", status: "upcoming" }
+        ]
+      }
+    ],
+    note: "当前原型阶段已接入示例视频，可直接从商品详情进入课程播放页。",
+    primaryActionType: "player",
+    primaryActionTarget: "player-aigc-video",
+    primaryActionText: "立即学习",
+    secondaryActionText: "咨询课程"
+  },
+  "course-wechat-game": {
+    id: "course-wechat-game",
+    tag: "项目实战",
+    title: "微信小游戏开发",
+    author: "Gerry",
+    coverTheme: "cover-indigo",
+    coverHint: "目录组织 / 交互循环 / 真机调试",
+    meta: "4 节课程 · 飞机大战项目实战",
+    price: "已购内容",
+    access: "支持示例回看 · 适合开发入门",
+    description:
+      "围绕微信小游戏项目实战，讲解项目结构、资源组织、交互循环、碰撞检测和真机调试，让你更快理解小游戏开发的基本链路。",
+    gains: [
+      "理解小游戏项目初始化与资源组织方式",
+      "掌握基础交互循环和碰撞检测的实现思路",
+      "熟悉真机调试与发布前的最小检查流程"
+    ],
+    suitable: ["小游戏开发初学者", "前端转小游戏开发", "想做实战型课程的人"],
+    progressSummary: {
+      status: "已购课程",
+      completedLessons: 2,
+      totalLessons: 4,
+      percent: 50,
+      completedDuration: "累计学习 26 分钟",
+      currentLessonTitle: "最近学习：第 3 节 飞机大战交互循环",
+      nextLessonTitle: "下一节：第 4 节 真机调试与发布"
+    },
+    chapters: [
+      {
+        id: "course-wechat-game-chapter-1",
+        title: "模块 1 · 项目结构搭建",
+        summary: "先把目录、资源和基础场景搭起来。",
+        lessons: [
+          { id: "course-wechat-game-l1", title: "第 1 节 小游戏初始化与目录组织", duration: "12:06", status: "completed" },
+          { id: "course-wechat-game-l2", title: "第 2 节 资源加载与场景布局", duration: "11:10", status: "completed" }
+        ]
+      },
+      {
+        id: "course-wechat-game-chapter-2",
+        title: "模块 2 · 飞机大战实战",
+        summary: "围绕核心交互和发布流程完成一个最小可运行案例。",
+        lessons: [
+          { id: "course-wechat-game-l3", title: "第 3 节 飞机大战交互循环", duration: "项目演示", status: "current" },
+          { id: "course-wechat-game-l4", title: "第 4 节 真机调试与发布", duration: "09:42", status: "upcoming" }
+        ]
+      }
+    ],
+    note: "当前原型阶段已接入项目演示视频，可直接从详情页进入播放。",
+    primaryActionType: "player",
+    primaryActionTarget: "player-wechat-game",
+    primaryActionText: "立即学习",
+    secondaryActionText: "咨询课程"
+  },
   "course-1": {
     id: "course-1",
     tag: "系列课",
@@ -154,6 +261,53 @@ const detailCourseCatalog = {
 };
 
 const playerCourseCatalog = {
+  "player-ip-course": {
+    id: "player-ip-course",
+    title: "个人 IP 内容变现实战课",
+    coverUrl: "/assets/home/banner1.jpg",
+    duration: "内容更新中",
+    sourceLabel: "系列课",
+    videoUrl: "",
+    description: "聚焦个人 IP 的定位、选题、内容成交链路和私域承接节奏，帮助你建立系统的内容变现路径。",
+    outlineText: "当前课程主线已接入到课程播放页，视频资源仍在整理中，你可以先查看学习进度和课程目录，再从后续资源中继续学习。",
+    progressSummary: {
+      completedLessons: 4,
+      totalLessons: 12,
+      percent: 33,
+      lastPosition: "最近学习 第 4 节 内容成交链路拆解",
+      currentLessonTitle: "当前课节：第 4 节 内容成交链路拆解",
+      nextLessonTitle: "下一节：第 5 节 朋友圈内容节奏设计"
+    },
+    chapters: [
+      {
+        id: "player-ip-chapter-1",
+        title: "模块 1 · 定位与内容起步",
+        lessons: [
+          { id: "player-ip-l1", title: "第 1 节 个人品牌定位与优势梳理", duration: "14:28", status: "completed" },
+          { id: "player-ip-l2", title: "第 2 节 高转化选题的搭建方式", duration: "12:16", status: "completed" },
+          { id: "player-ip-l3", title: "第 3 节 内容表达结构与开场设计", duration: "15:02", status: "completed" }
+        ]
+      },
+      {
+        id: "player-ip-chapter-2",
+        title: "模块 2 · 转化路径与私域承接",
+        lessons: [
+          { id: "player-ip-l4", title: "第 4 节 内容成交链路拆解", duration: "11:41", status: "current" },
+          { id: "player-ip-l5", title: "第 5 节 朋友圈内容节奏设计", duration: "13:19", status: "upcoming" },
+          { id: "player-ip-l6", title: "第 6 节 咨询承接与内容互动动作", duration: "10:08", status: "upcoming" }
+        ]
+      },
+      {
+        id: "player-ip-chapter-3",
+        title: "模块 3 · 日常复盘与内容经营",
+        lessons: [
+          { id: "player-ip-l7", title: "第 7 节 周更节奏与内容复盘", duration: "09:56", status: "upcoming" },
+          { id: "player-ip-l8", title: "第 8 节 产品化表达模板", duration: "11:52", status: "upcoming" },
+          { id: "player-ip-l9", title: "第 9 节 咨询服务的内容包装", duration: "08:44", status: "upcoming" }
+        ]
+      }
+    ]
+  },
   "player-aigc-video": {
     id: "player-aigc-video",
     title: "AIGC 视频制作",

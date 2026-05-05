@@ -57,7 +57,14 @@ const learningPageData = {
 
 const learningPlayerCourseMap = {
   "learn-aigc": "player-aigc-video",
-  "learn-wechat-game": "player-wechat-game"
+  "learn-wechat-game": "player-wechat-game",
+  "learn-1": "player-ip-course"
+};
+
+const learningDetailCourseMap = {
+  "learn-aigc": "course-aigc-video",
+  "learn-wechat-game": "course-wechat-game",
+  "learn-1": "course-1"
 };
 
 const learningBootcampMap = {
@@ -79,6 +86,10 @@ function getPlayerCourseIdByLearningId(itemId = "") {
   return learningPlayerCourseMap[itemId] || "";
 }
 
+function getDetailCourseIdByLearningId(itemId = "") {
+  return learningDetailCourseMap[itemId] || "";
+}
+
 function getBootcampIdByLearningId(itemId = "") {
   return learningBootcampMap[itemId] || "";
 }
@@ -94,6 +105,7 @@ function getLiveEntryByLearningId(itemId = "") {
 module.exports = {
   getLearningPageData,
   getPlayerCourseIdByLearningId,
+  getDetailCourseIdByLearningId,
   getBootcampIdByLearningId,
   getLiveEntryByLearningId
 };

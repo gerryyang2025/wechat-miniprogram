@@ -26,7 +26,7 @@
     </view>
 
     <view class="learning-list">
-      <view wx:for="{{learningList}}" wx:key="id" class="learning-card card-surface">
+      <view wx:for="{{learningList}}" wx:key="id" class="learning-card card-surface" data-item-id="{{item.id}}" bindtap="onItemTap">
         <view class="learning-cover learning-cover--{{item.theme}}">
           <text class="learning-type">{{item.type}}</text>
         </view>
@@ -34,7 +34,7 @@
           <text class="learning-item-title">{{item.title}}</text>
           <text class="learning-progress">{{item.progress}}</text>
           <text class="learning-last">{{item.last}}</text>
-          <view class="learning-action" data-item-id="{{item.id}}" bindtap="onContinueTap">{{item.actionLabel || '继续学习'}}</view>
+          <view class="learning-action" data-item-id="{{item.id}}" catchtap="onContinueTap">{{item.actionLabel || '继续学习'}}</view>
         </view>
       </view>
     </view>
