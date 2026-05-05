@@ -17,7 +17,6 @@ const purchasedCourseConfig = [
   {
     id: "owned-course-aigc",
     detailCourseId: "course-aigc-video",
-    shortTitle: "AIGC视频",
     badge: "录播课",
     action: "学习",
     theme: "cyan",
@@ -26,7 +25,6 @@ const purchasedCourseConfig = [
   {
     id: "owned-course-wechat-game",
     detailCourseId: "course-wechat-game",
-    shortTitle: "小游戏开发",
     badge: "录播课",
     action: "学习",
     theme: "indigo",
@@ -35,7 +33,6 @@ const purchasedCourseConfig = [
   {
     id: "owned-course-1",
     detailCourseId: "course-1",
-    shortTitle: "IP变现课",
     badge: "系列课",
     action: "学习",
     theme: "purple",
@@ -57,16 +54,6 @@ const homePageData = {
     }
   ],
   recommendedCourses: [
-    {
-      id: "course-1",
-      coverTheme: "cover-purple",
-      tag: "系列课",
-      title: "个人 IP 内容变现实战课",
-      author: "Gerry",
-      meta: "12 节课程 · 适合 0 到 1 搭建",
-      price: "¥299",
-      hint: "定位 / 选题 / 成交路径"
-    },
     {
       id: "course-2",
       coverTheme: "cover-blue",
@@ -181,7 +168,7 @@ function getHomePageData() {
     return {
       id: item.id,
       badge: item.badge,
-      title: item.shortTitle || courseMeta.title,
+      title: courseMeta.title,
       meta: compactOwnedMeta(courseMeta.progress),
       summary: recentLesson.recentLessonTitle,
       recentLessonIndex: recentLesson.recentLessonIndex,
