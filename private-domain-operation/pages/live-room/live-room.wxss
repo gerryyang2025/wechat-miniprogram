@@ -147,6 +147,34 @@
   color: #8d96b7;
 }
 
+.live-room-bullet-list {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.live-room-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+}
+
+.live-room-bullet-dot {
+  flex-shrink: 0;
+  width: 14rpx;
+  height: 14rpx;
+  margin-top: 10rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #4d78ff 0%, #7a56ff 100%);
+}
+
+.live-room-bullet-text {
+  font-size: 24rpx;
+  line-height: 1.72;
+  color: #66719a;
+}
+
 .message-list {
   margin-top: 18rpx;
   display: flex;

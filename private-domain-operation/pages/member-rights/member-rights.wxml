@@ -1,0 +1,44 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="rights-scroll">
+    <view class="rights-nav">
+      <view class="rights-back" bindtap="onBackTap">‹</view>
+      <view class="rights-nav-copy">
+        <text class="rights-nav-title">会员权益</text>
+        <text class="rights-nav-subtitle">查看当前阶段开放的会员内容与说明</text>
+      </view>
+    </view>
+
+    <view class="rights-hero card-surface">
+      <text class="rights-badge">年度会员</text>
+      <text class="rights-title">时昕有点懒 · 会员内容计划</text>
+      <text class="rights-desc">当前阶段以课程学习、直播回放和训练营精选内容为主，后续会逐步补齐购买、续费与权益管理能力。</text>
+    </view>
+
+    <view class="rights-section card-surface">
+      <text class="rights-section-title">当前已开放权益</text>
+      <view class="rights-list">
+        <view wx:for="{{rights}}" wx:key="id" class="rights-item">
+          <text class="rights-item-title">{{item.title}}</text>
+          <text class="rights-item-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="rights-section card-surface">
+      <text class="rights-section-title">权益内包含内容示例</text>
+      <view class="rights-chip-row">
+        <text wx:for="{{includedContent}}" wx:key="*this" class="rights-chip">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="rights-section card-surface">
+      <text class="rights-section-title">补充说明</text>
+      <view class="rights-note-list">
+        <view wx:for="{{notes}}" wx:key="*this" class="rights-note-item">
+          <text class="rights-note-dot"></text>
+          <text class="rights-note-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

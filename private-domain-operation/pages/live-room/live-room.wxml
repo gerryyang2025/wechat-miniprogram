@@ -28,10 +28,24 @@
       <text class="live-room-notice">{{notice}}</text>
     </view>
 
+    <view wx:if="{{mode === 'replay'}}" class="live-room-section card-surface">
+      <view class="live-room-section-head">
+        <text class="live-room-section-title">回放进度</text>
+        <text class="live-room-section-note">{{replayProgress}}</text>
+      </view>
+      <text class="live-room-notice">{{replaySummary}}</text>
+      <view class="live-room-bullet-list">
+        <view wx:for="{{replayHighlights}}" wx:key="*this" class="live-room-bullet-item">
+          <text class="live-room-bullet-dot"></text>
+          <text class="live-room-bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="live-room-section card-surface">
       <view class="live-room-section-head">
         <text class="live-room-section-title">互动消息</text>
-        <text class="live-room-section-note">{{mode === 'replay' ? '回放示例' : '直播互动示例'}}</text>
+        <text class="live-room-section-note">{{mode === 'replay' ? '回放片段与笔记' : '直播互动示例'}}</text>
       </view>
       <view class="message-list">
         <view wx:for="{{messages}}" wx:key="id" class="message-item">
@@ -55,7 +69,7 @@
 
   <view class="live-room-footer">
     <view class="live-room-footer-inner">
-      <view class="live-room-input">输入问题或记录想法</view>
+      <view class="live-room-input">{{inputPlaceholder}}</view>
       <view class="live-room-action" bindtap="onAskTap">{{mode === 'replay' ? '记笔记' : '去提问'}}</view>
     </view>
   </view>

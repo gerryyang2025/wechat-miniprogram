@@ -1,0 +1,38 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="notifications-scroll">
+    <view class="notifications-nav">
+      <view class="notifications-back" bindtap="onBackTap">‹</view>
+      <view class="notifications-nav-copy">
+        <text class="notifications-nav-title">消息通知</text>
+        <text class="notifications-nav-subtitle">查看课程更新、训练营提醒与直播动态</text>
+      </view>
+    </view>
+
+    <view class="notifications-hero card-surface">
+      <text class="notifications-badge">消息中心</text>
+      <text class="notifications-title">最近消息</text>
+      <text class="notifications-desc">当前阶段以静态示例展示消息结构，后续会接入真实未读状态、分类筛选和服务通知能力。</text>
+    </view>
+
+    <view class="notifications-list">
+      <view wx:for="{{notifications}}" wx:key="id" class="notification-card card-surface">
+        <view class="notification-head">
+          <text class="notification-category">{{item.category}}</text>
+          <text class="notification-time">{{item.time}}</text>
+        </view>
+        <text class="notification-title">{{item.title}}</text>
+        <text class="notification-summary">{{item.summary}}</text>
+      </view>
+    </view>
+
+    <view class="notifications-section card-surface">
+      <text class="notifications-section-title">补充说明</text>
+      <view class="notifications-tip-list">
+        <view wx:for="{{tips}}" wx:key="*this" class="notifications-tip-item">
+          <text class="notifications-tip-dot"></text>
+          <text class="notifications-tip-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

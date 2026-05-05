@@ -9,7 +9,10 @@
     "pages/learning/learning",
     "pages/course-player/course-player",
     "pages/consultation/consultation",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/member-rights/member-rights",
+    "pages/notifications/notifications",
+    "pages/settings/settings"
   ],
   "window": {
     "navigationStyle": "custom",

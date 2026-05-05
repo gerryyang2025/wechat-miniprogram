@@ -1,0 +1,52 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="settings-scroll">
+    <view class="settings-nav">
+      <view class="settings-back" bindtap="onBackTap">‹</view>
+      <view class="settings-nav-copy">
+        <text class="settings-nav-title">系统设置</text>
+        <text class="settings-nav-subtitle">查看当前原型环境下的基础设置与账户说明</text>
+      </view>
+    </view>
+
+    <view class="settings-hero card-surface">
+      <text class="settings-badge">原型设置</text>
+      <text class="settings-title">基础体验偏好</text>
+      <text class="settings-desc">当前阶段以展示页面结构和交互节奏为主，后续再补齐真实账号、通知和隐私设置能力。</text>
+    </view>
+
+    <view class="settings-section card-surface">
+      <text class="settings-section-title">开关设置</text>
+      <view class="settings-switch-item">
+        <view class="settings-switch-copy">
+          <text class="settings-switch-title">首页 Banner 自动轮播</text>
+          <text class="settings-switch-desc">控制首页 Banner 是否自动切换。</text>
+        </view>
+        <switch color="#6172ff" checked="{{switches.autoplayBanner}}" data-key="autoplayBanner" bindchange="onSwitchChange"></switch>
+      </view>
+      <view class="settings-switch-item">
+        <view class="settings-switch-copy">
+          <text class="settings-switch-title">直播开始提醒</text>
+          <text class="settings-switch-desc">用于后续直播开播前提醒展示。</text>
+        </view>
+        <switch color="#6172ff" checked="{{switches.liveReminder}}" data-key="liveReminder" bindchange="onSwitchChange"></switch>
+      </view>
+      <view class="settings-switch-item">
+        <view class="settings-switch-copy">
+          <text class="settings-switch-title">直播回放更新提醒</text>
+          <text class="settings-switch-desc">用于后续回放开放后的提醒展示。</text>
+        </view>
+        <switch color="#6172ff" checked="{{switches.replayReminder}}" data-key="replayReminder" bindchange="onSwitchChange"></switch>
+      </view>
+    </view>
+
+    <view class="settings-section card-surface">
+      <text class="settings-section-title">账户信息</text>
+      <view class="settings-note-list">
+        <view wx:for="{{accountInfo}}" wx:key="*this" class="settings-note-item">
+          <text class="settings-note-dot"></text>
+          <text class="settings-note-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

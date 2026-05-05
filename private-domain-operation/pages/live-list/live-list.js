@@ -27,7 +27,8 @@ const liveList = [
     schedule: "回放已开放 · 90 分钟",
     audience: "已购课程用户可反复观看",
     summary: "整理直播中的高频问题，适合复盘内容节奏与用户转化。",
-    actionText: "查看回放"
+    note: "附重点片段与复盘建议",
+    actionText: "继续回看"
   },
   {
     id: "live-bootcamp-review",
@@ -37,6 +38,7 @@ const liveList = [
     schedule: "回放已开放 · 45 分钟",
     audience: "训练营成员专属回放",
     summary: "围绕朋友圈作业、训练营打卡和咨询转化做集中复盘。",
+    note: "附训练营作业点评摘要",
     actionText: "查看回放"
   }
 ];

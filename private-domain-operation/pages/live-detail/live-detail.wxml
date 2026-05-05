@@ -4,7 +4,7 @@
       <view class="live-detail-back" bindtap="onBackTap">‹</view>
       <view class="live-detail-nav-copy">
         <text class="live-detail-nav-title">直播详情</text>
-        <text class="live-detail-nav-subtitle">观看条件与直播看点</text>
+        <text class="live-detail-nav-subtitle">{{navSubtitle}}</text>
       </view>
     </view>
 
@@ -23,9 +23,13 @@
     </view>
 
     <view class="live-detail-section card-surface">
-      <text class="live-detail-section-title">准入说明</text>
+      <view class="live-detail-section-head">
+        <text class="live-detail-section-title">{{statusPanelTitle}}</text>
+        <text class="live-detail-section-note">{{statusPanelTag}}</text>
+      </view>
+      <text class="live-detail-status-summary">{{statusPanelSummary}}</text>
       <view class="bullet-list">
-        <view wx:for="{{live.accessRules}}" wx:key="*this" class="bullet-item">
+        <view wx:for="{{statusPanelItems}}" wx:key="*this" class="bullet-item">
           <text class="bullet-dot"></text>
           <text class="bullet-text">{{item}}</text>
         </view>
@@ -33,11 +37,27 @@
     </view>
 
     <view class="live-detail-section card-surface">
-      <text class="live-detail-section-title">本场看点</text>
+      <text class="live-detail-section-title">{{sectionHighlightTitle}}</text>
       <view class="bullet-list">
         <view wx:for="{{live.highlights}}" wx:key="*this" class="bullet-item">
           <text class="bullet-dot"></text>
           <text class="bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{isReplay && live.replayMoments.length}}" class="live-detail-section card-surface">
+      <view class="live-detail-section-head">
+        <text class="live-detail-section-title">推荐回看片段</text>
+        <text class="live-detail-section-note">适合按片段复盘</text>
+      </view>
+      <view class="replay-moment-list">
+        <view wx:for="{{live.replayMoments}}" wx:key="range" class="replay-moment-item">
+          <view class="replay-moment-range">{{item.range}}</view>
+          <view class="replay-moment-copy">
+            <text class="replay-moment-title">{{item.title}}</text>
+            <text class="replay-moment-desc">{{item.desc}}</text>
+          </view>
         </view>
       </view>
     </view>

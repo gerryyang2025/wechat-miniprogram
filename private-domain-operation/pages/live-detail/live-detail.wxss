@@ -103,6 +103,13 @@
   color: #606a8f;
 }
 
+.live-detail-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
 .live-detail-section {
   margin-top: 24rpx;
   padding: 28rpx;
@@ -113,6 +120,18 @@
   line-height: 1.35;
   font-weight: 800;
   color: #202742;
+}
+
+.live-detail-section-note {
+  font-size: 22rpx;
+  color: #8d96b7;
+}
+
+.live-detail-status-summary {
+  margin-top: 18rpx;
+  font-size: 24rpx;
+  line-height: 1.72;
+  color: #66719a;
 }
 
 .bullet-list {
@@ -138,6 +157,52 @@
 }
 
 .bullet-text {
+  font-size: 24rpx;
+  line-height: 1.72;
+  color: #66719a;
+}
+
+.replay-moment-list {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.replay-moment-item {
+  padding: 22rpx;
+  border-radius: 24rpx;
+  background: rgba(245, 248, 255, 0.92);
+  border: 1rpx solid rgba(224, 230, 250, 0.94);
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.replay-moment-range {
+  align-self: flex-start;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(92, 108, 255, 0.1);
+  color: #6172ff;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.replay-moment-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.replay-moment-title {
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #202742;
+  font-weight: 700;
+}
+
+.replay-moment-desc {
   font-size: 24rpx;
   line-height: 1.72;
   color: #66719a;

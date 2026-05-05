@@ -34,7 +34,7 @@
           <text class="learning-item-title">{{item.title}}</text>
           <text class="learning-progress">{{item.progress}}</text>
           <text class="learning-last">{{item.last}}</text>
-          <view class="learning-action" data-item-id="{{item.id}}" bindtap="onContinueTap">继续学习</view>
+          <view class="learning-action" data-item-id="{{item.id}}" bindtap="onContinueTap">{{item.actionLabel || '继续学习'}}</view>
         </view>
       </view>
     </view>

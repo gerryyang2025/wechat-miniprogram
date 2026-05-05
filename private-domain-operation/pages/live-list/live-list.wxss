@@ -120,6 +120,16 @@
   color: #7f89ab;
 }
 
+.live-note {
+  align-self: flex-start;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(93, 120, 255, 0.08);
+  color: #6073f5;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .live-title {
   font-size: 32rpx;
   line-height: 1.4;

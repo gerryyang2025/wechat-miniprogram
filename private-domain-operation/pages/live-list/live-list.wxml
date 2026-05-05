@@ -37,6 +37,7 @@
         <text class="live-meta">讲师 · {{item.speaker}}</text>
         <text class="live-audience">{{item.audience}}</text>
         <text class="live-summary">{{item.summary}}</text>
+        <text wx:if="{{item.note}}" class="live-note">{{item.note}}</text>
         <view class="live-list-card-foot">
           <text class="live-action">{{item.actionText}}</text>
         </view>
