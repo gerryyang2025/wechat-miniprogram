@@ -1,4 +1,5 @@
 const { clone } = require("./shared");
+const { getLearningCourseMeta } = require("./course-data");
 const {
   buildPageEntry,
   toContentOps,
@@ -165,7 +166,8 @@ const userManagementList = [
     name: "时昕同学",
     phone: "138 **** 8821",
     activeAt: "今天 09:20",
-    progress: "AIGC 视频制作 · 已学 2 / 6 节",
+    detailCourseId: "course-aigc-video",
+    progress: "AIGC 视频制作 · 已学 2 / 5 节",
     tags: ["课程学员", "高活跃"],
     typeKeys: ["active"]
   },
@@ -192,7 +194,8 @@ const userManagementList = [
     name: "训练营同学",
     phone: "150 **** 6628",
     activeAt: "05-04 16:05",
-    progress: "个人 IP 内容变现实战课 · 已学 4 / 12 节",
+    detailCourseId: "course-1",
+    progress: "个人 IP 内容变现实战课 · 已学 4 / 9 节",
     tags: ["课程学员", "训练营成员"],
     typeKeys: ["camp"]
   }
@@ -325,11 +328,16 @@ function getUserManagementPageData(activeTab = "all") {
       activeTab === "all"
         ? userManagementList
         : userManagementList.filter((item) => item.typeKeys.includes(activeTab))
-    ).map((item) => ({
-      ...item,
-      avatarText: item.name.slice(0, 1),
-      tapFeedback: `查看 ${item.name}`
-    }))
+    ).map((item) => {
+      const courseMeta = item.detailCourseId ? getLearningCourseMeta(item.detailCourseId) : null;
+
+      return {
+        ...item,
+        progress: courseMeta ? `${courseMeta.title} · ${courseMeta.progress}` : item.progress,
+        avatarText: item.name.slice(0, 1),
+        tapFeedback: `查看 ${item.name}`
+      };
+    })
   };
 }
 

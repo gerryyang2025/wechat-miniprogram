@@ -85,7 +85,7 @@
             <view
               wx:for="{{item.lessons}}"
               wx:key="id"
-              class="player-lesson-item player-lesson-item--{{item.renderedStatus}}"
+              class="player-lesson-item player-lesson-item--{{item.renderedStatus}} {{item.isSelected ? 'player-lesson-item--selected' : ''}}"
               data-lesson-id="{{item.id}}"
               data-lesson-status="{{item.status}}"
               bindtap="onLessonTap"

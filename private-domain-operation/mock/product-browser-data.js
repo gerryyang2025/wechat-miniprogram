@@ -1,4 +1,5 @@
 const { clone } = require("./shared");
+const { getDetailCourse } = require("./course-data");
 const {
   buildPageEntry,
   toBootcampDetail,
@@ -12,7 +13,7 @@ const productCategories = [
     label: "课程",
     title: "录播课程",
     desc: "围绕个人 IP、内容表达和私域转化的系统课程。",
-    badge: "12 节起",
+    badge: "4 节起",
     theme: "purple"
   },
   {
@@ -46,7 +47,7 @@ const productList = [
     type: "course",
     tag: "系列课",
     title: "个人 IP 内容变现实战课",
-    subtitle: "12 节课程 · 适合 0 到 1 搭建",
+    subtitle: "9 节课程 · 适合 0 到 1 搭建",
     summary: "定位、选题、内容承接和成交路径一次梳理。",
     price: "¥299",
     actionText: "查看详情",
@@ -57,7 +58,7 @@ const productList = [
     type: "course",
     tag: "视频课",
     title: "短视频表达与节奏训练",
-    subtitle: "8 节课程 · 口播拍摄训练",
+    subtitle: "4 节课程 · 口播拍摄训练",
     summary: "聚焦镜头状态、口播节奏和表达结构。",
     price: "会员可学",
     actionText: "查看详情",
@@ -68,7 +69,7 @@ const productList = [
     type: "course",
     tag: "图文课",
     title: "朋友圈内容转化模型",
-    subtitle: "6 节课程 · 图文成交训练",
+    subtitle: "4 节课程 · 图文成交训练",
     summary: "建立信任内容与转化内容的组合节奏。",
     price: "¥129",
     actionText: "查看详情",
@@ -99,7 +100,24 @@ const productList = [
 ];
 
 function getProductCategories() {
-  return clone(productCategories);
+  const minimumCourseLessonCount = productList
+    .filter((item) => item.type === "course")
+    .map((item) => {
+      const detailCourse = getDetailCourse(item.id);
+      const matched = String((detailCourse && detailCourse.meta) || "").match(/^(\d+)\s*节课程/);
+      return matched ? Number(matched[1]) : 0;
+    })
+    .filter(Boolean)
+    .reduce((minimum, count) => (minimum === 0 ? count : Math.min(minimum, count)), 0);
+
+  return clone(productCategories).map((item) =>
+    item.key === "course" && minimumCourseLessonCount
+      ? {
+          ...item,
+          badge: `${minimumCourseLessonCount} 节起`
+        }
+      : item
+  );
 }
 
 function getProductFilterTabs() {
@@ -107,7 +125,21 @@ function getProductFilterTabs() {
 }
 
 function getProductList() {
-  return clone(productList);
+  return clone(productList).map((item) => {
+    if (item.type !== "course") {
+      return item;
+    }
+
+    const detailCourse = getDetailCourse(item.id);
+
+    return detailCourse
+      ? {
+          ...item,
+          title: detailCourse.title,
+          subtitle: detailCourse.meta
+        }
+      : item;
+  });
 }
 
 function getFilteredProducts(activeType = "all") {

@@ -135,7 +135,7 @@ const detailCourseCatalog = {
     author: "Gerry",
     coverTheme: "cover-purple",
     coverHint: "定位 / 选题 / 成交路径",
-    meta: "12 节课程 · 适合 0 到 1 搭建",
+    meta: "9 节课程 · 适合 0 到 1 搭建",
     price: "¥299",
     access: "支持随时回看 · 课程持续更新",
     description:
@@ -149,8 +149,8 @@ const detailCourseCatalog = {
     progressSummary: {
       status: "已购课程",
       completedLessons: 4,
-      totalLessons: 12,
-      percent: 33,
+      totalLessons: 9,
+      percent: 44,
       completedDuration: "累计学习 96 分钟",
       currentLessonTitle: "最近学习：第 4 节 内容成交链路拆解",
       nextLessonTitle: "下一节：第 5 节 朋友圈内容节奏设计"
@@ -205,7 +205,7 @@ const detailCourseCatalog = {
     author: "Gerry",
     coverTheme: "cover-blue",
     coverHint: "口播结构 / 镜头状态 / 节奏感",
-    meta: "8 节课程 · 口播拍摄训练",
+    meta: "4 节课程 · 口播拍摄训练",
     price: "会员可学",
     access: "会员内容 · 支持手机反复练习",
     description:
@@ -253,7 +253,7 @@ const detailCourseCatalog = {
     author: "Gerry",
     coverTheme: "cover-indigo",
     coverHint: "内容铺垫 / 信任积累 / 转化动作",
-    meta: "6 节课程 · 图文成交训练",
+    meta: "4 节课程 · 图文成交训练",
     price: "¥129",
     access: "支持图文回看 · 适合日常运营复用",
     description:
@@ -304,8 +304,8 @@ const playerCourseCatalog = {
     outlineText: "当前课程主线已接入到课程播放页，视频资源仍在整理中，你可以先查看学习进度和课程目录，再从后续资源中继续学习。",
     progressSummary: {
       completedLessons: 4,
-      totalLessons: 12,
-      percent: 33,
+      totalLessons: 9,
+      percent: 44,
       lastPosition: "最近学习 第 4 节 内容成交链路拆解",
       currentLessonTitle: "当前课节：第 4 节 内容成交链路拆解",
       nextLessonTitle: "下一节：第 5 节 朋友圈内容节奏设计"
@@ -478,7 +478,7 @@ const COURSE_PROGRESS_STORAGE_KEY = "pdo_course_progress_v1";
 const defaultPlayerCourseProgressState = {
   "player-ip-course": {
     completedLessons: 4,
-    totalLessons: 12,
+    totalLessons: 9,
     completedDuration: "累计学习 96 分钟",
     lastPosition: "最近学习 第 4 节 内容成交链路拆解",
     currentLessonId: "player-ip-l4"
@@ -515,6 +515,42 @@ function flattenLessons(chapters = []) {
   });
 
   return lessons;
+}
+
+function getLessonIndexById(flatLessons = [], lessonId = "") {
+  return flatLessons.findIndex((lesson) => lesson.id === lessonId);
+}
+
+function getCourseLessonCount(chapters = []) {
+  return flattenLessons(chapters).length;
+}
+
+function buildCourseMeta(meta = "", lessonCount = 0) {
+  const normalizedMeta = String(meta || "").trim();
+
+  if (!lessonCount) {
+    return normalizedMeta;
+  }
+
+  const suffix = normalizedMeta.replace(/^\s*\d+\s*节课程\s*[·•]\s*/, "").trim();
+
+  return suffix ? `${lessonCount} 节课程 · ${suffix}` : `${lessonCount} 节课程`;
+}
+
+function normalizeProgressSummary(summary = null, totalLessons = 0) {
+  if (!summary) {
+    return summary;
+  }
+
+  const normalizedTotalLessons = totalLessons || summary.totalLessons || 0;
+  const completedLessons = Math.min(summary.completedLessons || 0, normalizedTotalLessons);
+
+  return {
+    ...summary,
+    completedLessons,
+    totalLessons: normalizedTotalLessons,
+    percent: buildProgressPercent(completedLessons, normalizedTotalLessons)
+  };
 }
 
 function canUseStorage() {
@@ -590,7 +626,7 @@ function buildHydratedProgressState() {
       ((flatLessons.find((lesson) => lesson.status !== "locked") || {}).id) ||
       "";
     const selectedLessonId = defaultLessonId;
-    const selectedIndex = flatLessons.findIndex((lesson) => lesson.id === selectedLessonId);
+    const selectedIndex = getLessonIndexById(flatLessons, selectedLessonId);
     const autoCompletedLessons = baseCourse.unlockStrategy === "sequential" && selectedIndex >= 0 ? selectedIndex + 1 : 0;
     const completedLessons = Math.min(
       flatLessons.length,
@@ -599,6 +635,18 @@ function buildHydratedProgressState() {
         autoCompletedLessons
       )
     );
+    const sequentialProgressIndex =
+      baseCourse.unlockStrategy === "sequential"
+        ? Math.max(selectedIndex, completedLessons > 0 ? completedLessons - 1 : -1)
+        : selectedIndex;
+    const progressLessonId =
+      sequentialProgressIndex >= 0 && flatLessons[sequentialProgressIndex]
+        ? flatLessons[sequentialProgressIndex].id
+        : selectedLessonId;
+    const progressLesson =
+      sequentialProgressIndex >= 0 && flatLessons[sequentialProgressIndex]
+        ? flatLessons[sequentialProgressIndex]
+        : null;
 
     nextState[courseId] = {
       completedLessons,
@@ -607,8 +655,8 @@ function buildHydratedProgressState() {
       lastPosition:
         persistedState.lastPosition ||
         fallbackState.lastPosition ||
-        (selectedIndex >= 0 ? `上次学到：${flatLessons[selectedIndex].title}` : ""),
-      currentLessonId: selectedIndex >= 0 ? flatLessons[selectedIndex].id : selectedLessonId
+        (progressLesson ? `上次学到：${progressLesson.title}` : ""),
+      currentLessonId: progressLessonId
     };
   });
 
@@ -816,16 +864,25 @@ function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
   };
 
   const selectedLesson = flatLessons[selectedIndex];
+  const currentIndex = getLessonIndexById(flatLessons, currentState.currentLessonId);
   const autoCompletedLessons = baseCourse.unlockStrategy === "sequential" ? selectedIndex + 1 : currentState.completedLessons || 0;
   const completedLessons = Math.max(currentState.completedLessons || 0, autoCompletedLessons);
+  const progressLessonIndex =
+    baseCourse.unlockStrategy === "sequential"
+      ? Math.max(currentIndex, selectedIndex, completedLessons > 0 ? completedLessons - 1 : -1)
+      : selectedIndex;
+  const progressLesson =
+    progressLessonIndex >= 0 && flatLessons[progressLessonIndex]
+      ? flatLessons[progressLessonIndex]
+      : selectedLesson;
 
   playerCourseProgressState[playerCourseId] = {
     ...currentState,
     totalLessons: currentState.totalLessons || flatLessons.length,
     completedLessons,
     completedDuration: buildCompletedDuration(flatLessons, completedLessons, currentState.completedDuration),
-    currentLessonId: lessonId,
-    lastPosition: `上次学到：${selectedLesson.title}`
+    currentLessonId: progressLesson ? progressLesson.id : lessonId,
+    lastPosition: progressLesson ? `上次学到：${progressLesson.title}` : `上次学到：${selectedLesson.title}`
   };
 
   persistPlayerCourseProgressState();
@@ -896,9 +953,13 @@ function getLockedLessonAction(course = {}) {
 function getDetailCourse(courseId = "course-1") {
   const baseCourse = detailCourseCatalog[courseId] || detailCourseCatalog["course-1"];
   const clonedCourse = clone(baseCourse);
+  const lessonCount = getCourseLessonCount(clonedCourse.chapters || []);
 
   const targetPlayerCourseId = clonedCourse.playerCourseId || clonedCourse.previewPlayerCourseId;
   const lockedLessonAction = getLockedLessonAction(clonedCourse);
+
+  clonedCourse.meta = buildCourseMeta(clonedCourse.meta, lessonCount);
+  clonedCourse.progressSummary = normalizeProgressSummary(clonedCourse.progressSummary, lessonCount);
 
   if (targetPlayerCourseId) {
     clonedCourse.chapters = buildRenderedChapters(

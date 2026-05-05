@@ -165,28 +165,16 @@ function getSelectableLesson(lessons = [], preferredLessonId = "") {
 }
 
 function buildRenderedChapters(chapters = [], selectedLessonId = "") {
-  const flatLessons = flattenLessons(chapters);
-  const selectedIndex = flatLessons.findIndex((lesson) => lesson.id === selectedLessonId);
-  let globalIndex = -1;
-
   return chapters.map((chapter) => ({
     ...chapter,
     lessons: (chapter.lessons || []).map((lesson) => {
-      globalIndex += 1;
-      let renderedStatus = lesson.status || "upcoming";
-
-      if (lesson.id === selectedLessonId) {
-        renderedStatus = "current";
-      } else if (selectedIndex > -1 && globalIndex < selectedIndex && lesson.status !== "locked") {
-        renderedStatus = "completed";
-      } else if (lesson.status === "current") {
-        renderedStatus = "upcoming";
-      }
+      const renderedStatus = lesson.status || "upcoming";
 
       return {
         ...lesson,
         renderedStatus,
-        stateLabel: getRenderedLessonStateLabel(renderedStatus)
+        stateLabel: getRenderedLessonStateLabel(renderedStatus),
+        isSelected: lesson.id === selectedLessonId
       };
     })
   }));
@@ -290,7 +278,7 @@ function buildCoursePlayerPageState(payload = {}, preferredLessonId = "", hasVid
         ...payload.progressSummary,
         currentLessonTitle: selectedLesson ? `本节：${selectedLesson.title}` : payload.progressSummary.currentLessonTitle,
         nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：当前目录已学完",
-        lastPosition: selectedLesson ? `上次学到：${selectedLesson.title}` : payload.progressSummary.lastPosition
+        lastPosition: payload.progressSummary.lastPosition
       }
     : null;
 

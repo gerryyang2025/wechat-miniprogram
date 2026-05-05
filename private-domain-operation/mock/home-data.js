@@ -1,5 +1,5 @@
 const { clone } = require("./shared");
-const { getLearningCourseMeta } = require("./course-data");
+const { getDetailCourse, getLearningCourseMeta } = require("./course-data");
 const {
   buildPageEntry,
   toBootcampDetail,
@@ -60,7 +60,7 @@ const homePageData = {
       tag: "视频课",
       title: "短视频表达与节奏训练",
       author: "Gerry",
-      meta: "8 节课程 · 口播拍摄训练",
+      meta: "4 节课程 · 口播拍摄训练",
       price: "会员可学",
       hint: "口播结构 / 镜头状态 / 节奏感"
     },
@@ -70,7 +70,7 @@ const homePageData = {
       tag: "图文课",
       title: "朋友圈内容转化模型",
       author: "Gerry",
-      meta: "6 节课程 · 图文成交训练",
+      meta: "4 节课程 · 图文成交训练",
       price: "¥129",
       hint: "内容铺垫 / 信任积累 / 转化动作"
     }
@@ -191,10 +191,15 @@ function getHomePageData() {
     liveCenterEntry: buildPageEntry(toLiveList()),
     bannerResumeDelay: HOME_BANNER_RESUME_DELAY,
     purchasedCourses,
-    recommendedCourses: clone(homePageData.recommendedCourses).map((item) => ({
-      ...item,
-      entry: buildPageEntry(toProductDetail(item.id))
-    })),
+    recommendedCourses: clone(homePageData.recommendedCourses).map((item) => {
+      const detailCourse = getDetailCourse(item.id);
+
+      return {
+        ...item,
+        meta: detailCourse ? detailCourse.meta : item.meta,
+        entry: buildPageEntry(toProductDetail(item.id))
+      };
+    }),
     featureCards: clone(homePageData.featureCards).map((item) => ({
       ...item,
       entry:
