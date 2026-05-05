@@ -27,7 +27,7 @@
 - 页面结构与跳转关系：见 [IA_PAGES.md](./IA_PAGES.md)
 - 前端技术栈与实现约束：见 [FRONTEND_TECH.md](./FRONTEND_TECH.md)
 - 缩写、英文术语和专有名词解释：见 [GLOSSARY.md](./GLOSSARY.md)
-- 原型图文件存放目录：见 [prototype-images/nano-banana/README.md](./prototype-images/nano-banana/README.md)
+- 原型图文件存放目录：见 [prototype-images/nano-banana/README.md](../prototype-images/nano-banana/README.md)
 
 ## 2. Nano Banana 出图统一规则
 
@@ -80,7 +80,7 @@
 
 - 风格：`中高保真产品交互图`
 - 平台感：明显符合 `微信小程序`
-- 当前风格基准：优先参考 `prototype-images/original/demo1.jpg`
+- 当前风格基准：优先参考 `../prototype-images/original/demo1.jpg`
 - 气质：专业、明亮、可信，带轻科技感和内容学习平台感
 - 页面整体结构：顶部大面积蓝紫渐变氛围区，主体内容区以白色或极浅冷灰色为主
 - 背景主色：蓝紫、靛蓝、亮蓝、少量青蓝高光
@@ -121,7 +121,7 @@
 
 为方便原型阶段快速推进，当前建议按下面顺序使用 `Nano Banana AI` 生成页面提示词。
 
-对应保存目录与文件命名规则见 [prototype-images/nano-banana/README.md](./prototype-images/nano-banana/README.md)。
+对应保存目录与文件命名规则见 [prototype-images/nano-banana/README.md](../prototype-images/nano-banana/README.md)。
 
 第一优先级：先跑通用户主路径
 

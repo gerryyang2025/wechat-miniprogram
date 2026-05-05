@@ -6,7 +6,7 @@
 
 关联文档：
 
-- [README.md](./README.md)
+- [README.md](../README.md)
 - [MVP_FEATURES.md](./MVP_FEATURES.md)
 - [IA_PAGES.md](./IA_PAGES.md)
 - [FRONTEND_TECH.md](./FRONTEND_TECH.md)
@@ -96,9 +96,9 @@
 ### 4.2 数据层
 
 - `部分完成` 页面本地静态数据
-  - 首页数据已内置在 [pages/home/home.js](./pages/home/home.js)
-  - 学习页数据已内置在 [pages/learning/learning.js](./pages/learning/learning.js)
-  - 我的页数据已内置在 [pages/profile/profile.js](./pages/profile/profile.js)
+  - 首页数据已内置在 [pages/home/home.js](../pages/home/home.js)
+  - 学习页数据已内置在 [pages/learning/learning.js](../pages/learning/learning.js)
+  - 我的页数据已内置在 [pages/profile/profile.js](../pages/profile/profile.js)
 - `部分完成` 当前还没有统一的 Mock 数据目录
 - `部分完成` 课程播放视频资源获取方案已经明确
   - 一期建议使用 `讲师自制短视频 / 本地视频迁移 / 直播录制回放`

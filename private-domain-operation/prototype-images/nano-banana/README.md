@@ -8,7 +8,7 @@
 
 - 所有原型图统一存放在 `prototype-images/nano-banana/`
 - 按页面类型分目录保存，不要把用户端、基础服务页、商家工作台页面混放
-- 文件名前缀使用两位序号，并与 [PROTOTYPE_PROMPTS.md](../../PROTOTYPE_PROMPTS.md) 中的推荐出图顺序保持一致
+- 文件名前缀使用两位序号，并与 [PROTOTYPE_PROMPTS.md](../../docs/PROTOTYPE_PROMPTS.md) 中的推荐出图顺序保持一致
 - 文件名使用英文短横线命名，避免空格、中文和特殊字符
 - 初次生成建议先存 `v1` 版本，精修后再追加 `v2`、`v3` 或 `final`
 - 每张页面图只保存单页，不保存多页面拼图
@@ -58,7 +58,7 @@
 
 ## 4. 与提示词文档对应关系
 
-以下命名与 [PROTOTYPE_PROMPTS.md](../../PROTOTYPE_PROMPTS.md) 中的页面提示词一一对应。
+以下命名与 [PROTOTYPE_PROMPTS.md](../../docs/PROTOTYPE_PROMPTS.md) 中的页面提示词一一对应。
 
 | 优先级序号 | 提示词章节 | 页面名称 | 保存目录 | 建议文件名 |
 | --- | --- | --- | --- | --- |
@@ -81,6 +81,6 @@
 
 ## 5. 使用说明
 
-- 输出图统一使用 [PROTOTYPE_PROMPTS.md](../../PROTOTYPE_PROMPTS.md) 中的参数要求
+- 输出图统一使用 [PROTOTYPE_PROMPTS.md](../../docs/PROTOTYPE_PROMPTS.md) 中的参数要求
 - 如需保留多轮版本，建议追加版本后缀，如 `01-home-v1.png`、`01-home-v2.png`
 - 如需保留精修稿，可增加 `-final` 后缀，如 `01-home-final.png`

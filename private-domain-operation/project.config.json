@@ -60,6 +60,10 @@
         "type": "folder"
       },
       {
+        "value": "docs",
+        "type": "folder"
+      },
+      {
         "value": "project.private.config.json",
         "type": "file"
       },

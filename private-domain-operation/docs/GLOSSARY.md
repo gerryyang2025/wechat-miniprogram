@@ -6,7 +6,7 @@
 
 关联文档：
 
-- [README.md](./README.md)
+- [README.md](../README.md)
 - [DESIGN.md](./DESIGN.md)
 - [CORE_REQUIREMENTS.md](./CORE_REQUIREMENTS.md)
 - [MVP_FEATURES.md](./MVP_FEATURES.md)

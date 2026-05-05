@@ -1,6 +1,6 @@
 # private-domain-operation
 
-面向 `个人 IP（Personal Brand Identity）` 打造、知识付费、私域运营管理与内容变现的微信小程序产品方案文档集合。
+这是一个面向 `个人 IP（Personal Brand）`、课程交付、直播互动与私域运营的微信小程序原型项目，包含当前可运行的前端原型实现以及配套的产品、技术和实现文档。
 
 当前阶段以 `微信小程序` 为一期实现平台，目标是帮助讲师、教培机构、品牌主理人和内容创业者在微信生态内完成：
 
@@ -50,7 +50,12 @@
 - 已完成 `首页 / 学习 / 课程播放 / 我的` 四个用户端原型页
 - 已接入两门可播放示例课程：`AIGC 视频制作`、`微信小游戏开发`
 - 首页 `Banner` 自动轮播、已购课程摘要和学习页继续学习主路径已可直接体验
-- 更细的实现状态与下一步计划见 [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md)
+- 更细的实现状态与下一步计划见 [IMPLEMENTATION_TRACKER.md](./docs/IMPLEMENTATION_TRACKER.md)
+
+文档目录约定：
+
+- 项目根目录只保留当前入口 [README.md](./README.md)
+- 其余主设计、需求、技术与跟踪文档统一收纳在 [`docs/`](./docs/)
 
 后期规划：
 
@@ -63,32 +68,32 @@
 
 - [README.md](./README.md)
   - 顶层入口文档，说明系统定位、主要功能、技术栈和文档结构
-- [DESIGN.md](./DESIGN.md)
+- [DESIGN.md](./docs/DESIGN.md)
   - 产品总设计文档，记录产品定位、能力架构、平台策略与演进方向
-- [CORE_REQUIREMENTS.md](./CORE_REQUIREMENTS.md)
+- [CORE_REQUIREMENTS.md](./docs/CORE_REQUIREMENTS.md)
   - 产品核心需求文档，记录当前最明确的业务诉求与平台边界
-- [MVP_FEATURES.md](./MVP_FEATURES.md)
+- [MVP_FEATURES.md](./docs/MVP_FEATURES.md)
   - 一期 `MVP（Minimum Viable Product）` 功能范围、优先级与验收清单
-- [IA_PAGES.md](./IA_PAGES.md)
+- [IA_PAGES.md](./docs/IA_PAGES.md)
   - 页面 `IA（Information Architecture）` 文档，记录页面结构图、页面清单与跳转关系
-- [PROTOTYPE_PROMPTS.md](./PROTOTYPE_PROMPTS.md)
+- [PROTOTYPE_PROMPTS.md](./docs/PROTOTYPE_PROMPTS.md)
   - 页面原型提示词文档，记录使用 `Nano Banana AI` 生成交互图的页面提示词
-- [FRONTEND_TECH.md](./FRONTEND_TECH.md)
+- [FRONTEND_TECH.md](./docs/FRONTEND_TECH.md)
   - 前端技术方案文档，记录微信小程序前端技术栈与实现约束
-- [BACKEND_TECH.md](./BACKEND_TECH.md)
+- [BACKEND_TECH.md](./docs/BACKEND_TECH.md)
   - 后端技术方案文档，记录后端架构、数据库、存储与事务设计
-- [REFERENCE.md](./REFERENCE.md)
+- [REFERENCE.md](./docs/REFERENCE.md)
   - GitHub 开源项目参考文档，记录相似项目排名、借鉴方向与实现参考价值
-- [GLOSSARY.md](./GLOSSARY.md)
+- [GLOSSARY.md](./docs/GLOSSARY.md)
   - 术语与缩写表，统一解释 `MVP`、`SCRM`、`CTA`、`SDK`、`API` 等容易歧义的术语
-- [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md)
+- [IMPLEMENTATION_TRACKER.md](./docs/IMPLEMENTATION_TRACKER.md)
   - 实现跟踪文档，记录当前已完成功能、待实现功能与下一步修改计划
 
 ## 术语说明
 
 为避免歧义，文档中的缩写、专有名词和英文术语统一维护在：
 
-- [GLOSSARY.md](./GLOSSARY.md)
+- [GLOSSARY.md](./docs/GLOSSARY.md)
 
 ## 当前建议的研发路线
 
