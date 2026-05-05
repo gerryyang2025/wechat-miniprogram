@@ -1,4 +1,9 @@
 const { clone } = require("./shared");
+const {
+  buildPageEntry,
+  toConsultation,
+  toProductList
+} = require("../utils/navigation");
 
 const memberRightsBaseData = {
   navSubtitle: "查看当前阶段开放的会员内容与说明",
@@ -123,10 +128,14 @@ const consultationSceneMap = {
 };
 
 function getMemberRightsPageData(source = "") {
-  return {
+  const pageData = {
     ...clone(memberRightsBaseData),
-    ...(clone(memberRightsSourceOverrides[source] || {}))
+    ...(clone(memberRightsSourceOverrides[source] || {})),
+    primaryEntry: buildPageEntry(toProductList("member")),
+    secondaryEntry: buildPageEntry(toConsultation("member", "年度会员计划"))
   };
+
+  return pageData;
 }
 
 function getNotificationsPageData() {
@@ -163,9 +172,36 @@ function getConsultationPageData(scene = "profile", title = "") {
   };
 }
 
+function normalizeConsultationDraft(value = "") {
+  return String(value || "").slice(0, 300);
+}
+
+function appendConsultationDraft(currentDraft = "", question = "") {
+  const nextQuestion = String(question || "").trim();
+  const nextDraft = String(currentDraft || "").trim();
+
+  if (!nextQuestion) {
+    return normalizeConsultationDraft(nextDraft);
+  }
+
+  return normalizeConsultationDraft(nextDraft ? `${nextDraft}\n${nextQuestion}` : nextQuestion);
+}
+
+function getConsultationSubmitFeedback(scene = "profile", title = "") {
+  const pageData = getConsultationPageData(scene, title);
+
+  return {
+    title: pageData.submitTitle,
+    desc: pageData.submitDesc
+  };
+}
+
 module.exports = {
+  appendConsultationDraft,
+  getConsultationSubmitFeedback,
   getMemberRightsPageData,
   getNotificationsPageData,
   getSettingsPageData,
-  getConsultationPageData
+  getConsultationPageData,
+  normalizeConsultationDraft
 };

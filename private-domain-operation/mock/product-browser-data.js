@@ -1,4 +1,10 @@
 const { clone } = require("./shared");
+const {
+  buildPageEntry,
+  toBootcampDetail,
+  toMemberRights,
+  toProductDetail
+} = require("../utils/navigation");
 
 const productCategories = [
   {
@@ -112,9 +118,42 @@ function getFilteredProducts(activeType = "all") {
   return clone(productList.filter((item) => item.type === activeType));
 }
 
+function buildProductEntry(productId = "", productType = "") {
+  if (productType === "course") {
+    return buildPageEntry(toProductDetail(productId));
+  }
+
+  if (productType === "camp") {
+    return buildPageEntry(toBootcampDetail(productId));
+  }
+
+  if (productType === "member") {
+    return buildPageEntry(toMemberRights());
+  }
+
+  return null;
+}
+
+function getProductListPageData(activeType = "all") {
+  return {
+    filterTabs: getProductFilterTabs(),
+    activeTab: activeType || "all",
+    emptyHint:
+      activeType && activeType !== "all"
+        ? "当前分类下暂时只展示最小商品示例，后续会继续补充。"
+        : "当前先展示课程、训练营和会员的最小商品示例。",
+    productList: getFilteredProducts(activeType).map((item) => ({
+      ...item,
+      entry: buildProductEntry(item.id, item.type)
+    }))
+  };
+}
+
 module.exports = {
+  buildProductEntry,
   getProductCategories,
   getProductFilterTabs,
   getProductList,
-  getFilteredProducts
+  getFilteredProducts,
+  getProductListPageData
 };

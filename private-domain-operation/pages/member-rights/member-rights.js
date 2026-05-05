@@ -1,10 +1,14 @@
 const { getMemberRightsPageData } = require("../../mock/service-data");
+const {
+  openPageEntry,
+  parseMemberRightsOptions,
+} = require("../../utils/navigation");
 
 Page({
   data: getMemberRightsPageData(),
 
   onLoad(options = {}) {
-    const source = decodeURIComponent(options.source || "");
+    const { source } = parseMemberRightsOptions(options);
     this.setData(getMemberRightsPageData(source));
   },
 
@@ -15,14 +19,10 @@ Page({
   },
 
   onPrimaryTap() {
-    wx.navigateTo({
-      url: "/pages/product-list/product-list?category=member"
-    });
+    openPageEntry(this.data.primaryEntry, "查看会员内容");
   },
 
   onSecondaryTap() {
-    wx.navigateTo({
-      url: `/pages/consultation/consultation?scene=member&title=${encodeURIComponent("年度会员计划")}`
-    });
+    openPageEntry(this.data.secondaryEntry, "咨询会员");
   }
 });

@@ -1,15 +1,17 @@
-const { getBootcamp } = require("../../mock/bootcamp-data");
+const {
+  getBootcampDetailPageData,
+  getBootcampActionMessage
+} = require("../../mock/bootcamp-data");
+const { parseBootcampDetailOptions } = require("../../utils/navigation");
 
 Page({
-  data: {
-    bootcamp: getBootcamp("camp-7day-growth")
-  },
+  data: getBootcampDetailPageData("camp-7day-growth"),
 
   onLoad(options = {}) {
-    const campId = decodeURIComponent(options.campId || "camp-7day-growth");
+    const { campId } = parseBootcampDetailOptions(options);
 
     this.setData({
-      bootcamp: getBootcamp(campId)
+      ...getBootcampDetailPageData(campId)
     });
   },
 
@@ -21,14 +23,14 @@ Page({
 
   onCheckInTap() {
     wx.showToast({
-      title: "打卡功能后续接入",
+      title: getBootcampActionMessage("checkin"),
       icon: "none"
     });
   },
 
   onNoticeTap() {
     wx.showToast({
-      title: "公告详情后续接入",
+      title: getBootcampActionMessage("notice"),
       icon: "none"
     });
   }

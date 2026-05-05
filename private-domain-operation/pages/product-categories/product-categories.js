@@ -1,4 +1,5 @@
 const { getProductCategories } = require("../../mock/product-browser-data");
+const { toProductList } = require("../../utils/navigation");
 
 Page({
   data: {
@@ -15,13 +16,13 @@ Page({
     const { categoryKey } = event.currentTarget.dataset;
 
     wx.navigateTo({
-      url: `/pages/product-list/product-list?category=${encodeURIComponent(categoryKey)}`
+      url: toProductList(categoryKey)
     });
   },
 
   onOpenAllTap() {
     wx.navigateTo({
-      url: "/pages/product-list/product-list?category=all"
+      url: toProductList("all")
     });
   }
 });

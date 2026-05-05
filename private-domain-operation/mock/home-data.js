@@ -1,5 +1,17 @@
 const { clone } = require("./shared");
 const { getLearningCourseMeta } = require("./course-data");
+const {
+  buildPageEntry,
+  toBootcampDetail,
+  toCoursePlayer,
+  toLearning,
+  toLiveDetail,
+  toLiveList,
+  toMemberRights,
+  toProductCategories,
+  toProductDetail,
+  toProductList
+} = require("../utils/navigation");
 
 const purchasedCourseConfig = [
   {
@@ -115,6 +127,8 @@ const homePrimaryLiveEntry = {
   mode: "upcoming"
 };
 
+const HOME_BANNER_RESUME_DELAY = 160;
+
 function compactOwnedSummary(text = "") {
   return text
     .replace(/^最近学习：/, "")
@@ -162,6 +176,7 @@ function getHomePageData() {
   const purchasedCourses = purchasedCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
     const recentLesson = buildOwnedRecentLesson(courseMeta.last);
+    const playerCourseId = getOwnedCoursePlayerCourseId(item.id);
 
     return {
       id: item.id,
@@ -172,7 +187,10 @@ function getHomePageData() {
       recentLessonIndex: recentLesson.recentLessonIndex,
       action: item.action,
       theme: item.theme,
-      monogram: item.monogram
+      monogram: item.monogram,
+      entry: playerCourseId
+        ? buildPageEntry(toCoursePlayer(playerCourseId))
+        : buildPageEntry(toLearning(), "reLaunch")
     };
   });
 
@@ -180,9 +198,27 @@ function getHomePageData() {
     currentBannerIndex: homePageData.currentBannerIndex,
     bannerAutoplay: homePageData.bannerAutoplay,
     bannerList: clone(homePageData.bannerList),
+    searchEntry: buildPageEntry(toProductList("all")),
+    categoriesEntry: buildPageEntry(toProductCategories()),
+    ownedAllEntry: buildPageEntry(toLearning(), "reLaunch"),
+    liveCenterEntry: buildPageEntry(toLiveList()),
+    bannerResumeDelay: HOME_BANNER_RESUME_DELAY,
     purchasedCourses,
-    recommendedCourses: clone(homePageData.recommendedCourses),
-    featureCards: clone(homePageData.featureCards)
+    recommendedCourses: clone(homePageData.recommendedCourses).map((item) => ({
+      ...item,
+      entry: buildPageEntry(toProductDetail(item.id))
+    })),
+    featureCards: clone(homePageData.featureCards).map((item) => ({
+      ...item,
+      entry:
+        item.type === "camp"
+          ? buildPageEntry(toBootcampDetail("camp-7day-growth"))
+          : item.type === "live"
+            ? buildPageEntry(toLiveDetail(homePrimaryLiveEntry.liveId, homePrimaryLiveEntry.mode))
+            : item.type === "member"
+              ? buildPageEntry(toMemberRights("home"))
+              : null
+    }))
   };
 }
 
@@ -190,12 +226,41 @@ function getOwnedCoursePlayerCourseId(ownedId = "") {
   return ownedCoursePlayerCourseMap[ownedId] || "";
 }
 
-function getHomePrimaryLiveEntry() {
-  return clone(homePrimaryLiveEntry);
+function getHomeOwnedEntry(ownedId = "") {
+  const pageData = getHomePageData();
+  const targetItem = pageData.purchasedCourses.find((item) => item.id === ownedId);
+  return targetItem ? clone(targetItem.entry) : buildPageEntry(toLearning(), "reLaunch");
+}
+
+function getHomeRecommendedEntry(courseId = "") {
+  const pageData = getHomePageData();
+  const targetItem = pageData.recommendedCourses.find((item) => item.id === courseId);
+  return targetItem ? clone(targetItem.entry) : null;
+}
+
+function getHomeFeatureEntry(featureType = "") {
+  const pageData = getHomePageData();
+  const targetItem = pageData.featureCards.find((item) => item.type === featureType);
+  return targetItem ? clone(targetItem.entry) : null;
+}
+
+function getHomePageMeta() {
+  const pageData = getHomePageData();
+
+  return {
+    searchEntry: clone(pageData.searchEntry),
+    categoriesEntry: clone(pageData.categoriesEntry),
+    ownedAllEntry: clone(pageData.ownedAllEntry),
+    liveCenterEntry: clone(pageData.liveCenterEntry),
+    bannerResumeDelay: HOME_BANNER_RESUME_DELAY
+  };
 }
 
 module.exports = {
+  HOME_BANNER_RESUME_DELAY,
+  getHomeFeatureEntry,
   getHomePageData,
-  getOwnedCoursePlayerCourseId,
-  getHomePrimaryLiveEntry
+  getHomePageMeta,
+  getHomeOwnedEntry,
+  getHomeRecommendedEntry
 };

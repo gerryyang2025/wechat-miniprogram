@@ -1,11 +1,8 @@
-const { getLiveListTabs, getLiveList } = require("../../mock/live-data");
+const { getLiveListPageData } = require("../../mock/live-data");
+const { openPageEntry } = require("../../utils/navigation");
 
 Page({
-  data: {
-    filterTabs: getLiveListTabs(),
-    activeTab: "all",
-    liveList: getLiveList("all")
-  },
+  data: getLiveListPageData("all"),
 
   onBackTap() {
     wx.navigateBack({
@@ -15,21 +12,12 @@ Page({
 
   onFilterTap(event) {
     const { tabKey } = event.currentTarget.dataset;
-
-    this.setData({
-      activeTab: tabKey,
-      liveList: getLiveList(tabKey)
-    });
+    this.setData(getLiveListPageData(tabKey));
   },
 
   onLiveTap(event) {
     const { liveId, status } = event.currentTarget.dataset;
-    const mode = status === "replay" ? "replay" : status === "live" ? "live" : "upcoming";
-
-    wx.navigateTo({
-      url:
-        `/pages/live-detail/live-detail?liveId=${encodeURIComponent(liveId)}` +
-        `&mode=${encodeURIComponent(mode)}`
-    });
+    const targetItem = this.data.liveList.find((item) => item.id === liveId && item.status === status);
+    openPageEntry(targetItem ? targetItem.entry : null, "查看详情");
   }
 });

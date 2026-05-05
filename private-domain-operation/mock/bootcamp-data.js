@@ -60,6 +60,24 @@ function getBootcamp(campId = "camp-7day-growth") {
   return clone(bootcampCatalog[campId] || bootcampCatalog["camp-7day-growth"]);
 }
 
+function getBootcampDetailPageData(campId = "camp-7day-growth") {
+  return {
+    bootcamp: getBootcamp(campId),
+    checkInActionText: "打卡功能后续接入",
+    noticeActionText: "公告详情后续接入"
+  };
+}
+
+function getBootcampActionMessage(actionKey = "") {
+  if (actionKey === "notice") {
+    return "公告详情后续接入";
+  }
+
+  return "打卡功能后续接入";
+}
+
 module.exports = {
-  getBootcamp
+  getBootcamp,
+  getBootcampDetailPageData,
+  getBootcampActionMessage
 };

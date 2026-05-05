@@ -5,6 +5,13 @@ const {
   ensureAlbumPermission,
   saveImageToAlbum
 } = require("../../utils/poster");
+const {
+  parseProductDetailOptions,
+  toCoursePlayer,
+  toMemberRights,
+  toLearning,
+  toConsultation
+} = require("../../utils/navigation");
 
 Page({
   data: {
@@ -13,7 +20,7 @@ Page({
   },
 
   onLoad(options = {}) {
-    const courseId = decodeURIComponent(options.courseId || "course-1");
+    const { courseId } = parseProductDetailOptions(options);
     this.currentCourseId = courseId;
     const product = getDetailCourse(courseId);
 
@@ -43,28 +50,28 @@ Page({
 
     if (product.primaryActionType === "player" && product.primaryActionTarget) {
       wx.navigateTo({
-        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(product.primaryActionTarget)}`
+        url: toCoursePlayer(product.primaryActionTarget)
       });
       return;
     }
 
     if (product.primaryActionType === "preview" && product.primaryActionTarget) {
       wx.navigateTo({
-        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(product.primaryActionTarget)}`
+        url: toCoursePlayer(product.primaryActionTarget)
       });
       return;
     }
 
     if (product.primaryActionType === "member_rights") {
       wx.navigateTo({
-        url: "/pages/member-rights/member-rights?source=course"
+        url: toMemberRights("course")
       });
       return;
     }
 
     if (product.primaryActionType === "learning") {
       wx.reLaunch({
-        url: "/pages/learning/learning"
+        url: toLearning()
       });
       return;
     }
@@ -77,9 +84,7 @@ Page({
 
   onSecondaryTap() {
     wx.navigateTo({
-      url:
-        `/pages/consultation/consultation?scene=course` +
-        `&title=${encodeURIComponent(this.data.product.title)}`
+      url: toConsultation("course", this.data.product.title)
     });
   },
 
@@ -88,16 +93,14 @@ Page({
 
     if (product.lockedAction === "member") {
       wx.navigateTo({
-        url: "/pages/member-rights/member-rights?source=course"
+        url: toMemberRights("course")
       });
       return;
     }
 
     if (product.lockedAction === "consultation") {
       wx.navigateTo({
-        url:
-          `/pages/consultation/consultation?scene=course` +
-          `&title=${encodeURIComponent(product.title)}`
+        url: toConsultation("course", product.title)
       });
       return;
     }
@@ -127,9 +130,7 @@ Page({
     }
 
     wx.navigateTo({
-      url:
-        `/pages/course-player/course-player?courseId=${encodeURIComponent(targetPlayerCourseId)}` +
-        `&lessonId=${encodeURIComponent(playerLessonId)}`
+      url: toCoursePlayer(targetPlayerCourseId, playerLessonId)
     });
   },
 

@@ -1,19 +1,16 @@
-const { getConsultationPageData } = require("../../mock/service-data");
-
-function decodeValue(value = "") {
-  try {
-    return decodeURIComponent(value);
-  } catch (error) {
-    return value;
-  }
-}
+const {
+  appendConsultationDraft,
+  getConsultationPageData,
+  getConsultationSubmitFeedback,
+  normalizeConsultationDraft
+} = require("../../mock/service-data");
+const { parseConsultationOptions } = require("../../utils/navigation");
 
 Page({
   data: getConsultationPageData(),
 
   onLoad(options = {}) {
-    const scene = decodeValue(options.scene || "profile");
-    const targetTitle = decodeValue(options.title);
+    const { scene, title: targetTitle } = parseConsultationOptions(options);
 
     this.setData(getConsultationPageData(scene, targetTitle));
   },
@@ -26,22 +23,23 @@ Page({
 
   onQuickQuestionTap(event) {
     const { question } = event.currentTarget.dataset;
-    const { draftMessage } = this.data;
 
     this.setData({
-      draftMessage: draftMessage ? `${draftMessage}\n${question}` : question
+      draftMessage: appendConsultationDraft(this.data.draftMessage, question)
     });
   },
 
   onInputChange(event) {
     this.setData({
-      draftMessage: event.detail.value
+      draftMessage: normalizeConsultationDraft(event.detail.value)
     });
   },
 
   onSubmitTap() {
+    const feedback = getConsultationSubmitFeedback(this.data.scene, this.data.targetTitle);
+
     wx.showToast({
-      title: this.data.submitTitle,
+      title: feedback.title,
       icon: "none"
     });
   }

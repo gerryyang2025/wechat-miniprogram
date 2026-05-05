@@ -1,4 +1,5 @@
 const { clone } = require("./shared");
+const { getCourseMedia } = require("./media-data");
 
 const detailCourseCatalog = {
   "course-aigc-video": {
@@ -291,10 +292,7 @@ const playerCourseCatalog = {
     unlockStrategy: "sequential",
     lockedAction: "progress",
     title: "个人 IP 内容变现实战课",
-    coverUrl: "/assets/home/banner1.jpg",
-    duration: "内容更新中",
-    sourceLabel: "系列课",
-    videoUrl: "",
+    ...getCourseMedia("player-ip-course"),
     description: "聚焦个人 IP 的定位、选题、内容成交链路和私域承接节奏，帮助你建立系统的内容变现路径。",
     outlineText: "当前课程主线已接入到课程播放页，视频资源仍在整理中，你可以先查看学习进度和课程目录，再从后续资源中继续学习。",
     progressSummary: {
@@ -341,10 +339,7 @@ const playerCourseCatalog = {
     unlockStrategy: "sequential",
     lockedAction: "progress",
     title: "AIGC 视频制作",
-    coverUrl: "/assets/home/banner1.jpg",
-    duration: "03:22",
-    sourceLabel: "录播课程",
-    videoUrl: "http://106.55.160.81:8080/brad_pitt_vs_tom_cruise_1773333936.mp4",
+    ...getCourseMedia("player-aigc-video"),
     description: "聚焦 AIGC 视频创作流程，从脚本构思、口播表达，到成片剪辑与发布节奏。",
     outlineText: "本节内容将快速带你了解 AIGC 视频制作的基础链路，包括选题、脚本组织、画面表达和成片发布。",
     progressSummary: {
@@ -381,10 +376,7 @@ const playerCourseCatalog = {
     unlockStrategy: "sequential",
     lockedAction: "progress",
     title: "微信小游戏开发",
-    coverUrl: "/assets/home/banner2.jpg",
-    duration: "项目演示",
-    sourceLabel: "项目实战",
-    videoUrl: "http://106.55.160.81:8080/wechat-plane-game.mov",
+    ...getCourseMedia("player-wechat-game"),
     description: "围绕微信小游戏实战，讲解项目结构、交互循环、资源组织与真机调试流程。",
     outlineText: "本节内容聚焦飞机大战小游戏示例，重点说明场景搭建、角色移动、碰撞检测、资源管理与发布调试。",
     progressSummary: {
@@ -421,10 +413,7 @@ const playerCourseCatalog = {
     previewLimit: 2,
     lockedAction: "member",
     title: "短视频表达与节奏训练",
-    coverUrl: "/assets/home/banner1.jpg",
-    duration: "试看内容",
-    sourceLabel: "会员试看",
-    videoUrl: "",
+    ...getCourseMedia("player-short-video"),
     description: "这是一组用于展示短视频表达训练结构的试看内容，帮助你先理解课程模块和训练节奏。",
     outlineText: "当前为试看内容示例，你可以查看课程结构、课节状态和推荐学习路径，正式内容与会员权益后续接入。",
     chapters: [
@@ -453,10 +442,7 @@ const playerCourseCatalog = {
     previewLimit: 2,
     lockedAction: "consultation",
     title: "朋友圈内容转化模型",
-    coverUrl: "/assets/home/banner2.jpg",
-    duration: "图文试看",
-    sourceLabel: "图文内容",
-    videoUrl: "",
+    ...getCourseMedia("player-circle-conversion"),
     description: "这是一组用于展示朋友圈内容转化结构的图文课程示例，帮助你先理解信任内容和转化动作的编排方式。",
     outlineText: "当前为图文课程原型示例，你可以查看目录、课节状态和内容结构，正式图文内容后续接入。",
     chapters: [

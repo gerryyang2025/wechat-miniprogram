@@ -1,4 +1,7 @@
-const { getContentOpsPageData } = require("../../mock/merchant-data");
+const {
+  getContentOpsActionFeedback,
+  getContentOpsPageData
+} = require("../../mock/merchant-data");
 
 Page({
   data: getContentOpsPageData(),
@@ -13,7 +16,7 @@ Page({
     const { label } = event.currentTarget.dataset;
 
     wx.showToast({
-      title: label,
+      title: getContentOpsActionFeedback(label),
       icon: "none"
     });
   }

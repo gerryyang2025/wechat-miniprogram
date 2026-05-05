@@ -1,4 +1,10 @@
 const { getMerchantDashboardPageData } = require("../../mock/merchant-data");
+const {
+  toProductManagement,
+  toLiveManagement,
+  toUserManagement,
+  toContentOps
+} = require("../../utils/navigation");
 
 Page({
   data: getMerchantDashboardPageData(),
@@ -14,28 +20,28 @@ Page({
 
     if (label === "商品管理") {
       wx.navigateTo({
-        url: "/pages/product-management/product-management"
+        url: toProductManagement()
       });
       return;
     }
 
     if (label === "直播管理") {
       wx.navigateTo({
-        url: "/pages/live-management/live-management"
+        url: toLiveManagement()
       });
       return;
     }
 
     if (label === "用户管理") {
       wx.navigateTo({
-        url: "/pages/user-management/user-management"
+        url: toUserManagement()
       });
       return;
     }
 
     if (label === "内容运营") {
       wx.navigateTo({
-        url: "/pages/content-ops/content-ops"
+        url: toContentOps()
       });
       return;
     }

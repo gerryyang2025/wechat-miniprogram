@@ -1,27 +1,21 @@
-const { getPlayerCourse } = require("../../mock/course-data");
 const {
   getHomePageData,
-  getOwnedCoursePlayerCourseId,
-  getHomePrimaryLiveEntry
+  getHomeFeatureEntry,
+  getHomeOwnedEntry,
+  getHomePageMeta,
+  getHomeRecommendedEntry
 } = require("../../mock/home-data");
+const {
+  openPageEntry
+} = require("../../utils/navigation");
 
 Page({
   data: getHomePageData(),
 
-  getLiveEntry() {
-    return getHomePrimaryLiveEntry();
-  },
-
-  getPlayableCourseByOwnedId(ownedId) {
-    return getPlayerCourse(getOwnedCoursePlayerCourseId(ownedId));
-  },
-
   onShow() {
     const latestData = getHomePageData();
 
-    this.setData({
-      purchasedCourses: latestData.purchasedCourses
-    });
+    this.setData(latestData);
     this.resumeBannerAutoplay();
   },
 
@@ -34,81 +28,34 @@ Page({
   },
 
   onSearchTap() {
-    wx.navigateTo({
-      url: "/pages/product-list/product-list?category=all"
-    });
+    openPageEntry(getHomePageMeta().searchEntry);
   },
 
   onOpenCategories() {
-    wx.navigateTo({
-      url: "/pages/product-categories/product-categories"
-    });
+    openPageEntry(getHomePageMeta().categoriesEntry);
   },
 
   onViewAllOwned() {
-    wx.reLaunch({
-      url: "/pages/learning/learning"
-    });
+    openPageEntry(getHomePageMeta().ownedAllEntry);
   },
 
   onOwnedCourseTap(event) {
     const { ownedId } = event.currentTarget.dataset;
-    const targetCourse = this.getPlayableCourseByOwnedId(ownedId);
-
-    if (targetCourse) {
-      wx.navigateTo({
-        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(targetCourse.id)}`
-      });
-      return;
-    }
-
-    this.onViewAllOwned();
+    openPageEntry(getHomeOwnedEntry(ownedId), "查看全部");
   },
 
   onCardTap(event) {
     const { courseId } = event.currentTarget.dataset;
-
-    wx.navigateTo({
-      url: `/pages/product-detail/product-detail?courseId=${encodeURIComponent(courseId)}`
-    });
+    openPageEntry(getHomeRecommendedEntry(courseId), "查看详情");
   },
 
   onFeatureTap(event) {
-    const { label, featureType } = event.currentTarget.dataset;
-
-    if (featureType === "camp") {
-      wx.navigateTo({
-        url: "/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth"
-      });
-      return;
-    }
-
-    if (featureType === "live") {
-      const { liveId, mode } = this.getLiveEntry();
-
-      wx.navigateTo({
-        url: `/pages/live-detail/live-detail?liveId=${encodeURIComponent(liveId)}&mode=${encodeURIComponent(mode)}`
-      });
-      return;
-    }
-
-    if (featureType === "member") {
-      wx.navigateTo({
-        url: "/pages/member-rights/member-rights?source=home"
-      });
-      return;
-    }
-
-    wx.showToast({
-      title: `${label}功能下一步接入`,
-      icon: "none"
-    });
+    const { featureType } = event.currentTarget.dataset;
+    openPageEntry(getHomeFeatureEntry(featureType), "功能下一步接入");
   },
 
   onOpenLiveCenter() {
-    wx.navigateTo({
-      url: "/pages/live-list/live-list"
-    });
+    openPageEntry(getHomePageMeta().liveCenterEntry);
   },
 
   onBannerChange(event) {
@@ -129,6 +76,8 @@ Page({
   },
 
   resumeBannerAutoplay() {
+    const { bannerResumeDelay } = getHomePageMeta();
+
     if (this.bannerAutoplayTimer) {
       clearTimeout(this.bannerAutoplayTimer);
       this.bannerAutoplayTimer = null;
@@ -143,6 +92,6 @@ Page({
         bannerAutoplay: true
       });
       this.bannerAutoplayTimer = null;
-    }, 160);
+    }, bannerResumeDelay);
   }
 });

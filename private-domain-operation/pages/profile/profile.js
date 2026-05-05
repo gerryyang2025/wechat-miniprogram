@@ -1,4 +1,11 @@
 const { getProfilePageData } = require("../../mock/profile-data");
+const {
+  toMemberRights,
+  toMerchantDashboard,
+  toNotifications,
+  toConsultation,
+  toSettings
+} = require("../../utils/navigation");
 
 Page({
   data: getProfilePageData(),
@@ -8,35 +15,35 @@ Page({
 
     if (label === "会员权益") {
       wx.navigateTo({
-        url: "/pages/member-rights/member-rights"
+        url: toMemberRights()
       });
       return;
     }
 
     if (label === "商家工作台") {
       wx.navigateTo({
-        url: "/pages/merchant-dashboard/merchant-dashboard"
+        url: toMerchantDashboard()
       });
       return;
     }
 
     if (label === "消息通知") {
       wx.navigateTo({
-        url: "/pages/notifications/notifications"
+        url: toNotifications()
       });
       return;
     }
 
     if (label === "咨询反馈") {
       wx.navigateTo({
-        url: "/pages/consultation/consultation?scene=profile&title=咨询反馈"
+        url: toConsultation("profile", "咨询反馈")
       });
       return;
     }
 
     if (label === "系统设置") {
       wx.navigateTo({
-        url: "/pages/settings/settings"
+        url: toSettings()
       });
       return;
     }

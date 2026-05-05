@@ -1,4 +1,8 @@
 const { clone } = require("./shared");
+const {
+  buildPageEntry,
+  toLiveDetail
+} = require("../utils/navigation");
 
 const liveCatalog = {
   "live-private-domain-qa": {
@@ -276,13 +280,91 @@ function getLiveList(activeTab = "all") {
   return clone(liveListItems.filter((item) => item.status === activeTab));
 }
 
+function getLiveStatusLabel(status = "") {
+  if (status === "upcoming") {
+    return "即将开始";
+  }
+
+  if (status === "live") {
+    return "直播中";
+  }
+
+  return "回放";
+}
+
+function getLiveListPageData(activeTab = "all") {
+  return {
+    filterTabs: getLiveListTabs(),
+    activeTab,
+    emptyHint:
+      activeTab === "all"
+        ? "当前先展示即将开始、直播中和回放三类直播示例。"
+        : "当前状态下先展示最小直播示例，后续会继续补更多直播场次。",
+    liveList: getLiveList(activeTab).map((item) => ({
+      ...item,
+      statusLabel: getLiveStatusLabel(item.status),
+      entry: buildPageEntry(toLiveDetail(item.id, item.status))
+    }))
+  };
+}
+
 function getLiveRoom(liveId = "live-private-domain-qa") {
   return clone(liveRoomCatalog[liveId] || liveRoomCatalog["live-private-domain-qa"]);
+}
+
+function getLiveDetailPageData(liveId = "live-private-domain-qa", mode = "upcoming") {
+  const live = getLiveDetail(liveId);
+  const isReplay = mode === "replay";
+  const isLive = mode === "live";
+
+  return {
+    live,
+    mode,
+    isReplay,
+    statusText: isReplay ? live.replayStatus : isLive ? live.liveStatus || "正在直播中" : live.upcomingStatus,
+    navSubtitle: isReplay ? "回放说明与复盘重点" : "观看条件与直播看点",
+    statusPanelTitle: isReplay ? "回放状态" : isLive ? "直播提醒" : "开播提醒",
+    statusPanelTag: isReplay ? "支持反复观看" : isLive ? "互动进行中" : "建议提前进入",
+    statusPanelSummary: isReplay
+      ? "本场直播已经整理为回放内容，适合按重点片段复看并同步记录复盘笔记。"
+      : isLive
+        ? "当前为直播中状态，适合直接进入直播间观看并参与互动。"
+        : "建议在开播前 5 分钟进入直播间，提前确认观看环境与互动节奏。",
+    statusPanelItems: isReplay ? live.replaySupport || [] : live.accessRules,
+    sectionIntroTitle: isReplay ? "回放说明" : "准入说明",
+    sectionHighlightTitle: isReplay ? "回放重点" : "本场看点",
+    primaryActionText: isReplay ? "查看回放" : "进入直播间",
+    secondaryActionText: isReplay ? "咨询回放" : "咨询直播"
+  };
+}
+
+function getLiveRoomPageData(liveId = "live-private-domain-qa", mode = "live", title = "直播间") {
+  const isReplay = mode === "replay";
+  const room = getLiveRoom(liveId);
+
+  return {
+    liveId,
+    title,
+    mode,
+    statusText: isReplay ? "回放中" : "直播中",
+    statusTheme: isReplay ? "replay" : "live",
+    audienceText: isReplay ? room.replayAudienceText : room.liveAudienceText,
+    topic: isReplay ? room.replayTopic : room.liveTopic,
+    notice: isReplay ? room.replayNotice : room.liveNotice,
+    messages: isReplay ? room.replayMessages : room.liveMessages,
+    replayProgress: isReplay ? room.replayProgress : "",
+    replaySummary: isReplay ? room.replaySummary : "",
+    replayHighlights: isReplay ? room.replayHighlights : [],
+    inputPlaceholder: isReplay ? "记录回放笔记或复盘想法" : "输入问题或记录想法"
+  };
 }
 
 module.exports = {
   getLiveDetail,
   getLiveListTabs,
   getLiveList,
-  getLiveRoom
+  getLiveListPageData,
+  getLiveRoom,
+  getLiveDetailPageData,
+  getLiveRoomPageData
 };

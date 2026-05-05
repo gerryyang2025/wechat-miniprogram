@@ -29,7 +29,7 @@
     <view class="live-management-list">
       <view wx:for="{{liveList}}" wx:key="id" class="live-card card-surface">
         <view class="live-card-cover live-card-cover--{{item.theme}}">
-          <text class="live-card-status live-card-status--{{item.status}}">{{item.status === 'upcoming' ? '未开始' : item.status === 'live' ? '直播中' : '已结束'}}</text>
+          <text class="live-card-status live-card-status--{{item.status}}">{{item.statusLabel}}</text>
           <text class="live-card-hint">{{item.coverHint}}</text>
         </view>
         <view class="live-card-body">

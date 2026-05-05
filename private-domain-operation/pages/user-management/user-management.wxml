@@ -34,7 +34,7 @@
     <view class="user-management-list">
       <view wx:for="{{userList}}" wx:key="id" class="user-card card-surface" data-name="{{item.name}}" bindtap="onUserTap">
         <view class="user-card-head">
-          <view class="user-avatar">{{item.name.slice(0, 1)}}</view>
+          <view class="user-avatar">{{item.avatarText}}</view>
           <view class="user-copy">
             <text class="user-name">{{item.name}}</text>
             <text class="user-phone">{{item.phone}}</text>

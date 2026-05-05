@@ -11,24 +11,22 @@ Page({
 
   onFilterTap(event) {
     const { tabKey } = event.currentTarget.dataset;
-
-    this.setData({
-      ...getProductManagementPageData(tabKey)
-    });
+    this.setData(getProductManagementPageData(tabKey));
   },
 
   onEditTap(event) {
     const { title } = event.currentTarget.dataset;
+    const targetItem = this.data.productList.find((item) => item.title === title);
 
     wx.showToast({
-      title: `编辑 ${title}`,
+      title: targetItem ? targetItem.editFeedback : `编辑 ${title}`,
       icon: "none"
     });
   },
 
   onCreateTap() {
     wx.showToast({
-      title: "新建商品流程后续接入",
+      title: this.data.createFeedback,
       icon: "none"
     });
   }

@@ -240,51 +240,97 @@ const contentOpsData = {
   ]
 };
 
+const merchantFeedback = {
+  productCreate: "新建商品流程后续接入",
+  liveCreate: "新建直播流程后续接入",
+  userSearch: "搜索能力后续接入",
+  contentDefault: "内容运营动作后续接入"
+};
+
 function getMerchantDashboardPageData() {
   return clone(merchantDashboardData);
 }
 
 function getProductManagementPageData(activeTab = "all") {
   return {
+    pageHint: "当前先展示课程、训练营和会员商品的最小管理示例。",
     filterTabs: clone(productManagementFilterTabs),
     activeTab,
+    createFeedback: merchantFeedback.productCreate,
     productList: clone(
       activeTab === "all"
         ? productManagementList
         : productManagementList.filter((item) => item.type === activeTab)
-    )
+    ).map((item) => ({
+      ...item,
+      statusTone:
+        item.status === "草稿" ? "draft" : item.status === "进行中" ? "active" : "published",
+      editFeedback: `编辑 ${item.title}`
+    }))
   };
 }
 
 function getLiveManagementPageData(activeTab = "all") {
   return {
+    pageHint: "当前先展示未开始、直播中和已结束三类直播管理示例。",
     filterTabs: clone(liveManagementFilterTabs),
     activeTab,
+    createFeedback: merchantFeedback.liveCreate,
     liveList: clone(
       activeTab === "all"
         ? liveManagementList
         : liveManagementList.filter((item) => item.status === activeTab)
-    )
+    ).map((item) => ({
+      ...item,
+      statusLabel: item.status === "upcoming" ? "未开始" : item.status === "live" ? "直播中" : "已结束",
+      actionFeedback: `${item.actionText} · ${item.title}`
+    }))
   };
 }
 
 function getUserManagementPageData(activeTab = "all") {
   return {
+    pageHint: "当前先展示学员分层、活跃状态和学习摘要的最小原型。",
     filterTabs: clone(userManagementFilterTabs),
     activeTab,
+    searchFeedback: merchantFeedback.userSearch,
     userList: clone(
       activeTab === "all"
         ? userManagementList
         : userManagementList.filter((item) => item.typeKeys.includes(activeTab))
-    )
+    ).map((item) => ({
+      ...item,
+      avatarText: item.name.slice(0, 1),
+      tapFeedback: `查看 ${item.name}`
+    }))
   };
 }
 
 function getContentOpsPageData() {
-  return clone(contentOpsData);
+  return {
+    ...clone(contentOpsData),
+    pageHint: "当前先展示 Banner、推荐位和公告配置的最小运营原型。",
+    banners: clone(contentOpsData.banners).map((item) => ({
+      ...item,
+      actionFeedback: "编辑 Banner"
+    })),
+    recommendationSlots: clone(contentOpsData.recommendationSlots).map((item) => ({
+      ...item,
+      actionFeedback: item.action
+    })),
+    notices: clone(contentOpsData.notices).map((item) => ({
+      ...item,
+      actionFeedback: "编辑公告"
+    }))
+  };
+}
+
+function getContentOpsActionFeedback(label = "") {
+  return label || merchantFeedback.contentDefault;
 }
 
 module.exports = {
+  getContentOpsActionFeedback,
   getMerchantDashboardPageData,
   getProductManagementPageData,
   getLiveManagementPageData,

@@ -1,6 +1,6 @@
 # 功能思维导图
 
-文档版本：`v0.3`
+文档版本：`v0.7`
 
 更新日期：`2026-05-05`
 
@@ -138,9 +138,14 @@ mindmap
       Banner 轻量资源
       多页面底部安全区修复
       首页 Banner 后台恢复轮播修复
+      navigation.js 参数与跳转工具
+      course-player-state.js 播放器状态工具
+      首页/学习/服务页轻状态下沉
+      商品浏览/商家端筛选态下沉
     数据层
       mock
         shared.js
+        media-data.js
         home-data.js
         learning-data.js
         profile-data.js
@@ -161,11 +166,13 @@ mindmap
         直播数据
         商家端数据
         会员与服务页数据
-    当前待完成
-      课程播放主路径细化
+        课程媒资与封面资源状态
+      当前待完成
       学习进度联动
-      课程目录交互
+      课程解锁与试看规则继续细化
+      剩余页面少量提示态继续收进统一数据层
       海报能力保持当前范围
+      更多课程视频与封面资源
 ```
 
 ## 3. 文字树状结构
@@ -210,9 +217,14 @@ private-domain-operation
 │   ├── 底部导航组件
 │   ├── Banner 轻量资源
 │   ├── 多页面底部安全区修复
-│   └── 首页 Banner 后台恢复轮播修复
+│   ├── 首页 Banner 后台恢复轮播修复
+│   ├── navigation.js 参数与跳转工具
+│   ├── course-player-state.js 播放器状态工具
+│   ├── 首页/学习/服务页轻状态下沉
+│   └── 商品浏览/商家端筛选态下沉
 ├── 数据层
 │   ├── mock/shared.js
+│   ├── mock/media-data.js
 │   ├── mock/home-data.js
 │   ├── mock/learning-data.js
 │   ├── mock/profile-data.js
@@ -222,10 +234,11 @@ private-domain-operation
 │   ├── mock/merchant-data.js
 │   ├── mock/service-data.js
 │   ├── mock/product-browser-data.js
-│   └── 已统一：首页 / 学习 / 我的 / 训练营 / 直播 / 商家端 / 会员 / 服务页
+│   └── 已统一：首页 / 学习 / 我的 / 训练营 / 直播 / 商家端 / 会员 / 服务页 / 课程媒资
 └── 当前待完成
-    ├── 课程播放主路径细化
     ├── 学习进度联动
-    ├── 课程目录交互
-    └── 海报能力保持当前范围
+    ├── 课程解锁与试看规则继续细化
+    ├── 剩余页面少量提示态继续收进统一数据层
+    ├── 海报能力保持当前范围
+    └── 更多课程视频与封面资源
 ```

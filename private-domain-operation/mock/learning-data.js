@@ -1,5 +1,14 @@
 const { clone } = require("./shared");
 const { getLearningCourseMeta } = require("./course-data");
+const {
+  buildPageEntry,
+  toBootcampDetail,
+  toCoursePlayer,
+  toLiveDetail,
+  toLiveList,
+  toProductDetail,
+  toProductList
+} = require("../utils/navigation");
 
 const learningCourseConfig = [
   {
@@ -128,6 +137,8 @@ function getLearningPageData() {
   const learningList = learningCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
     const recentLesson = buildLearningRecentLesson(courseMeta.last);
+    const detailCourseId = getDetailCourseIdByLearningId(item.id);
+    const playerCourseId = getPlayerCourseIdByLearningId(item.id);
 
     return {
       id: item.id,
@@ -137,22 +148,41 @@ function getLearningPageData() {
       lastLabel: recentLesson.lastLabel,
       lastText: recentLesson.lastText,
       theme: item.theme,
-      actionLabel: item.actionLabel
+      actionLabel: item.actionLabel,
+      detailEntry: detailCourseId ? buildPageEntry(toProductDetail(detailCourseId)) : null,
+      continueEntry: playerCourseId ? buildPageEntry(toCoursePlayer(playerCourseId)) : null
     };
   });
 
+  const staticLearningList = clone(learningPageData.learningList).map((item) => ({
+    ...item,
+    detailEntry:
+      item.id === "learn-2"
+        ? buildPageEntry(toBootcampDetail(getBootcampIdByLearningId(item.id)))
+        : item.id === "learn-3"
+          ? (() => {
+              const targetLive = getLiveEntryByLearningId(item.id);
+              return targetLive ? buildPageEntry(toLiveDetail(targetLive.liveId, targetLive.mode)) : null;
+            })()
+          : null,
+    continueEntry:
+      item.id === "learn-2"
+        ? buildPageEntry(toBootcampDetail(getBootcampIdByLearningId(item.id)))
+        : item.id === "learn-3"
+          ? (() => {
+              const targetLive = getLiveEntryByLearningId(item.id);
+              return targetLive ? buildPageEntry(toLiveDetail(targetLive.liveId, targetLive.mode)) : null;
+            })()
+          : null
+  }));
+
   return {
     metrics: clone(learningPageData.metrics),
-    learningList: [...learningList, ...clone(learningPageData.learningList)]
+    searchEntry: buildPageEntry(toProductList("all")),
+    searchFeedback: "原型阶段先通过首页与分类浏览查找课程",
+    liveCenterEntry: buildPageEntry(toLiveList()),
+    learningList: [...learningList, ...staticLearningList]
   };
-}
-
-function getPlayerCourseIdByLearningId(itemId = "") {
-  return learningPlayerCourseMap[itemId] || "";
-}
-
-function getDetailCourseIdByLearningId(itemId = "") {
-  return learningDetailCourseMap[itemId] || "";
 }
 
 function getBootcampIdByLearningId(itemId = "") {
@@ -167,7 +197,38 @@ function getLiveEntryByLearningId(itemId = "") {
   return clone(learningLiveMap[itemId]);
 }
 
+function getPlayerCourseIdByLearningId(itemId = "") {
+  return learningPlayerCourseMap[itemId] || "";
+}
+
+function getDetailCourseIdByLearningId(itemId = "") {
+  return learningDetailCourseMap[itemId] || "";
+}
+
+function getLearningPageMeta() {
+  const pageData = getLearningPageData();
+
+  return {
+    searchEntry: clone(pageData.searchEntry),
+    searchFeedback: pageData.searchFeedback,
+    liveCenterEntry: clone(pageData.liveCenterEntry)
+  };
+}
+
+function getLearningItemEntry(itemId = "", actionType = "detail") {
+  const pageData = getLearningPageData();
+  const targetItem = pageData.learningList.find((item) => item.id === itemId);
+
+  if (!targetItem) {
+    return null;
+  }
+
+  return clone(actionType === "continue" ? targetItem.continueEntry : targetItem.detailEntry);
+}
+
 module.exports = {
+  getLearningItemEntry,
+  getLearningPageMeta,
   getLearningPageData,
   getPlayerCourseIdByLearningId,
   getDetailCourseIdByLearningId,

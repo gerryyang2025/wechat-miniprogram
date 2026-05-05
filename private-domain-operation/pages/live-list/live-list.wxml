@@ -30,7 +30,7 @@
         bindtap="onLiveTap"
       >
         <view class="live-list-card-top">
-          <text class="live-status live-status--{{item.status}}">{{item.status === 'upcoming' ? '即将开始' : item.status === 'live' ? '直播中' : '回放'}}</text>
+          <text class="live-status live-status--{{item.status}}">{{item.statusLabel}}</text>
           <text class="live-schedule">{{item.schedule}}</text>
         </view>
         <text class="live-title">{{item.title}}</text>

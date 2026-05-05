@@ -35,7 +35,7 @@
         <view class="product-card-body">
           <view class="product-card-head">
             <text class="product-card-title">{{item.title}}</text>
-            <text class="product-card-status product-card-status--{{item.status === '草稿' ? 'draft' : item.status === '进行中' ? 'active' : 'published'}}">{{item.status}}</text>
+            <text class="product-card-status product-card-status--{{item.statusTone}}">{{item.status}}</text>
           </view>
           <text class="product-card-update">最近更新：{{item.updatedAt}}</text>
           <view class="product-card-foot">
