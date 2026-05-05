@@ -17,6 +17,14 @@
       <text class="learning-search-icon">⌕</text>
     </view>
 
+    <view class="learning-live-entry card-surface" bindtap="onOpenLiveCenter">
+      <view class="learning-live-copy">
+        <text class="learning-live-title">直播中心</text>
+        <text class="learning-live-desc">查看即将开始、直播中与回放中的直播内容。</text>
+      </view>
+      <text class="learning-live-action">查看全部</text>
+    </view>
+
     <view class="learning-list">
       <view wx:for="{{learningList}}" wx:key="id" class="learning-card card-surface">
         <view class="learning-cover learning-cover--{{item.theme}}">
@@ -30,6 +38,8 @@
         </view>
       </view>
     </view>
+
+    <view class="learning-bottom-spacer"></view>
   </scroll-view>
 
   <bottom-nav current="learning"></bottom-nav>

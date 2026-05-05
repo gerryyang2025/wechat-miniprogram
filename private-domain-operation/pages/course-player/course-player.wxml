@@ -25,13 +25,52 @@
 
       <view class="player-meta">
         <text class="player-meta-item">时长 {{duration}}</text>
-        <text class="player-meta-item">来源 录播课程</text>
+        <text class="player-meta-item">来源 {{sourceLabel}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{progressSummary}}" class="player-progress card-surface">
+      <view class="player-progress-head">
+        <text class="player-progress-title">学习进度</text>
+        <text class="player-progress-percent">{{progressSummary.percent}}%</text>
+      </view>
+      <view class="player-progress-copy">
+        <text class="player-progress-value">{{progressSummary.completedLessons}} / {{progressSummary.totalLessons}} 节</text>
+        <text class="player-progress-meta">{{progressSummary.lastPosition}}</text>
+      </view>
+      <view class="player-progress-bar">
+        <view class="player-progress-inner" style="width: {{progressSummary.percent}}%;"></view>
+      </view>
+      <view class="player-progress-note">
+        <text class="player-progress-line">{{progressSummary.currentLessonTitle}}</text>
+        <text class="player-progress-line">{{progressSummary.nextLessonTitle}}</text>
       </view>
     </view>
 
     <view class="player-outline card-surface">
       <text class="player-outline-title">本节内容</text>
       <text class="player-outline-text">{{outlineText}}</text>
+    </view>
+
+    <view wx:if="{{chapters.length}}" class="player-directory card-surface">
+      <view class="player-directory-head">
+        <text class="player-outline-title">课程目录</text>
+        <text class="player-directory-note">当前课节与后续内容</text>
+      </view>
+      <view class="player-chapter-list">
+        <view wx:for="{{chapters}}" wx:key="id" class="player-chapter-item">
+          <text class="player-chapter-title">{{item.title}}</text>
+          <view class="player-lesson-list">
+            <view wx:for="{{item.lessons}}" wx:key="id" class="player-lesson-item">
+              <view class="player-lesson-main">
+                <text class="player-lesson-title">{{item.title}}</text>
+                <text class="player-lesson-duration">{{item.duration}}</text>
+              </view>
+              <text class="player-lesson-state player-lesson-state--{{item.status}}">{{item.status === "completed" ? "已完成" : item.status === "current" ? "当前播放" : "待学习"}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
 
     <view wx:if="{{isVideoError}}" class="player-status card-surface">

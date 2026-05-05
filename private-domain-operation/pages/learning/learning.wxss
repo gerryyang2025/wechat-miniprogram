@@ -70,11 +70,52 @@
   color: #50587b;
 }
 
+.learning-live-entry {
+  margin-top: 22rpx;
+  padding: 26rpx 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.learning-live-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.learning-live-title {
+  font-size: 30rpx;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #1f2441;
+}
+
+.learning-live-desc {
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #7f89ab;
+}
+
+.learning-live-action {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #5a6efa;
+}
+
 .learning-list {
   margin-top: 28rpx;
   display: flex;
   flex-direction: column;
   gap: 20rpx;
+}
+
+.learning-bottom-spacer {
+  height: calc(148rpx + env(safe-area-inset-bottom));
 }
 
 .learning-card {

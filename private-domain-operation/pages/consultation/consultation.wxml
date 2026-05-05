@@ -1,0 +1,52 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="consult-scroll content-safe-bottom">
+    <view class="consult-nav">
+      <view class="consult-back" bindtap="onBackTap">‹</view>
+      <view class="consult-nav-copy">
+        <text class="consult-nav-title">{{pageTitle}}</text>
+        <text class="consult-nav-subtitle">{{pageSubtitle}}</text>
+      </view>
+    </view>
+
+    <view class="consult-hero card-surface">
+      <text class="consult-hero-tag">{{contextLabel}}</text>
+      <text class="consult-hero-title">{{targetTitle}}</text>
+      <text class="consult-hero-desc">你可以先查看常见问题，也可以直接留下你的咨询内容。当前阶段以原型页面演示为主，不接入真实客服系统。</text>
+    </view>
+
+    <view class="consult-section card-surface">
+      <text class="consult-section-title">常见咨询方向</text>
+      <view class="question-chip-row">
+        <view
+          wx:for="{{quickQuestions}}"
+          wx:key="*this"
+          class="question-chip"
+          data-question="{{item}}"
+          bindtap="onQuickQuestionTap"
+        >{{item}}</view>
+      </view>
+    </view>
+
+    <view class="consult-section card-surface">
+      <text class="consult-section-title">填写咨询内容</text>
+      <view class="consult-textarea-shell">
+        <textarea
+          class="consult-textarea"
+          maxlength="300"
+          placeholder="例如：我想了解这门课适合什么基础的人学习？直播回放什么时候开放？"
+          value="{{draftMessage}}"
+          bindinput="onInputChange"
+        ></textarea>
+      </view>
+      <text class="consult-helper">建议留下你最关心的问题，方便后续接入真实客服和消息通知时继续完善流程。</text>
+    </view>
+
+    <view class="consult-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="consult-footer">
+    <view class="consult-footer-inner">
+      <view class="consult-primary" bindtap="onSubmitTap">提交咨询</view>
+    </view>
+  </view>
+</view>

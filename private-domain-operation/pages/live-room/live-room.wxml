@@ -1,0 +1,62 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="live-room-scroll content-safe-bottom">
+    <view class="live-room-nav">
+      <view class="live-room-back" bindtap="onBackTap">‹</view>
+      <view class="live-room-nav-copy">
+        <text class="live-room-nav-title">{{title}}</text>
+        <text class="live-room-nav-subtitle">{{audienceText}}</text>
+      </view>
+    </view>
+
+    <view class="live-room-stage card-surface">
+      <view class="live-room-video">
+        <view class="live-room-status live-room-status--{{statusTheme}}">{{statusText}}</view>
+        <view class="live-room-center-copy">
+          <text class="live-room-center-title">{{title}}</text>
+          <text class="live-room-center-topic">{{topic}}</text>
+        </view>
+      </view>
+
+      <view class="live-room-info">
+        <text class="live-room-info-title">{{title}}</text>
+        <text class="live-room-info-subtitle">{{topic}}</text>
+      </view>
+    </view>
+
+    <view class="live-room-section card-surface">
+      <text class="live-room-section-title">置顶公告</text>
+      <text class="live-room-notice">{{notice}}</text>
+    </view>
+
+    <view class="live-room-section card-surface">
+      <view class="live-room-section-head">
+        <text class="live-room-section-title">互动消息</text>
+        <text class="live-room-section-note">{{mode === 'replay' ? '回放示例' : '直播互动示例'}}</text>
+      </view>
+      <view class="message-list">
+        <view wx:for="{{messages}}" wx:key="id" class="message-item">
+          <text class="message-user">{{item.user}}</text>
+          <text class="message-text">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="live-room-section card-surface">
+      <text class="live-room-section-title">相关内容</text>
+      <view class="related-card">
+        <text class="related-tag">相关课程</text>
+        <text class="related-title">个人 IP 内容变现实战课</text>
+        <text class="related-desc">直播中的高频问题，已在课程中有系统拆解。</text>
+      </view>
+    </view>
+
+    <view class="live-room-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="live-room-footer">
+    <view class="live-room-footer-inner">
+      <view class="live-room-input">输入问题或记录想法</view>
+      <view class="live-room-action" bindtap="onAskTap">{{mode === 'replay' ? '记笔记' : '去提问'}}</view>
+    </view>
+  </view>
+</view>

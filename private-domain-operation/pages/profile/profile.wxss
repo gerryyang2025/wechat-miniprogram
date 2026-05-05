@@ -105,3 +105,7 @@
   font-size: 40rpx;
   color: #b0b7d1;
 }
+
+.profile-bottom-spacer {
+  height: calc(148rpx + env(safe-area-inset-bottom));
+}

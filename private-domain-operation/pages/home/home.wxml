@@ -61,7 +61,8 @@
             wx:for="{{purchasedCourses}}"
             wx:key="id"
             class="owned-card owned-card--{{item.theme}}"
-            bindtap="onViewAllOwned"
+            data-owned-id="{{item.id}}"
+            bindtap="onOwnedCourseTap"
           >
             <view class="owned-mark owned-mark--{{item.theme}}">
               <text class="owned-mark-text">{{item.monogram}}</text>
@@ -88,6 +89,7 @@
           wx:for="{{recommendedCourses}}"
           wx:key="id"
           class="course-card card-surface"
+          data-course-id="{{item.id}}"
           bindtap="onCardTap"
         >
           <view class="course-cover {{item.coverTheme}}">
@@ -107,6 +109,12 @@
       </view>
 
       <view class="feature-stack">
+        <view class="feature-stack-head">
+          <view class="section-title">
+            <text>训练营与直播</text>
+          </view>
+          <view class="ghost-button" bindtap="onOpenLiveCenter">查看更多直播</view>
+        </view>
         <view
           wx:for="{{featureCards}}"
           wx:key="id"
@@ -117,10 +125,17 @@
             <text class="feature-title">{{item.title}}</text>
             <text class="feature-desc">{{item.desc}}</text>
           </view>
-          <view class="ghost-button" data-label="{{item.action}}" bindtap="onFeatureTap">{{item.action}}</view>
+          <view
+            class="ghost-button"
+            data-label="{{item.action}}"
+            data-feature-type="{{item.type}}"
+            bindtap="onFeatureTap"
+          >{{item.action}}</view>
         </view>
       </view>
     </view>
+
+    <view class="home-bottom-spacer"></view>
   </scroll-view>
 
   <bottom-nav current="home"></bottom-nav>

@@ -1,23 +1,24 @@
+const { getPlayerCourse } = require("../../mock/course-data");
+
 Page({
   data: {
+    bootcampMap: {
+      "learn-2": "camp-7day-growth"
+    },
+    liveMap: {
+      "learn-3": {
+        liveId: "live-private-domain-qa",
+        mode: "replay"
+      }
+    },
     playableCourses: [
       {
         id: "learn-aigc",
-        title: "AIGC 视频制作",
-        videoUrl: "http://106.55.160.81:8080/brad_pitt_vs_tom_cruise_1773333936.mp4",
-        coverUrl: "/assets/home/banner1.jpg",
-        duration: "03:22",
-        description: "聚焦 AIGC 视频创作流程，从脚本构思、口播表达，到成片剪辑与发布节奏。",
-        outlineText: "本节内容将快速带你了解 AIGC 视频制作的基础链路，包括选题、脚本组织、画面表达和成片发布。"
+        playerCourseId: "player-aigc-video"
       },
       {
         id: "learn-wechat-game",
-        title: "微信小游戏开发",
-        videoUrl: "http://106.55.160.81:8080/wechat-plane-game.mov",
-        coverUrl: "/assets/home/banner2.jpg",
-        duration: "项目演示",
-        description: "围绕微信小游戏实战，讲解项目结构、交互循环、资源组织与真机调试流程。",
-        outlineText: "本节内容聚焦飞机大战小游戏示例，重点说明场景搭建、角色移动、碰撞检测、资源管理与发布调试。"
+        playerCourseId: "player-wechat-game"
       }
     ],
     metrics: [
@@ -76,21 +77,47 @@ Page({
     });
   },
 
+  onOpenLiveCenter() {
+    wx.navigateTo({
+      url: "/pages/live-list/live-list"
+    });
+  },
+
   onContinueTap(event) {
     const { itemId } = event.currentTarget.dataset;
     const targetCourse = this.data.playableCourses.find((course) => course.id === itemId);
+    const targetBootcampId = this.data.bootcampMap[itemId];
+    const targetLive = this.data.liveMap[itemId];
 
     if (targetCourse) {
-      const { title, videoUrl, coverUrl, duration, description, outlineText } = targetCourse;
+      const playerCourse = getPlayerCourse(targetCourse.playerCourseId);
+
+      if (!playerCourse) {
+        wx.showToast({
+          title: "课程资源准备中",
+          icon: "none"
+        });
+        return;
+      }
 
       wx.navigateTo({
+        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(playerCourse.id)}`
+      });
+      return;
+    }
+
+    if (targetBootcampId) {
+      wx.navigateTo({
+        url: `/pages/bootcamp-detail/bootcamp-detail?campId=${encodeURIComponent(targetBootcampId)}`
+      });
+      return;
+    }
+
+    if (targetLive) {
+      wx.navigateTo({
         url:
-          `/pages/course-player/course-player?title=${encodeURIComponent(title)}` +
-          `&videoUrl=${encodeURIComponent(videoUrl)}` +
-          `&coverUrl=${encodeURIComponent(coverUrl)}` +
-          `&duration=${encodeURIComponent(duration)}` +
-          `&description=${encodeURIComponent(description)}` +
-          `&outlineText=${encodeURIComponent(outlineText || "")}`
+          `/pages/live-detail/live-detail?liveId=${encodeURIComponent(targetLive.liveId)}` +
+          `&mode=${encodeURIComponent(targetLive.mode)}`
       });
       return;
     }

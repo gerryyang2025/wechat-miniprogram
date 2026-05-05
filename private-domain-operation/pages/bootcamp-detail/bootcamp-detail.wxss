@@ -1,0 +1,333 @@
+.bootcamp-scroll {
+  min-height: 100vh;
+  padding: calc(108rpx + env(safe-area-inset-top)) 28rpx 0;
+  box-sizing: border-box;
+}
+
+.bootcamp-nav {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-bottom: 28rpx;
+}
+
+.bootcamp-back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 44rpx;
+  line-height: 72rpx;
+  text-align: center;
+}
+
+.bootcamp-nav-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.bootcamp-nav-title {
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.bootcamp-nav-subtitle {
+  font-size: 24rpx;
+  color: rgba(241, 244, 255, 0.82);
+}
+
+.bootcamp-hero {
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.bootcamp-cover {
+  height: 276rpx;
+  border-radius: 28rpx;
+  padding: 24rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(145deg, #4d72ff 0%, #7a59ff 100%);
+  color: #ffffff;
+}
+
+.camp-cover {
+  background: linear-gradient(145deg, #4d72ff 0%, #7a59ff 100%);
+}
+
+.bootcamp-status {
+  align-self: flex-start;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.bootcamp-cover-hint {
+  width: 72%;
+  font-size: 34rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.bootcamp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.bootcamp-title {
+  font-size: 40rpx;
+  line-height: 1.35;
+  color: #202742;
+  font-weight: 800;
+}
+
+.bootcamp-subtitle {
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #6b7498;
+}
+
+.bootcamp-description {
+  font-size: 26rpx;
+  line-height: 1.72;
+  color: #606a8f;
+}
+
+.bootcamp-section {
+  margin-top: 24rpx;
+  padding: 28rpx;
+}
+
+.bootcamp-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.bootcamp-section-title {
+  font-size: 30rpx;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #202742;
+}
+
+.bootcamp-section-note {
+  font-size: 22rpx;
+  color: #8d96b7;
+}
+
+.tag-row {
+  margin-top: 18rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.tag-chip {
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(238, 242, 255, 0.96);
+  color: #57627f;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.bullet-list,
+.notice-list {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.bootcamp-bottom-spacer {
+  height: calc(148rpx + env(safe-area-inset-bottom));
+}
+
+.bullet-item,
+.notice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+}
+
+.bullet-dot,
+.notice-dot {
+  flex-shrink: 0;
+  width: 14rpx;
+  height: 14rpx;
+  margin-top: 10rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #4d78ff 0%, #7a56ff 100%);
+}
+
+.bullet-text,
+.notice-text {
+  font-size: 24rpx;
+  line-height: 1.72;
+  color: #66719a;
+}
+
+.bootcamp-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.bootcamp-progress-label {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #202742;
+}
+
+.bootcamp-progress-value {
+  font-size: 24rpx;
+  color: #6278f4;
+  font-weight: 700;
+}
+
+.bootcamp-progress-bar {
+  margin-top: 16rpx;
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: rgba(223, 229, 255, 0.92);
+  overflow: hidden;
+}
+
+.bootcamp-progress-inner {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
+}
+
+.bootcamp-focus-title {
+  margin-top: 14rpx;
+  font-size: 28rpx;
+  line-height: 1.45;
+  color: #202742;
+  font-weight: 700;
+}
+
+.bootcamp-focus-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #66719a;
+}
+
+.schedule-list {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.schedule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+}
+
+.schedule-day {
+  flex-shrink: 0;
+  min-width: 102rpx;
+  height: 44rpx;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  background: rgba(239, 243, 255, 0.96);
+  color: #5d6cf8;
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.schedule-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.schedule-title {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #202742;
+  font-weight: 600;
+}
+
+.schedule-status {
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.schedule-status--done {
+  color: #37a36b;
+}
+
+.schedule-status--active {
+  color: #5d6cf8;
+}
+
+.schedule-status--pending {
+  color: #9aa3c3;
+}
+
+.bootcamp-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(247, 249, 255, 0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -18rpx 40rpx rgba(69, 82, 147, 0.08);
+}
+
+.bootcamp-footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.bootcamp-footer-tip {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #5c678f;
+  font-weight: 600;
+}
+
+.bootcamp-primary {
+  flex-shrink: 0;
+  min-width: 220rpx;
+  height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}

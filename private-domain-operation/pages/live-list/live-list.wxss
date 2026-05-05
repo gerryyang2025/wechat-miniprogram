@@ -1,0 +1,134 @@
+.live-list-scroll {
+  min-height: 100vh;
+  padding: calc(108rpx + env(safe-area-inset-top)) 28rpx 0;
+  box-sizing: border-box;
+}
+
+.live-list-nav {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-bottom: 28rpx;
+}
+
+.live-list-back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 44rpx;
+  line-height: 72rpx;
+  text-align: center;
+}
+
+.live-list-nav-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.live-list-nav-title {
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.live-list-nav-subtitle {
+  font-size: 24rpx;
+  color: rgba(241, 244, 255, 0.82);
+}
+
+.live-list-filter {
+  padding: 24rpx;
+}
+
+.filter-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.filter-chip {
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(239, 243, 255, 0.96);
+  color: #7380a6;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.filter-chip--active {
+  background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
+  color: #ffffff;
+}
+
+.live-list-wrap {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.live-list-card {
+  padding: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.live-list-card-top,
+.live-list-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.live-status {
+  align-self: flex-start;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.live-status--upcoming {
+  background: rgba(79, 128, 255, 0.12);
+  color: #4f80ff;
+}
+
+.live-status--live {
+  background: rgba(115, 88, 255, 0.14);
+  color: #6a5cff;
+}
+
+.live-status--replay {
+  background: rgba(86, 196, 255, 0.16);
+  color: #2090d8;
+}
+
+.live-schedule,
+.live-meta,
+.live-audience,
+.live-summary {
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #7f89ab;
+}
+
+.live-title {
+  font-size: 32rpx;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #202742;
+}
+
+.live-action {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #5a6efa;
+}

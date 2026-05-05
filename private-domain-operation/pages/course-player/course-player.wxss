@@ -95,7 +95,9 @@
   font-weight: 600;
 }
 
+.player-progress,
 .player-outline,
+.player-directory,
 .player-status {
   margin-top: 24rpx;
   padding: 28rpx 30rpx;
@@ -104,6 +106,15 @@
   gap: 12rpx;
 }
 
+.player-progress-head,
+.player-directory-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.player-progress-title,
 .player-outline-title,
 .player-status-title {
   font-size: 30rpx;
@@ -111,9 +122,130 @@
   color: #222946;
 }
 
+.player-progress-percent {
+  flex-shrink: 0;
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #5a6efa;
+}
+
+.player-progress-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.player-progress-value {
+  font-size: 38rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #24315b;
+}
+
+.player-progress-meta,
+.player-progress-line,
+.player-directory-note,
+.player-lesson-duration {
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #7f89ab;
+}
+
+.player-progress-bar {
+  width: 100%;
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: rgba(235, 239, 255, 0.96);
+  overflow: hidden;
+}
+
+.player-progress-inner {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #6172ff 0%, #57c2ff 100%);
+}
+
+.player-progress-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
 .player-outline-text,
 .player-status-text {
   font-size: 24rpx;
   line-height: 1.7;
   color: #7f89ab;
+}
+
+.player-chapter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.player-chapter-item {
+  padding: 22rpx;
+  border-radius: 24rpx;
+  background: rgba(247, 249, 255, 0.9);
+  border: 1rpx solid rgba(224, 230, 250, 0.94);
+}
+
+.player-chapter-title {
+  font-size: 26rpx;
+  line-height: 1.45;
+  font-weight: 700;
+  color: #25325a;
+}
+
+.player-lesson-list {
+  margin-top: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.player-lesson-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.player-lesson-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.player-lesson-title {
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #5e688d;
+}
+
+.player-lesson-state {
+  flex-shrink: 0;
+  margin-top: 4rpx;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.player-lesson-state--completed {
+  background: rgba(73, 124, 255, 0.12);
+  color: #4c6cff;
+}
+
+.player-lesson-state--current {
+  background: rgba(108, 93, 255, 0.14);
+  color: #675dff;
+}
+
+.player-lesson-state--upcoming {
+  background: rgba(228, 233, 249, 0.94);
+  color: #8d96b7;
 }

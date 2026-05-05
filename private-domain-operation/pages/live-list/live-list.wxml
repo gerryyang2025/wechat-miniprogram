@@ -1,0 +1,46 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="live-list-scroll content-safe-bottom">
+    <view class="live-list-nav">
+      <view class="live-list-back" bindtap="onBackTap">‹</view>
+      <view class="live-list-nav-copy">
+        <text class="live-list-nav-title">直播中心</text>
+        <text class="live-list-nav-subtitle">查看即将开始、直播中与回放内容</text>
+      </view>
+    </view>
+
+    <view class="live-list-filter card-surface">
+      <view class="filter-chip-row">
+        <view
+          wx:for="{{filterTabs}}"
+          wx:key="key"
+          class="filter-chip {{item.key === activeTab ? 'filter-chip--active' : ''}}"
+          data-tab-key="{{item.key}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="live-list-wrap">
+      <view
+        wx:for="{{liveList}}"
+        wx:key="title"
+        class="live-list-card card-surface"
+        data-live-id="{{item.id}}"
+        data-status="{{item.status}}"
+        bindtap="onLiveTap"
+      >
+        <view class="live-list-card-top">
+          <text class="live-status live-status--{{item.status}}">{{item.status === 'upcoming' ? '即将开始' : item.status === 'live' ? '直播中' : '回放'}}</text>
+          <text class="live-schedule">{{item.schedule}}</text>
+        </view>
+        <text class="live-title">{{item.title}}</text>
+        <text class="live-meta">讲师 · {{item.speaker}}</text>
+        <text class="live-audience">{{item.audience}}</text>
+        <text class="live-summary">{{item.summary}}</text>
+        <view class="live-list-card-foot">
+          <text class="live-action">{{item.actionText}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

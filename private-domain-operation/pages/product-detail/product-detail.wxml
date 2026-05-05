@@ -1,0 +1,109 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="detail-scroll content-safe-bottom">
+    <view class="detail-nav">
+      <view class="detail-back" bindtap="onBackTap">‹</view>
+      <view class="detail-nav-copy">
+        <text class="detail-nav-title">商品详情</text>
+        <text class="detail-nav-subtitle">课程信息与内容结构</text>
+      </view>
+    </view>
+
+    <view class="detail-hero card-surface">
+      <view class="detail-cover {{product.coverTheme}}">
+        <text class="detail-cover-tag">{{product.tag}}</text>
+        <text class="detail-cover-hint">{{product.coverHint}}</text>
+      </view>
+
+      <view class="detail-main">
+        <text class="detail-title">{{product.title}}</text>
+        <text class="detail-author">讲师 · {{product.author}}</text>
+        <text class="detail-meta">{{product.meta}}</text>
+
+        <view class="detail-price-row">
+          <text class="detail-price">{{product.price}}</text>
+          <text class="detail-access">{{product.access}}</text>
+        </view>
+
+        <text class="detail-description">{{product.description}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{product.progressSummary}}" class="detail-section card-surface">
+      <view class="detail-section-head">
+        <text class="detail-section-title">学习进度</text>
+        <text class="detail-section-note">{{product.progressSummary.status}}</text>
+      </view>
+      <view class="detail-progress-row">
+        <view class="detail-progress-copy">
+          <text class="detail-progress-value">{{product.progressSummary.completedLessons}} / {{product.progressSummary.totalLessons}} 节</text>
+          <text class="detail-progress-meta">{{product.progressSummary.completedDuration}}</text>
+        </view>
+        <text class="detail-progress-percent">{{product.progressSummary.percent}}%</text>
+      </view>
+      <view class="detail-progress-bar">
+        <view class="detail-progress-inner" style="width: {{product.progressSummary.percent}}%;"></view>
+      </view>
+      <view class="detail-progress-note">
+        <text class="detail-progress-line">{{product.progressSummary.currentLessonTitle}}</text>
+        <text class="detail-progress-line">{{product.progressSummary.nextLessonTitle}}</text>
+      </view>
+    </view>
+
+    <view class="detail-section card-surface">
+      <text class="detail-section-title">你将获得</text>
+      <view class="bullet-list">
+        <view wx:for="{{product.gains}}" wx:key="*this" class="bullet-item">
+          <text class="bullet-dot"></text>
+          <text class="bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-section card-surface">
+      <text class="detail-section-title">适合谁学</text>
+      <view class="tag-row">
+        <text wx:for="{{product.suitable}}" wx:key="*this" class="tag-chip">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="detail-section card-surface">
+      <view class="detail-section-head">
+        <text class="detail-section-title">课程目录预览</text>
+        <text class="detail-section-note">查看课程结构与当前状态</text>
+      </view>
+      <view class="chapter-list">
+        <view wx:for="{{product.chapters}}" wx:key="id" class="chapter-item">
+          <view class="chapter-head">
+            <view class="chapter-copy">
+              <text class="chapter-title">{{item.title}}</text>
+              <text class="chapter-summary">{{item.summary}}</text>
+            </view>
+            <text class="chapter-count">{{item.lessons.length}} 节</text>
+          </view>
+          <view class="outline-list">
+            <view wx:for="{{item.lessons}}" wx:key="id" class="outline-item">
+              <view class="outline-main">
+                <text class="outline-text">{{item.title}}</text>
+                <text class="outline-duration">{{item.duration}}</text>
+              </view>
+              <text class="outline-state outline-state--{{item.status}}">{{item.status === "completed" ? "已完成" : item.status === "current" ? "学习中" : item.status === "preview" ? "可试看" : "待学习"}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-note card-surface">
+      <text class="detail-note-text">{{product.note}}</text>
+    </view>
+
+    <view class="detail-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="detail-footer">
+    <view class="detail-footer-inner">
+      <view class="detail-secondary" bindtap="onSecondaryTap">{{product.secondaryActionText}}</view>
+      <view class="detail-primary" bindtap="onPrimaryTap">{{product.primaryActionText}}</view>
+    </view>
+  </view>
+</view>

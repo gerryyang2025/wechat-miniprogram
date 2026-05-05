@@ -1,0 +1,104 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="bootcamp-scroll content-safe-bottom">
+    <view class="bootcamp-nav">
+      <view class="bootcamp-back" bindtap="onBackTap">‹</view>
+      <view class="bootcamp-nav-copy">
+        <text class="bootcamp-nav-title">训练营详情</text>
+        <text class="bootcamp-nav-subtitle">任务节奏与打卡进度</text>
+      </view>
+    </view>
+
+    <view class="bootcamp-hero card-surface">
+      <view class="bootcamp-cover {{bootcamp.coverTheme}}">
+        <text class="bootcamp-status">{{bootcamp.status}}</text>
+        <text class="bootcamp-cover-hint">{{bootcamp.coverHint}}</text>
+      </view>
+
+      <view class="bootcamp-main">
+        <text class="bootcamp-title">{{bootcamp.title}}</text>
+        <text class="bootcamp-subtitle">{{bootcamp.subtitle}}</text>
+        <text class="bootcamp-description">{{bootcamp.description}}</text>
+      </view>
+    </view>
+
+    <view class="bootcamp-section card-surface">
+      <view class="bootcamp-section-head">
+        <text class="bootcamp-section-title">适合谁参加</text>
+        <text class="bootcamp-section-note">{{bootcamp.progress.streakText}}</text>
+      </view>
+      <view class="tag-row">
+        <text wx:for="{{bootcamp.suitable}}" wx:key="*this" class="tag-chip">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="bootcamp-section card-surface">
+      <text class="bootcamp-section-title">训练营支持</text>
+      <view class="bullet-list">
+        <view wx:for="{{bootcamp.support}}" wx:key="*this" class="bullet-item">
+          <text class="bullet-dot"></text>
+          <text class="bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bootcamp-section card-surface">
+      <view class="bootcamp-progress">
+        <text class="bootcamp-progress-label">当前进度</text>
+        <text class="bootcamp-progress-value">{{bootcamp.progress.completedDays}} / {{bootcamp.progress.totalDays}} 天</text>
+      </view>
+      <view class="bootcamp-progress-bar">
+        <view class="bootcamp-progress-inner" style="width: {{(bootcamp.progress.completedDays / bootcamp.progress.totalDays) * 100}}%;"></view>
+      </view>
+    </view>
+
+    <view class="bootcamp-section card-surface">
+      <text class="bootcamp-section-title">{{bootcamp.todayFocus.dayLabel}}</text>
+      <text class="bootcamp-focus-title">{{bootcamp.todayFocus.title}}</text>
+      <text class="bootcamp-focus-desc">{{bootcamp.todayFocus.desc}}</text>
+      <view class="bullet-list">
+        <view wx:for="{{bootcamp.todayFocus.tasks}}" wx:key="*this" class="bullet-item">
+          <text class="bullet-dot"></text>
+          <text class="bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bootcamp-section card-surface">
+      <view class="bootcamp-section-head">
+        <text class="bootcamp-section-title">课表预览</text>
+        <text class="bootcamp-section-note">原型阶段展示前 4 天</text>
+      </view>
+      <view class="schedule-list">
+        <view wx:for="{{bootcamp.schedule}}" wx:key="day" class="schedule-item">
+          <view class="schedule-day">{{item.day}}</view>
+          <view class="schedule-copy">
+            <text class="schedule-title">{{item.title}}</text>
+            <text class="schedule-status schedule-status--{{item.status === '已完成' ? 'done' : item.status === '进行中' ? 'active' : 'pending'}}">{{item.status}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bootcamp-section card-surface">
+      <view class="bootcamp-section-head">
+        <text class="bootcamp-section-title">最新公告</text>
+        <text class="bootcamp-section-note" bindtap="onNoticeTap">查看详情</text>
+      </view>
+      <view class="notice-list">
+        <view wx:for="{{bootcamp.notices}}" wx:key="*this" class="notice-item">
+          <text class="notice-dot"></text>
+          <text class="notice-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bootcamp-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="bootcamp-footer">
+    <view class="bootcamp-footer-inner">
+      <view class="bootcamp-footer-tip">今日任务已解锁</view>
+      <view class="bootcamp-primary" bindtap="onCheckInTap">去打卡</view>
+    </view>
+  </view>
+</view>

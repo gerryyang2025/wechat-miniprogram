@@ -1,0 +1,59 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="live-detail-scroll content-safe-bottom">
+    <view class="live-detail-nav">
+      <view class="live-detail-back" bindtap="onBackTap">‹</view>
+      <view class="live-detail-nav-copy">
+        <text class="live-detail-nav-title">直播详情</text>
+        <text class="live-detail-nav-subtitle">观看条件与直播看点</text>
+      </view>
+    </view>
+
+    <view class="live-detail-hero card-surface">
+      <view class="live-detail-cover">
+        <text class="live-detail-status">{{statusText}}</text>
+        <text class="live-detail-cover-hint">{{live.coverHint}}</text>
+      </view>
+
+      <view class="live-detail-main">
+        <text class="live-detail-title">{{live.title}}</text>
+        <text class="live-detail-meta">讲师 · {{live.speaker}} · {{live.duration}}</text>
+        <text class="live-detail-viewers">{{live.viewers}}</text>
+        <text class="live-detail-intro">{{live.intro}}</text>
+      </view>
+    </view>
+
+    <view class="live-detail-section card-surface">
+      <text class="live-detail-section-title">准入说明</text>
+      <view class="bullet-list">
+        <view wx:for="{{live.accessRules}}" wx:key="*this" class="bullet-item">
+          <text class="bullet-dot"></text>
+          <text class="bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="live-detail-section card-surface">
+      <text class="live-detail-section-title">本场看点</text>
+      <view class="bullet-list">
+        <view wx:for="{{live.highlights}}" wx:key="*this" class="bullet-item">
+          <text class="bullet-dot"></text>
+          <text class="bullet-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="live-detail-section card-surface">
+      <text class="live-detail-section-title">讲师简介</text>
+      <text class="live-detail-bio">{{live.teacherBio}}</text>
+    </view>
+
+    <view class="live-detail-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="live-detail-footer">
+    <view class="live-detail-footer-inner">
+      <view class="live-detail-secondary" bindtap="onSecondaryTap">{{secondaryActionText}}</view>
+      <view class="live-detail-primary" bindtap="onPrimaryTap">{{primaryActionText}}</view>
+    </view>
+  </view>
+</view>

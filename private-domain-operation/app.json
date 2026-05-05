@@ -1,8 +1,14 @@
 {
   "pages": [
     "pages/home/home",
+    "pages/product-detail/product-detail",
+    "pages/bootcamp-detail/bootcamp-detail",
+    "pages/live-detail/live-detail",
+    "pages/live-list/live-list",
+    "pages/live-room/live-room",
     "pages/learning/learning",
     "pages/course-player/course-player",
+    "pages/consultation/consultation",
     "pages/profile/profile"
   ],
   "window": {

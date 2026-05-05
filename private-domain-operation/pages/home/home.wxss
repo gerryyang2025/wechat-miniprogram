@@ -10,6 +10,10 @@
   padding-bottom: calc(96rpx + env(safe-area-inset-bottom));
 }
 
+.home-bottom-spacer {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}
+
 .hero-panel {
   padding: calc(108rpx + env(safe-area-inset-top)) 32rpx 26rpx;
 }
@@ -375,6 +379,13 @@
   display: flex;
   flex-direction: column;
   gap: 16rpx;
+}
+
+.feature-stack-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20rpx;
 }
 
 .feature-card {
