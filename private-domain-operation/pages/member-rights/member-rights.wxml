@@ -4,14 +4,18 @@
       <view class="rights-back" bindtap="onBackTap">‹</view>
       <view class="rights-nav-copy">
         <text class="rights-nav-title">会员权益</text>
-        <text class="rights-nav-subtitle">查看当前阶段开放的会员内容与说明</text>
+        <text class="rights-nav-subtitle">{{navSubtitle}}</text>
       </view>
     </view>
 
     <view class="rights-hero card-surface">
       <text class="rights-badge">年度会员</text>
-      <text class="rights-title">时昕有点懒 · 会员内容计划</text>
-      <text class="rights-desc">当前阶段以课程学习、直播回放和训练营精选内容为主，后续会逐步补齐购买、续费与权益管理能力。</text>
+      <text class="rights-title">{{heroTitle}}</text>
+      <text class="rights-desc">{{heroDesc}}</text>
+      <view class="rights-hero-actions">
+        <view class="ghost-button" bindtap="onPrimaryTap">{{primaryActionText}}</view>
+        <view class="ghost-button ghost-button--soft" bindtap="onSecondaryTap">{{secondaryActionText}}</view>
+      </view>
     </view>
 
     <view class="rights-section card-surface">

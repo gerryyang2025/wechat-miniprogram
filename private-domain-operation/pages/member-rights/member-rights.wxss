@@ -51,6 +51,12 @@
   gap: 16rpx;
 }
 
+.rights-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
 .rights-badge {
   align-self: flex-start;
   padding: 10rpx 18rpx;

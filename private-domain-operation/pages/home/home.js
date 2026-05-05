@@ -87,6 +87,13 @@ Page({
       return;
     }
 
+    if (featureType === "member") {
+      wx.navigateTo({
+        url: "/pages/member-rights/member-rights?source=home"
+      });
+      return;
+    }
+
     wx.showToast({
       title: `${label}功能下一步接入`,
       icon: "none"
