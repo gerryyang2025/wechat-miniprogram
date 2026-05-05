@@ -15,7 +15,6 @@ const learningCourseConfig = [
     id: "learn-aigc",
     type: "课程",
     detailCourseId: "course-aigc-video",
-    shortTitle: "AIGC视频",
     theme: "cyan",
     actionLabel: "继续学习"
   },
@@ -23,7 +22,6 @@ const learningCourseConfig = [
     id: "learn-wechat-game",
     type: "课程",
     detailCourseId: "course-wechat-game",
-    shortTitle: "小游戏开发",
     theme: "indigo",
     actionLabel: "继续学习"
   },
@@ -31,7 +29,6 @@ const learningCourseConfig = [
     id: "learn-1",
     type: "课程",
     detailCourseId: "course-1",
-    shortTitle: "IP变现课",
     theme: "purple",
     actionLabel: "继续学习"
   }
@@ -143,7 +140,7 @@ function getLearningPageData() {
     return {
       id: item.id,
       type: item.type,
-      title: item.shortTitle || courseMeta.title,
+      title: courseMeta.title,
       progress: compactLearningProgress(courseMeta.progress),
       lastLabel: recentLesson.lastLabel,
       lastText: recentLesson.lastText,
