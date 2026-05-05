@@ -4,6 +4,9 @@ const detailCourseCatalog = {
   "course-aigc-video": {
     id: "course-aigc-video",
     playerCourseId: "player-aigc-video",
+    accessType: "purchased",
+    unlockStrategy: "sequential",
+    lockedAction: "progress",
     tag: "录播课",
     title: "AIGC 视频制作",
     author: "Gerry",
@@ -59,6 +62,9 @@ const detailCourseCatalog = {
   "course-wechat-game": {
     id: "course-wechat-game",
     playerCourseId: "player-wechat-game",
+    accessType: "purchased",
+    unlockStrategy: "sequential",
+    lockedAction: "progress",
     tag: "项目实战",
     title: "微信小游戏开发",
     author: "Gerry",
@@ -113,6 +119,9 @@ const detailCourseCatalog = {
   "course-1": {
     id: "course-1",
     playerCourseId: "player-ip-course",
+    accessType: "purchased",
+    unlockStrategy: "sequential",
+    lockedAction: "progress",
     tag: "系列课",
     title: "个人 IP 内容变现实战课",
     author: "Gerry",
@@ -179,6 +188,10 @@ const detailCourseCatalog = {
   "course-2": {
     id: "course-2",
     previewPlayerCourseId: "player-short-video",
+    accessType: "member",
+    unlockStrategy: "preview_limit",
+    previewLimit: 2,
+    lockedAction: "member",
     tag: "视频课",
     title: "短视频表达与节奏训练",
     author: "Gerry",
@@ -201,8 +214,8 @@ const detailCourseCatalog = {
         title: "模块 1 · 镜头表达基础",
         summary: "先把开场、停顿和镜头状态稳住。",
         lessons: [
-          { id: "course-2-l1", title: "第 1 节 开场 5 秒如何抓住注意力", duration: "08:35", status: "preview" },
-          { id: "course-2-l2", title: "第 2 节 口播节奏与停顿训练", duration: "10:24", status: "preview" }
+          { id: "course-2-l1", playerLessonId: "player-short-video-l1", title: "第 1 节 开场 5 秒如何抓住注意力", duration: "08:35", status: "preview" },
+          { id: "course-2-l2", playerLessonId: "player-short-video-l2", title: "第 2 节 口播节奏与停顿训练", duration: "10:24", status: "preview" }
         ]
       },
       {
@@ -210,19 +223,23 @@ const detailCourseCatalog = {
         title: "模块 2 · 结构化表达训练",
         summary: "从内容结构到结尾动作，建立可复用模板。",
         lessons: [
-          { id: "course-2-l3", title: "第 3 节 镜头状态与眼神控制", duration: "09:18", status: "locked" },
-          { id: "course-2-l4", title: "第 4 节 结构化表达与复盘方法", duration: "12:05", status: "locked" }
+          { id: "course-2-l3", playerLessonId: "player-short-video-l3", title: "第 3 节 镜头状态与眼神控制", duration: "09:18", status: "locked" },
+          { id: "course-2-l4", playerLessonId: "player-short-video-l4", title: "第 4 节 结构化表达与复盘方法", duration: "12:05", status: "locked" }
         ]
       }
     ],
     note: "当前为原型示例页，会员权益与试看策略以后续正式实现为准。",
-    primaryActionType: "toast",
-    primaryActionText: "了解会员权益",
+    primaryActionType: "member_rights",
+    primaryActionText: "解锁会员",
     secondaryActionText: "咨询课程"
   },
   "course-3": {
     id: "course-3",
     previewPlayerCourseId: "player-circle-conversion",
+    accessType: "preview",
+    unlockStrategy: "preview_limit",
+    previewLimit: 2,
+    lockedAction: "consultation",
     tag: "图文课",
     title: "朋友圈内容转化模型",
     author: "Gerry",
@@ -245,8 +262,8 @@ const detailCourseCatalog = {
         title: "模块 1 · 信任内容设计",
         summary: "先搭好朋友圈的信任底层。",
         lessons: [
-          { id: "course-3-l1", title: "第 1 节 朋友圈内容的角色分层", duration: "图文 1", status: "preview" },
-          { id: "course-3-l2", title: "第 2 节 信任内容与转化内容的配比", duration: "图文 2", status: "preview" }
+          { id: "course-3-l1", playerLessonId: "player-circle-conversion-l1", title: "第 1 节 朋友圈内容的角色分层", duration: "图文 1", status: "preview" },
+          { id: "course-3-l2", playerLessonId: "player-circle-conversion-l2", title: "第 2 节 信任内容与转化内容的配比", duration: "图文 2", status: "preview" }
         ]
       },
       {
@@ -254,14 +271,15 @@ const detailCourseCatalog = {
         title: "模块 2 · 转化动作设计",
         summary: "把日常内容和成交动作衔接起来。",
         lessons: [
-          { id: "course-3-l3", title: "第 3 节 日常发圈模板与节奏", duration: "图文 3", status: "locked" },
-          { id: "course-3-l4", title: "第 4 节 转化动作与成交提醒", duration: "图文 4", status: "locked" }
+          { id: "course-3-l3", playerLessonId: "player-circle-conversion-l3", title: "第 3 节 日常发圈模板与节奏", duration: "图文 3", status: "locked" },
+          { id: "course-3-l4", playerLessonId: "player-circle-conversion-l4", title: "第 4 节 转化动作与成交提醒", duration: "图文 4", status: "locked" }
         ]
       }
     ],
     note: "当前原型页只展示信息结构和目录示例，不包含购买与咨询流程。",
-    primaryActionType: "toast",
-    primaryActionText: "立即了解",
+    primaryActionType: "preview",
+    primaryActionTarget: "player-circle-conversion",
+    primaryActionText: "查看试看",
     secondaryActionText: "咨询课程"
   }
 };
@@ -269,6 +287,9 @@ const detailCourseCatalog = {
 const playerCourseCatalog = {
   "player-ip-course": {
     id: "player-ip-course",
+    accessType: "purchased",
+    unlockStrategy: "sequential",
+    lockedAction: "progress",
     title: "个人 IP 内容变现实战课",
     coverUrl: "/assets/home/banner1.jpg",
     duration: "内容更新中",
@@ -316,6 +337,9 @@ const playerCourseCatalog = {
   },
   "player-aigc-video": {
     id: "player-aigc-video",
+    accessType: "purchased",
+    unlockStrategy: "sequential",
+    lockedAction: "progress",
     title: "AIGC 视频制作",
     coverUrl: "/assets/home/banner1.jpg",
     duration: "03:22",
@@ -353,6 +377,9 @@ const playerCourseCatalog = {
   },
   "player-wechat-game": {
     id: "player-wechat-game",
+    accessType: "purchased",
+    unlockStrategy: "sequential",
+    lockedAction: "progress",
     title: "微信小游戏开发",
     coverUrl: "/assets/home/banner2.jpg",
     duration: "项目演示",
@@ -389,6 +416,10 @@ const playerCourseCatalog = {
   },
   "player-short-video": {
     id: "player-short-video",
+    accessType: "member",
+    unlockStrategy: "preview_limit",
+    previewLimit: 2,
+    lockedAction: "member",
     title: "短视频表达与节奏训练",
     coverUrl: "/assets/home/banner1.jpg",
     duration: "试看内容",
@@ -417,6 +448,10 @@ const playerCourseCatalog = {
   },
   "player-circle-conversion": {
     id: "player-circle-conversion",
+    accessType: "preview",
+    unlockStrategy: "preview_limit",
+    previewLimit: 2,
+    lockedAction: "consultation",
     title: "朋友圈内容转化模型",
     coverUrl: "/assets/home/banner2.jpg",
     duration: "图文试看",
@@ -445,7 +480,9 @@ const playerCourseCatalog = {
   }
 };
 
-const playerCourseProgressState = {
+const COURSE_PROGRESS_STORAGE_KEY = "pdo_course_progress_v1";
+
+const defaultPlayerCourseProgressState = {
   "player-ip-course": {
     completedLessons: 4,
     totalLessons: 12,
@@ -469,6 +506,8 @@ const playerCourseProgressState = {
   }
 };
 
+let playerCourseProgressState = null;
+
 function flattenLessons(chapters = []) {
   const lessons = [];
 
@@ -485,7 +524,122 @@ function flattenLessons(chapters = []) {
   return lessons;
 }
 
+function canUseStorage() {
+  return typeof wx !== "undefined" && wx && typeof wx.getStorageSync === "function" && typeof wx.setStorageSync === "function";
+}
+
+function safeGetStorageSync(key = "") {
+  if (!canUseStorage()) {
+    return null;
+  }
+
+  try {
+    return wx.getStorageSync(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function safeSetStorageSync(key = "", value) {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  try {
+    wx.setStorageSync(key, value);
+  } catch (error) {
+    // ignore storage errors in prototype mode
+  }
+}
+
+function parseDurationMinutes(duration = "") {
+  const matched = String(duration || "").match(/^(\d+):(\d{2})$/);
+
+  if (!matched) {
+    return 0;
+  }
+
+  const minutes = Number(matched[1]) || 0;
+  const seconds = Number(matched[2]) || 0;
+  const totalSeconds = minutes * 60 + seconds;
+
+  return Math.max(1, Math.round(totalSeconds / 60));
+}
+
+function buildCompletedDuration(flatLessons = [], completedLessons = 0, fallbackText = "") {
+  const parsedMinutes = flatLessons
+    .slice(0, completedLessons)
+    .reduce((total, lesson) => total + parseDurationMinutes(lesson.duration), 0);
+
+  if (parsedMinutes > 0) {
+    return `累计学习 ${parsedMinutes} 分钟`;
+  }
+
+  if (completedLessons > 0) {
+    return `累计学习 ${completedLessons} 节`;
+  }
+
+  return fallbackText || "累计学习 0 分钟";
+}
+
+function buildHydratedProgressState() {
+  const persisted = safeGetStorageSync(COURSE_PROGRESS_STORAGE_KEY);
+  const nextState = {};
+
+  Object.keys(playerCourseCatalog).forEach((courseId) => {
+    const baseCourse = playerCourseCatalog[courseId];
+    const flatLessons = flattenLessons(baseCourse.chapters || []);
+    const fallbackState = defaultPlayerCourseProgressState[courseId] || {};
+    const persistedState = persisted && persisted[courseId] ? persisted[courseId] : {};
+    const defaultLessonId =
+      persistedState.currentLessonId ||
+      fallbackState.currentLessonId ||
+      ((flatLessons.find((lesson) => lesson.status !== "locked") || {}).id) ||
+      "";
+    const selectedLessonId = defaultLessonId;
+    const selectedIndex = flatLessons.findIndex((lesson) => lesson.id === selectedLessonId);
+    const autoCompletedLessons = baseCourse.unlockStrategy === "sequential" && selectedIndex >= 0 ? selectedIndex + 1 : 0;
+    const completedLessons = Math.min(
+      flatLessons.length,
+      Math.max(
+        persistedState.completedLessons || fallbackState.completedLessons || 0,
+        autoCompletedLessons
+      )
+    );
+
+    nextState[courseId] = {
+      completedLessons,
+      totalLessons: flatLessons.length || persistedState.totalLessons || fallbackState.totalLessons || 0,
+      completedDuration: buildCompletedDuration(flatLessons, completedLessons, persistedState.completedDuration || fallbackState.completedDuration || ""),
+      lastPosition:
+        persistedState.lastPosition ||
+        fallbackState.lastPosition ||
+        (selectedIndex >= 0 ? `上次学到：${flatLessons[selectedIndex].title}` : ""),
+      currentLessonId: selectedIndex >= 0 ? flatLessons[selectedIndex].id : selectedLessonId
+    };
+  });
+
+  return nextState;
+}
+
+function ensurePlayerCourseProgressState() {
+  if (!playerCourseProgressState) {
+    playerCourseProgressState = buildHydratedProgressState();
+  }
+
+  return playerCourseProgressState;
+}
+
+function persistPlayerCourseProgressState() {
+  if (!playerCourseProgressState) {
+    return;
+  }
+
+  safeSetStorageSync(COURSE_PROGRESS_STORAGE_KEY, playerCourseProgressState);
+}
+
 function getCurrentLesson(playerCourseId = "", chapters = []) {
+  ensurePlayerCourseProgressState();
   const flatLessons = flattenLessons(chapters);
   const currentLessonId = playerCourseProgressState[playerCourseId] && playerCourseProgressState[playerCourseId].currentLessonId;
 
@@ -503,6 +657,34 @@ function getNextLesson(chapters = [], currentLessonId = "") {
   return flatLessons[currentIndex + 1];
 }
 
+function normalizeSequentialStatus(lessonIndex = 0, currentIndex = -1) {
+  if (currentIndex < 0) {
+    return lessonIndex === 0 ? "current" : lessonIndex === 1 ? "upcoming" : "locked";
+  }
+
+  if (lessonIndex < currentIndex) {
+    return "completed";
+  }
+
+  if (lessonIndex === currentIndex) {
+    return "current";
+  }
+
+  if (lessonIndex === currentIndex + 1) {
+    return "upcoming";
+  }
+
+  return "locked";
+}
+
+function normalizePreviewLimitStatus(lesson = {}, lessonIndex = 0, previewLimit = 0) {
+  if (lessonIndex < previewLimit) {
+    return "preview";
+  }
+
+  return "locked";
+}
+
 function buildProgressPercent(completedLessons = 0, totalLessons = 0) {
   if (!totalLessons) {
     return 0;
@@ -512,6 +694,7 @@ function buildProgressPercent(completedLessons = 0, totalLessons = 0) {
 }
 
 function buildLearningSummary(detailCourse = {}, playerCourseId = "") {
+  ensurePlayerCourseProgressState();
   const state = playerCourseProgressState[playerCourseId];
   const currentLesson = getCurrentLesson(playerCourseId, detailCourse.chapters || []);
 
@@ -529,6 +712,7 @@ function buildLearningSummary(detailCourse = {}, playerCourseId = "") {
 }
 
 function buildDetailProgressSummary(detailCourse = {}, playerCourseId = "") {
+  ensurePlayerCourseProgressState();
   const state = playerCourseProgressState[playerCourseId];
 
   if (!state) {
@@ -550,6 +734,7 @@ function buildDetailProgressSummary(detailCourse = {}, playerCourseId = "") {
 }
 
 function buildPlayerProgressSummary(playerCourse = {}, playerCourseId = "") {
+  ensurePlayerCourseProgressState();
   const state = playerCourseProgressState[playerCourseId];
 
   if (!state) {
@@ -569,11 +754,13 @@ function buildPlayerProgressSummary(playerCourse = {}, playerCourseId = "") {
   };
 }
 
-function buildRenderedChapters(chapters = [], playerCourseId = "") {
+function buildRenderedChapters(chapters = [], courseConfig = {}, playerCourseId = "", mode = "player") {
   const currentLesson = getCurrentLesson(playerCourseId, chapters);
   const currentLessonId = currentLesson ? currentLesson.id : "";
   const flatLessons = flattenLessons(chapters);
   const currentIndex = flatLessons.findIndex((lesson) => lesson.id === currentLessonId);
+  const unlockStrategy = courseConfig.unlockStrategy || "free_access";
+  const previewLimit = courseConfig.previewLimit || 0;
   let globalIndex = -1;
 
   return chapters.map((chapter) => ({
@@ -582,12 +769,16 @@ function buildRenderedChapters(chapters = [], playerCourseId = "") {
       globalIndex += 1;
       let status = lesson.status || "upcoming";
 
-      if (status !== "locked") {
-        if (lesson.id === currentLessonId) {
+      if (unlockStrategy === "sequential") {
+        status = normalizeSequentialStatus(globalIndex, currentIndex);
+      } else if (unlockStrategy === "preview_limit") {
+        status = normalizePreviewLimitStatus(lesson, globalIndex, previewLimit);
+      } else if (status !== "locked") {
+        if (mode === "player" && lesson.id === currentLessonId) {
           status = "current";
-        } else if (currentIndex > -1 && globalIndex < currentIndex) {
+        } else if (mode === "player" && currentIndex > -1 && globalIndex < currentIndex) {
           status = "completed";
-        } else if (status === "current") {
+        } else if (mode === "player" && status === "current") {
           status = "upcoming";
         }
       }
@@ -601,6 +792,7 @@ function buildRenderedChapters(chapters = [], playerCourseId = "") {
 }
 
 function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
+  ensurePlayerCourseProgressState();
   const baseCourse = playerCourseCatalog[playerCourseId];
 
   if (!baseCourse) {
@@ -614,6 +806,14 @@ function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
     return null;
   }
 
+  const renderedChapters = buildRenderedChapters(baseCourse.chapters || [], baseCourse, playerCourseId, "player");
+  const renderedLessons = flattenLessons(renderedChapters);
+  const selectedRenderedLesson = renderedLessons.find((lesson) => lesson.id === lessonId);
+
+  if (!selectedRenderedLesson || selectedRenderedLesson.status === "locked") {
+    return null;
+  }
+
   const currentState = playerCourseProgressState[playerCourseId] || {
     completedLessons: 0,
     totalLessons: flatLessons.length,
@@ -623,14 +823,19 @@ function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
   };
 
   const selectedLesson = flatLessons[selectedIndex];
+  const autoCompletedLessons = baseCourse.unlockStrategy === "sequential" ? selectedIndex + 1 : currentState.completedLessons || 0;
+  const completedLessons = Math.max(currentState.completedLessons || 0, autoCompletedLessons);
 
   playerCourseProgressState[playerCourseId] = {
     ...currentState,
     totalLessons: currentState.totalLessons || flatLessons.length,
-    completedLessons: Math.max(currentState.completedLessons || 0, selectedIndex + 1),
+    completedLessons,
+    completedDuration: buildCompletedDuration(flatLessons, completedLessons, currentState.completedDuration),
     currentLessonId: lessonId,
     lastPosition: `上次学到：${selectedLesson.title}`
   };
+
+  persistPlayerCourseProgressState();
 
   return clone(playerCourseProgressState[playerCourseId]);
 }
@@ -639,11 +844,16 @@ function getDetailCourse(courseId = "course-1") {
   const baseCourse = detailCourseCatalog[courseId] || detailCourseCatalog["course-1"];
   const clonedCourse = clone(baseCourse);
 
+  const targetPlayerCourseId = clonedCourse.playerCourseId || clonedCourse.previewPlayerCourseId;
+
+  if (targetPlayerCourseId) {
+    clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse, targetPlayerCourseId, "detail");
+  }
+
   if (!clonedCourse.playerCourseId) {
     return clonedCourse;
   }
 
-  clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse.playerCourseId);
   clonedCourse.progressSummary = buildDetailProgressSummary(clonedCourse, clonedCourse.playerCourseId);
 
   return clonedCourse;
@@ -657,7 +867,7 @@ function getPlayerCourse(courseId = "") {
   }
 
   const clonedCourse = clone(baseCourse);
-  clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse.id);
+  clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse, clonedCourse.id, "player");
   clonedCourse.progressSummary = buildPlayerProgressSummary(clonedCourse, clonedCourse.id);
 
   return clonedCourse;

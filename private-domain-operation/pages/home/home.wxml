@@ -73,7 +73,10 @@
                 <text class="owned-badge">{{item.badge}}</text>
               </view>
               <text class="owned-meta">{{item.meta}}</text>
-              <text class="owned-summary">最近学习 · {{item.summary}}</text>
+              <view class="owned-summary-row">
+                <text class="owned-summary-label">{{item.recentLessonIndex}}</text>
+                <text class="owned-summary">{{item.summary}}</text>
+              </view>
             </view>
             <view class="owned-action">{{item.action}}</view>
           </view>

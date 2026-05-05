@@ -48,6 +48,20 @@ Page({
       return;
     }
 
+    if (product.primaryActionType === "preview" && product.primaryActionTarget) {
+      wx.navigateTo({
+        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(product.primaryActionTarget)}`
+      });
+      return;
+    }
+
+    if (product.primaryActionType === "member_rights") {
+      wx.navigateTo({
+        url: "/pages/member-rights/member-rights?source=course"
+      });
+      return;
+    }
+
     if (product.primaryActionType === "learning") {
       wx.reLaunch({
         url: "/pages/learning/learning"
@@ -69,16 +83,38 @@ Page({
     });
   },
 
+  handleLockedLessonAction() {
+    const { product } = this.data;
+
+    if (product.lockedAction === "member") {
+      wx.navigateTo({
+        url: "/pages/member-rights/member-rights?source=course"
+      });
+      return;
+    }
+
+    if (product.lockedAction === "consultation") {
+      wx.navigateTo({
+        url:
+          `/pages/consultation/consultation?scene=course` +
+          `&title=${encodeURIComponent(product.title)}`
+      });
+      return;
+    }
+
+    wx.showToast({
+      title: "完成上一节后解锁",
+      icon: "none"
+    });
+  },
+
   onOutlineLessonTap(event) {
     const { lessonStatus, playerLessonId } = event.currentTarget.dataset;
     const { product } = this.data;
     const targetPlayerCourseId = product.playerCourseId || product.previewPlayerCourseId;
 
     if (lessonStatus === "locked") {
-      wx.showToast({
-        title: "当前课节暂未解锁",
-        icon: "none"
-      });
+      this.handleLockedLessonAction();
       return;
     }
 

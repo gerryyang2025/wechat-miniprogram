@@ -6,6 +6,7 @@ const learningCourseConfig = [
     id: "learn-aigc",
     type: "课程",
     detailCourseId: "course-aigc-video",
+    shortTitle: "AIGC视频",
     theme: "cyan",
     actionLabel: "继续学习"
   },
@@ -13,6 +14,7 @@ const learningCourseConfig = [
     id: "learn-wechat-game",
     type: "课程",
     detailCourseId: "course-wechat-game",
+    shortTitle: "小游戏开发",
     theme: "indigo",
     actionLabel: "继续学习"
   },
@@ -20,6 +22,7 @@ const learningCourseConfig = [
     id: "learn-1",
     type: "课程",
     detailCourseId: "course-1",
+    shortTitle: "IP变现课",
     theme: "purple",
     actionLabel: "继续学习"
   }
@@ -35,20 +38,22 @@ const learningPageData = {
     {
       id: "learn-2",
       type: "训练营",
-      title: "7 天私域增长训练营",
-      progress: "Day 2 / 7",
-      last: "最近任务：朋友圈内容拆解",
+      title: "7天增长营",
+      progress: "Day2/7",
+      lastLabel: "今日任务",
+      lastText: "朋友圈拆解",
       theme: "blue",
-      actionLabel: "继续打卡"
+      actionLabel: "打卡"
     },
     {
       id: "learn-3",
       type: "直播回放",
-      title: "私域运营直播答疑回放",
-      progress: "已观看至 23:18 / 90:00",
-      last: "推荐先回看：社群转化节奏与直播答疑结构",
+      title: "直播答疑回放",
+      progress: "23:18/90:00",
+      lastLabel: "重点片段",
+      lastText: "社群转化节奏",
       theme: "indigo",
-      actionLabel: "继续回看"
+      actionLabel: "回看"
     }
   ]
 };
@@ -76,16 +81,61 @@ const learningLiveMap = {
   }
 };
 
+function compactLearningProgress(text = "") {
+  return String(text || "")
+    .replace(/^已学\s*/, "")
+    .replace(/\s*节$/, "节")
+    .replace(/\s+/g, "");
+}
+
+function compactLearningSummary(text = "") {
+  return String(text || "")
+    .replace(/^最近学习：/, "")
+    .replace(/^最近学习\s*/, "")
+    .replace(/^上次学到：/, "")
+    .replace(/^上次学到\s*/, "")
+    .trim();
+}
+
+function clampLearningSummary(text = "", maxLength = 12) {
+  const normalized = String(text || "").trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}…` : normalized;
+}
+
+function buildLearningRecentLesson(text = "") {
+  const compactText = compactLearningSummary(text);
+  const matched = compactText.match(/^(第\s*\d+\s*节)\s*(.*)$/);
+
+  if (!matched) {
+    return {
+      lastLabel: "最近学习",
+      lastText: clampLearningSummary(compactText)
+    };
+  }
+
+  return {
+    lastLabel: matched[1].replace(/\s+/g, ""),
+    lastText: clampLearningSummary(matched[2] || compactText)
+  };
+}
+
 function getLearningPageData() {
   const learningList = learningCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
+    const recentLesson = buildLearningRecentLesson(courseMeta.last);
 
     return {
       id: item.id,
       type: item.type,
-      title: courseMeta.title,
-      progress: courseMeta.progress,
-      last: courseMeta.last,
+      title: item.shortTitle || courseMeta.title,
+      progress: compactLearningProgress(courseMeta.progress),
+      lastLabel: recentLesson.lastLabel,
+      lastText: recentLesson.lastText,
       theme: item.theme,
       actionLabel: item.actionLabel
     };

@@ -181,10 +181,33 @@
   font-weight: 600;
 }
 
+.learning-last-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.learning-last-label {
+  flex-shrink: 0;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(98, 120, 244, 0.1);
+  color: #6278f4;
+  font-size: 18rpx;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .learning-last {
+  flex: 1;
+  min-width: 0;
   font-size: 24rpx;
   line-height: 1.6;
   color: #7f89ab;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .learning-action {

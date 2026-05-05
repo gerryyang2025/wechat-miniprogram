@@ -33,7 +33,11 @@
         <view class="learning-body">
           <text class="learning-item-title">{{item.title}}</text>
           <text class="learning-progress">{{item.progress}}</text>
-          <text class="learning-last">{{item.last}}</text>
+          <view wx:if="{{item.lastLabel}}" class="learning-last-row">
+            <text class="learning-last-label">{{item.lastLabel}}</text>
+            <text class="learning-last">{{item.lastText}}</text>
+          </view>
+          <text wx:else class="learning-last">{{item.last}}</text>
           <view class="learning-action" data-item-id="{{item.id}}" catchtap="onContinueTap">{{item.actionLabel || '继续学习'}}</view>
         </view>
       </view>

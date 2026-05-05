@@ -310,6 +310,31 @@ Page({
     });
   },
 
+  handleLockedLessonAction() {
+    const lockedAction = this.playerPayload && this.playerPayload.lockedAction;
+
+    if (lockedAction === "member") {
+      wx.navigateTo({
+        url: "/pages/member-rights/member-rights?source=course"
+      });
+      return;
+    }
+
+    if (lockedAction === "consultation") {
+      wx.navigateTo({
+        url:
+          `/pages/consultation/consultation?scene=course` +
+          `&title=${encodeURIComponent(this.data.title)}`
+      });
+      return;
+    }
+
+    wx.showToast({
+      title: "完成上一节后解锁",
+      icon: "none"
+    });
+  },
+
   onRetryTap() {
     if (!this.playerPayload) {
       return;
@@ -339,10 +364,7 @@ Page({
     }
 
     if (lessonStatus === "locked") {
-      wx.showToast({
-        title: "当前课节暂未解锁",
-        icon: "none"
-      });
+      this.handleLockedLessonAction();
       return;
     }
 

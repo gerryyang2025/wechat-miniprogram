@@ -5,6 +5,7 @@ const purchasedCourseConfig = [
   {
     id: "owned-course-aigc",
     detailCourseId: "course-aigc-video",
+    shortTitle: "AIGC视频",
     badge: "录播课",
     action: "学习",
     theme: "cyan",
@@ -13,6 +14,7 @@ const purchasedCourseConfig = [
   {
     id: "owned-course-wechat-game",
     detailCourseId: "course-wechat-game",
+    shortTitle: "小游戏开发",
     badge: "录播课",
     action: "学习",
     theme: "indigo",
@@ -21,6 +23,7 @@ const purchasedCourseConfig = [
   {
     id: "owned-course-1",
     detailCourseId: "course-1",
+    shortTitle: "IP变现课",
     badge: "系列课",
     action: "学习",
     theme: "purple",
@@ -121,16 +124,52 @@ function compactOwnedSummary(text = "") {
     .trim();
 }
 
+function compactOwnedMeta(text = "") {
+  return String(text || "")
+    .replace(/^已学\s*/, "")
+    .replace(/\s*节$/, "节")
+    .replace(/\s+/g, "");
+}
+
+function clampOwnedSummary(text = "", maxLength = 10) {
+  const normalized = String(text || "").trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}…` : normalized;
+}
+
+function buildOwnedRecentLesson(text = "") {
+  const compactText = compactOwnedSummary(text);
+  const matched = compactText.match(/^(第\s*\d+\s*节)\s*(.*)$/);
+
+  if (!matched) {
+    return {
+      recentLessonIndex: "最近学习",
+      recentLessonTitle: clampOwnedSummary(compactText)
+    };
+  }
+
+  return {
+    recentLessonIndex: matched[1].replace(/\s+/g, ""),
+    recentLessonTitle: clampOwnedSummary(matched[2] || compactText)
+  };
+}
+
 function getHomePageData() {
   const purchasedCourses = purchasedCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
+    const recentLesson = buildOwnedRecentLesson(courseMeta.last);
 
     return {
       id: item.id,
       badge: item.badge,
-      title: courseMeta.title,
-      meta: courseMeta.progress,
-      summary: compactOwnedSummary(courseMeta.last),
+      title: item.shortTitle || courseMeta.title,
+      meta: compactOwnedMeta(courseMeta.progress),
+      summary: recentLesson.recentLessonTitle,
+      recentLessonIndex: recentLesson.recentLessonIndex,
       action: item.action,
       theme: item.theme,
       monogram: item.monogram
