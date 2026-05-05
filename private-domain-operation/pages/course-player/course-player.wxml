@@ -14,8 +14,9 @@
       <text class="player-description">{{description}}</text>
 
       <video
+        wx:if="{{isVideoReady}}"
         class="player-video"
-        src="{{videoUrl}}"
+        src="{{playerVideoUrl}}"
         poster="{{coverUrl}}"
         controls
         autoplay
@@ -23,9 +24,16 @@
         binderror="onVideoError"
       ></video>
 
+      <view wx:else class="player-video-placeholder player-video-placeholder--{{statusType}}">
+        <text class="player-video-placeholder-title">{{statusTitle}}</text>
+        <text class="player-video-placeholder-text">{{statusText}}</text>
+        <view class="ghost-button" bindtap="onStatusActionTap">{{statusActionText}}</view>
+      </view>
+
       <view class="player-meta">
         <text class="player-meta-item">时长 {{duration}}</text>
         <text class="player-meta-item">来源 {{sourceLabel}}</text>
+        <text wx:if="{{isFallbackCover}}" class="player-meta-item">封面已使用默认图</text>
       </view>
     </view>
 
@@ -73,9 +81,9 @@
       </view>
     </view>
 
-    <view wx:if="{{isVideoError}}" class="player-status card-surface">
-      <text class="player-status-title">视频暂时无法播放</text>
-      <text class="player-status-text">请检查小程序后台是否已配置对应媒体域名，或稍后重试。</text>
+    <view wx:if="{{statusType !== 'ready'}}" class="player-status card-surface">
+      <text class="player-status-title">{{statusTitle}}</text>
+      <text class="player-status-text">{{statusText}}</text>
     </view>
   </scroll-view>
 </view>

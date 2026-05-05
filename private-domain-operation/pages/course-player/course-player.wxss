@@ -80,6 +80,41 @@
   overflow: hidden;
 }
 
+.player-video-placeholder {
+  width: 100%;
+  min-height: 420rpx;
+  border-radius: 28rpx;
+  padding: 40rpx 36rpx;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(14, 21, 42, 0.98) 0%, rgba(28, 38, 71, 0.98) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18rpx;
+}
+
+.player-video-placeholder--preparing {
+  background: linear-gradient(180deg, rgba(17, 33, 66, 0.98) 0%, rgba(32, 53, 98, 0.98) 100%);
+}
+
+.player-video-placeholder--invalid,
+.player-video-placeholder--error {
+  background: linear-gradient(180deg, rgba(29, 24, 56, 0.98) 0%, rgba(45, 33, 82, 0.98) 100%);
+}
+
+.player-video-placeholder-title {
+  font-size: 34rpx;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.player-video-placeholder-text {
+  font-size: 24rpx;
+  line-height: 1.75;
+  color: rgba(234, 239, 255, 0.78);
+}
+
 .player-meta {
   display: flex;
   flex-wrap: wrap;
