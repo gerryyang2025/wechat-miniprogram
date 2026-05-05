@@ -1,6 +1,6 @@
 # 后端技术方案文档
 
-文档版本：`v0.5`
+文档版本：`v0.6`
 
 创建日期：`2026-05-04`
 
@@ -130,11 +130,103 @@
 - 回放分发
 - 防盗链与播放优化
 
+### 5.5 一期课程视频资源获取建议
+
+当前 MVP 阶段建议把“课程播放视频资源获取”拆成两个层次：
+
+- `当前最小可用方案`
+  - 讲师自制短视频
+  - 历史课程视频迁移
+  - 直播录制回放转课程回放
+- `后续增强方案`
+  - 接入 `VOD（云点播）` 做上传、转码、回放和媒资管理
+
+一期最推荐的实际链路：
+
+1. 讲师录制少量课程示例视频，优先准备 `3 ~ 5` 条可播放内容
+2. 将视频上传到 `COS（Cloud Object Storage）`
+3. 在本地 Mock 数据或后端媒资表中写入视频播放地址、封面、时长、标题等字段
+4. 前端课程播放页通过小程序 `video` 组件直接消费 HTTPS 资源地址
+
+当前阶段不建议：
+
+- 将视频文件直接放入小程序代码包
+- 在尚未完成页面主路径前就重投入建设复杂媒资后台
+
+适合当前阶段的资源来源优先级：
+
+- `优先级 1`：讲师自制课程示例视频
+- `优先级 2`：已有本地 MP4 课程资源迁移
+- `优先级 3`：直播结束后的录制回放复用
+
+何时建议从 `COS` 升级到 `VOD`：
+
+- 需要自动转码与多清晰度播放
+- 需要批量上传、媒资管理、截图和封面处理
+- 需要直播录制自动入库
+- 需要更稳定的回放分发和更完整的防盗链能力
+
 ## 6. 媒资数据组织建议
 
 - `COS（Cloud Object Storage）`：保存视频本体、封面、附件、回放文件
 - `MySQL 8.0`：保存媒资与课程、讲师、订单权益、直播回放之间的主业务关联
 - `etcd`：保存 `COS（Cloud Object Storage）` 对象键、访问地址、封面图、转码结果、时长、大小、权限状态和轻量索引信息
+
+### 6.1 一期课程播放资源最小数据结构建议
+
+一期原型和前端联调阶段，建议先统一一份最小视频资源结构，不依赖真实后端即可跑通播放页：
+
+```json
+{
+  "course_id": "course-ip-001",
+  "lesson_id": "lesson-001",
+  "title": "第 1 节 个人定位与内容方向",
+  "cover_url": "https://example-cdn.com/course-ip-001/poster-001.jpg",
+  "video_url": "https://example-cdn.com/course-ip-001/video-001.mp4",
+  "duration_seconds": 428,
+  "progress_seconds": 0,
+  "is_preview": false,
+  "source_type": "recorded_course"
+}
+```
+
+最小字段说明：
+
+- `course_id`：所属课程
+- `lesson_id`：课时唯一标识
+- `title`：课时标题
+- `cover_url`：视频封面图
+- `video_url`：可直接给小程序 `video` 组件使用的地址
+- `duration_seconds`：视频总时长
+- `progress_seconds`：当前用户最近学习位置，原型阶段可先用 Mock 值
+- `is_preview`：是否试听
+- `source_type`：资源来源，如 `recorded_course`、`live_replay`
+
+### 6.2 后端媒资与播放字段建议
+
+当后端开始接入真实数据时，建议至少补齐以下字段：
+
+- `media_id`
+- `course_id`
+- `lesson_id`
+- `media_type`
+- `storage_provider`
+- `object_key`
+- `play_url`
+- `cover_url`
+- `duration_seconds`
+- `file_size`
+- `status`
+- `source_type`
+- `created_at`
+- `updated_at`
+
+说明：
+
+- `storage_provider`：便于区分 `COS` 与后续可能接入的 `VOD`
+- `object_key`：便于后续做迁移、签名、失效和重建地址
+- `status`：便于区分 `uploading`、`ready`、`disabled`
+- `source_type`：便于区分录播课、训练营视频、直播回放
 
 ## 7. 服务架构建议
 

@@ -1,6 +1,7 @@
 Page({
   data: {
     currentBannerIndex: 0,
+    bannerAutoplay: true,
     bannerList: [
       {
         id: "banner-1",
@@ -13,20 +14,31 @@ Page({
     ],
     purchasedCourses: [
       {
+        id: "owned-course-aigc",
+        badge: "录播课",
+        title: "AIGC 视频制作",
+        meta: "可直接学习 · 03:22",
+        action: "去学习",
+        theme: "cyan",
+        monogram: "AI"
+      },
+      {
+        id: "owned-course-wechat-game",
+        badge: "录播课",
+        title: "微信小游戏开发",
+        meta: "可直接学习 · 项目实战",
+        action: "去学习",
+        theme: "indigo",
+        monogram: "WX"
+      },
+      {
         id: "owned-course-1",
         badge: "录播课",
         title: "个人 IP 内容变现实战课",
-        meta: "12 节内容 · 每周更新",
-        summary: "从定位到成交，把内容产品化。",
-        theme: "purple"
-      },
-      {
-        id: "owned-course-2",
-        badge: "训练营",
-        title: "7 天私域增长训练营",
-        meta: "Day 2 / 7 · 已解锁今日任务",
-        summary: "聚焦内容分发、社群互动和转化动作。",
-        theme: "blue"
+        meta: "已学 4 / 12 节",
+        action: "继续看",
+        theme: "purple",
+        monogram: "IP"
       }
     ],
     recommendedCourses: [
@@ -89,6 +101,18 @@ Page({
     ]
   },
 
+  onShow() {
+    this.resumeBannerAutoplay();
+  },
+
+  onHide() {
+    this.pauseBannerAutoplay();
+  },
+
+  onUnload() {
+    this.pauseBannerAutoplay();
+  },
+
   onSearchTap() {
     wx.showToast({
       title: "原型阶段暂不支持搜索",
@@ -122,5 +146,34 @@ Page({
     this.setData({
       currentBannerIndex: event.detail.current
     });
+  },
+
+  pauseBannerAutoplay() {
+    if (this.bannerAutoplayTimer) {
+      clearTimeout(this.bannerAutoplayTimer);
+      this.bannerAutoplayTimer = null;
+    }
+
+    this.setData({
+      bannerAutoplay: false
+    });
+  },
+
+  resumeBannerAutoplay() {
+    if (this.bannerAutoplayTimer) {
+      clearTimeout(this.bannerAutoplayTimer);
+      this.bannerAutoplayTimer = null;
+    }
+
+    this.setData({
+      bannerAutoplay: false
+    });
+
+    this.bannerAutoplayTimer = setTimeout(() => {
+      this.setData({
+        bannerAutoplay: true
+      });
+      this.bannerAutoplayTimer = null;
+    }, 160);
   }
 });

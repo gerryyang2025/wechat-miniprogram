@@ -20,7 +20,7 @@
         <swiper
           class="banner-swiper"
           circular
-          autoplay
+          autoplay="{{bannerAutoplay}}"
           interval="4500"
           duration="360"
           current="{{currentBannerIndex}}"
@@ -56,21 +56,24 @@
           <view class="ghost-button" bindtap="onViewAllOwned">查看全部</view>
         </view>
 
-        <scroll-view scroll-x class="owned-scroll" enable-flex="true">
-          <view class="owned-row">
-            <view
-              wx:for="{{purchasedCourses}}"
-              wx:key="id"
-              class="owned-card owned-card--{{item.theme}}"
-              bindtap="onViewAllOwned"
-            >
+        <view class="owned-list">
+          <view
+            wx:for="{{purchasedCourses}}"
+            wx:key="id"
+            class="owned-card owned-card--{{item.theme}}"
+            bindtap="onViewAllOwned"
+          >
+            <view class="owned-mark owned-mark--{{item.theme}}">
+              <text class="owned-mark-text">{{item.monogram}}</text>
+            </view>
+            <view class="owned-info">
               <text class="owned-badge">{{item.badge}}</text>
               <text class="owned-title">{{item.title}}</text>
               <text class="owned-meta">{{item.meta}}</text>
-              <text class="owned-summary">{{item.summary}}</text>
             </view>
+            <view class="owned-action">{{item.action}}</view>
           </view>
-        </scroll-view>
+        </view>
       </view>
 
       <view class="recommend-section">

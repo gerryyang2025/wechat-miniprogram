@@ -2,6 +2,7 @@
   "pages": [
     "pages/home/home",
     "pages/learning/learning",
+    "pages/course-player/course-player",
     "pages/profile/profile"
   ],
   "window": {

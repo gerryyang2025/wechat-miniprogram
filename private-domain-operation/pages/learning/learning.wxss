@@ -106,6 +106,10 @@
   background: linear-gradient(145deg, #4a53d6 0%, #7f76ff 100%);
 }
 
+.learning-cover--cyan {
+  background: linear-gradient(145deg, #1f8dff 0%, #4ec8ff 100%);
+}
+
 .learning-type {
   padding: 8rpx 14rpx;
   border-radius: 999rpx;

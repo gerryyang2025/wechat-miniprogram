@@ -158,24 +158,21 @@
   color: #8690b6;
 }
 
-.owned-scroll {
+.owned-list {
   margin-top: 22rpx;
-}
-
-.owned-row {
   display: flex;
-  gap: 20rpx;
-  padding-right: 8rpx;
+  flex-direction: column;
+  gap: 16rpx;
 }
 
 .owned-card {
-  width: 408rpx;
-  min-height: 220rpx;
+  width: 100%;
+  min-height: 156rpx;
   border-radius: 28rpx;
-  padding: 26rpx;
+  padding: 22rpx 24rpx;
   display: flex;
-  flex-direction: column;
-  gap: 14rpx;
+  align-items: center;
+  gap: 18rpx;
   box-sizing: border-box;
 }
 
@@ -187,32 +184,88 @@
   background: linear-gradient(145deg, #e8f4ff 0%, #ffffff 100%);
 }
 
+.owned-card--cyan {
+  background: linear-gradient(145deg, #e6f8ff 0%, #ffffff 100%);
+}
+
+.owned-card--indigo {
+  background: linear-gradient(145deg, #eceaff 0%, #ffffff 100%);
+}
+
+.owned-mark {
+  flex-shrink: 0;
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 14rpx 34rpx rgba(84, 110, 255, 0.18);
+}
+
+.owned-mark--purple {
+  background: linear-gradient(145deg, #6f57ff 0%, #4f90ff 100%);
+}
+
+.owned-mark--cyan {
+  background: linear-gradient(145deg, #1f8dff 0%, #4ec8ff 100%);
+}
+
+.owned-mark--indigo {
+  background: linear-gradient(145deg, #4a53d6 0%, #7f76ff 100%);
+}
+
+.owned-mark-text {
+  font-size: 28rpx;
+  font-weight: 800;
+  letter-spacing: 1rpx;
+}
+
+.owned-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
 .owned-badge {
   align-self: flex-start;
-  padding: 8rpx 16rpx;
+  padding: 6rpx 14rpx;
   border-radius: 999rpx;
   background: rgba(108, 124, 255, 0.1);
   color: #6278f4;
-  font-size: 22rpx;
+  font-size: 20rpx;
   font-weight: 600;
 }
 
 .owned-title {
-  font-size: 30rpx;
+  font-size: 28rpx;
   line-height: 1.4;
   color: #232847;
   font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .owned-meta {
   font-size: 24rpx;
   color: #68719a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.owned-summary {
+.owned-action {
+  flex-shrink: 0;
+  min-width: 104rpx;
+  text-align: right;
   font-size: 24rpx;
-  line-height: 1.6;
-  color: #8590b4;
+  font-weight: 700;
+  color: #556dfb;
 }
 
 .recommend-section {

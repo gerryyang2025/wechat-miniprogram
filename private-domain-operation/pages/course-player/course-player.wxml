@@ -1,0 +1,42 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="player-scroll content-safe-bottom">
+    <view class="player-nav">
+      <view class="player-back" bindtap="onBackTap">‹</view>
+      <view class="player-nav-copy">
+        <text class="player-nav-title">课程播放</text>
+        <text class="player-nav-subtitle">已购课程示例</text>
+      </view>
+    </view>
+
+    <view class="player-stage card-surface">
+      <text class="player-tag">课程示例</text>
+      <text class="player-title">{{title}}</text>
+      <text class="player-description">{{description}}</text>
+
+      <video
+        class="player-video"
+        src="{{videoUrl}}"
+        poster="{{coverUrl}}"
+        controls
+        autoplay
+        object-fit="contain"
+        binderror="onVideoError"
+      ></video>
+
+      <view class="player-meta">
+        <text class="player-meta-item">时长 {{duration}}</text>
+        <text class="player-meta-item">来源 录播课程</text>
+      </view>
+    </view>
+
+    <view class="player-outline card-surface">
+      <text class="player-outline-title">本节内容</text>
+      <text class="player-outline-text">{{outlineText}}</text>
+    </view>
+
+    <view wx:if="{{isVideoError}}" class="player-status card-surface">
+      <text class="player-status-title">视频暂时无法播放</text>
+      <text class="player-status-text">请检查小程序后台是否已配置对应媒体域名，或稍后重试。</text>
+    </view>
+  </scroll-view>
+</view>
