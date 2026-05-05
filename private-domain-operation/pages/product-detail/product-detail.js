@@ -14,10 +14,21 @@ Page({
 
   onLoad(options = {}) {
     const courseId = decodeURIComponent(options.courseId || "course-1");
+    this.currentCourseId = courseId;
     const product = getDetailCourse(courseId);
 
     this.setData({
       product
+    });
+  },
+
+  onShow() {
+    if (!this.currentCourseId) {
+      return;
+    }
+
+    this.setData({
+      product: getDetailCourse(this.currentCourseId)
     });
   },
 

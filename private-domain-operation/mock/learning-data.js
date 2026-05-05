@@ -1,4 +1,29 @@
 const { clone } = require("./shared");
+const { getLearningCourseMeta } = require("./course-data");
+
+const learningCourseConfig = [
+  {
+    id: "learn-aigc",
+    type: "课程",
+    detailCourseId: "course-aigc-video",
+    theme: "cyan",
+    actionLabel: "继续学习"
+  },
+  {
+    id: "learn-wechat-game",
+    type: "课程",
+    detailCourseId: "course-wechat-game",
+    theme: "indigo",
+    actionLabel: "继续学习"
+  },
+  {
+    id: "learn-1",
+    type: "课程",
+    detailCourseId: "course-1",
+    theme: "purple",
+    actionLabel: "继续学习"
+  }
+];
 
 const learningPageData = {
   metrics: [
@@ -7,33 +32,6 @@ const learningPageData = {
     { label: "累计天数", value: "12 天" }
   ],
   learningList: [
-    {
-      id: "learn-aigc",
-      type: "课程",
-      title: "AIGC 视频制作",
-      progress: "已购课程 · 随时学习",
-      last: "课程示例：AI 视频脚本、口播和剪辑流程",
-      theme: "cyan",
-      actionLabel: "继续学习"
-    },
-    {
-      id: "learn-wechat-game",
-      type: "课程",
-      title: "微信小游戏开发",
-      progress: "已购课程 · 项目实战",
-      last: "课程示例：飞机大战项目结构与资源组织",
-      theme: "indigo",
-      actionLabel: "继续学习"
-    },
-    {
-      id: "learn-1",
-      type: "课程",
-      title: "个人 IP 内容变现实战课",
-      progress: "已学 4 / 12 节",
-      last: "最近看到：第 4 节 个人品牌定位",
-      theme: "purple",
-      actionLabel: "继续学习"
-    },
     {
       id: "learn-2",
       type: "训练营",
@@ -79,7 +77,24 @@ const learningLiveMap = {
 };
 
 function getLearningPageData() {
-  return clone(learningPageData);
+  const learningList = learningCourseConfig.map((item) => {
+    const courseMeta = getLearningCourseMeta(item.detailCourseId);
+
+    return {
+      id: item.id,
+      type: item.type,
+      title: courseMeta.title,
+      progress: courseMeta.progress,
+      last: courseMeta.last,
+      theme: item.theme,
+      actionLabel: item.actionLabel
+    };
+  });
+
+  return {
+    metrics: clone(learningPageData.metrics),
+    learningList: [...learningList, ...clone(learningPageData.learningList)]
+  };
 }
 
 function getPlayerCourseIdByLearningId(itemId = "") {

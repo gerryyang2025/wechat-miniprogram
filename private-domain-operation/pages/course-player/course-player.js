@@ -1,4 +1,4 @@
-const { getPlayerCourse } = require("../../mock/course-data");
+const { getPlayerCourse, updatePlayerCourseProgress } = require("../../mock/course-data");
 
 const DEFAULT_COVER_URL = "/assets/home/banner1.jpg";
 const VIDEO_URL_PATTERN = /^https?:\/\//i;
@@ -156,8 +156,13 @@ Page({
     const targetCourse = getPlayerCourse(courseId);
 
     if (targetCourse) {
+      if (this.selectedLessonId) {
+        updatePlayerCourseProgress(courseId, this.selectedLessonId);
+      }
+
+      this.playerCourseId = courseId;
       this.playerPayload = targetCourse;
-      this.applyPlayerPayload(targetCourse);
+      this.applyPlayerPayload(getPlayerCourse(courseId) || targetCourse);
       return;
     }
 
@@ -256,7 +261,9 @@ Page({
     });
 
     setTimeout(() => {
-      this.applyPlayerPayload(this.playerPayload, false);
+      const latestPayload = this.playerCourseId ? getPlayerCourse(this.playerCourseId) || this.playerPayload : this.playerPayload;
+      this.playerPayload = latestPayload;
+      this.applyPlayerPayload(latestPayload, false);
     }, 80);
   },
 
@@ -280,6 +287,14 @@ Page({
     }
 
     this.selectedLessonId = lessonId;
+    if (this.playerCourseId) {
+      updatePlayerCourseProgress(this.playerCourseId, lessonId);
+      const latestPayload = getPlayerCourse(this.playerCourseId) || this.playerPayload;
+      this.playerPayload = latestPayload;
+      this.applyPlayerPayload(latestPayload, false);
+      return;
+    }
+
     this.applyPlayerPayload(this.playerPayload, false);
   }
 });

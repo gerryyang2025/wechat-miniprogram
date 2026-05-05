@@ -387,21 +387,249 @@ const playerCourseCatalog = {
   }
 };
 
-function getDetailCourse(courseId = "course-1") {
-  return clone(detailCourseCatalog[courseId] || detailCourseCatalog["course-1"]);
+const playerCourseProgressState = {
+  "player-ip-course": {
+    completedLessons: 4,
+    totalLessons: 12,
+    completedDuration: "累计学习 96 分钟",
+    lastPosition: "最近学习 第 4 节 内容成交链路拆解",
+    currentLessonId: "player-ip-l4"
+  },
+  "player-aigc-video": {
+    completedLessons: 1,
+    totalLessons: 5,
+    completedDuration: "累计学习 18 分钟",
+    lastPosition: "上次看到 03:22",
+    currentLessonId: "player-aigc-l2"
+  },
+  "player-wechat-game": {
+    completedLessons: 2,
+    totalLessons: 4,
+    completedDuration: "累计学习 26 分钟",
+    lastPosition: "最近完成 项目结构与资源组织",
+    currentLessonId: "player-wxgame-l3"
+  }
+};
+
+function flattenLessons(chapters = []) {
+  const lessons = [];
+
+  chapters.forEach((chapter) => {
+    (chapter.lessons || []).forEach((lesson, lessonIndex) => {
+      lessons.push({
+        ...lesson,
+        chapterTitle: chapter.title,
+        lessonIndex
+      });
+    });
+  });
+
+  return lessons;
 }
 
-function getPlayerCourse(courseId = "") {
-  if (!playerCourseCatalog[courseId]) {
+function getCurrentLesson(playerCourseId = "", chapters = []) {
+  const flatLessons = flattenLessons(chapters);
+  const currentLessonId = playerCourseProgressState[playerCourseId] && playerCourseProgressState[playerCourseId].currentLessonId;
+
+  return flatLessons.find((lesson) => lesson.id === currentLessonId) || flatLessons.find((lesson) => lesson.status === "current") || flatLessons[0] || null;
+}
+
+function getNextLesson(chapters = [], currentLessonId = "") {
+  const flatLessons = flattenLessons(chapters);
+  const currentIndex = flatLessons.findIndex((lesson) => lesson.id === currentLessonId);
+
+  if (currentIndex < 0 || currentIndex >= flatLessons.length - 1) {
     return null;
   }
 
-  return clone(playerCourseCatalog[courseId]);
+  return flatLessons[currentIndex + 1];
+}
+
+function buildProgressPercent(completedLessons = 0, totalLessons = 0) {
+  if (!totalLessons) {
+    return 0;
+  }
+
+  return Math.min(100, Math.round((completedLessons / totalLessons) * 100));
+}
+
+function buildLearningSummary(detailCourse = {}, playerCourseId = "") {
+  const state = playerCourseProgressState[playerCourseId];
+  const currentLesson = getCurrentLesson(playerCourseId, detailCourse.chapters || []);
+
+  if (!state || !currentLesson) {
+    return {
+      progress: detailCourse.access || detailCourse.meta || "已购课程",
+      last: detailCourse.description || ""
+    };
+  }
+
+  return {
+    progress: `已学 ${state.completedLessons} / ${state.totalLessons} 节`,
+    last: `最近学习：${currentLesson.title}`
+  };
+}
+
+function buildDetailProgressSummary(detailCourse = {}, playerCourseId = "") {
+  const state = playerCourseProgressState[playerCourseId];
+
+  if (!state) {
+    return detailCourse.progressSummary || null;
+  }
+
+  const currentLesson = getCurrentLesson(playerCourseId, detailCourse.chapters || []);
+  const nextLesson = getNextLesson(detailCourse.chapters || [], currentLesson ? currentLesson.id : "");
+
+  return {
+    status: "已购课程",
+    completedLessons: state.completedLessons,
+    totalLessons: state.totalLessons,
+    percent: buildProgressPercent(state.completedLessons, state.totalLessons),
+    completedDuration: state.completedDuration,
+    currentLessonTitle: currentLesson ? `最近学习：${currentLesson.title}` : "最近学习：暂未开始",
+    nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：继续查看后续课程内容"
+  };
+}
+
+function buildPlayerProgressSummary(playerCourse = {}, playerCourseId = "") {
+  const state = playerCourseProgressState[playerCourseId];
+
+  if (!state) {
+    return playerCourse.progressSummary || null;
+  }
+
+  const currentLesson = getCurrentLesson(playerCourseId, playerCourse.chapters || []);
+  const nextLesson = getNextLesson(playerCourse.chapters || [], currentLesson ? currentLesson.id : "");
+
+  return {
+    completedLessons: state.completedLessons,
+    totalLessons: state.totalLessons,
+    percent: buildProgressPercent(state.completedLessons, state.totalLessons),
+    lastPosition: state.lastPosition,
+    currentLessonTitle: currentLesson ? `当前课节：${currentLesson.title}` : "当前课节：内容准备中",
+    nextLessonTitle: nextLesson ? `下一节：${nextLesson.title}` : "下一节：继续查看后续目录"
+  };
+}
+
+function buildRenderedChapters(chapters = [], playerCourseId = "") {
+  const currentLesson = getCurrentLesson(playerCourseId, chapters);
+  const currentLessonId = currentLesson ? currentLesson.id : "";
+  const flatLessons = flattenLessons(chapters);
+  const currentIndex = flatLessons.findIndex((lesson) => lesson.id === currentLessonId);
+  let globalIndex = -1;
+
+  return chapters.map((chapter) => ({
+    ...chapter,
+    lessons: (chapter.lessons || []).map((lesson) => {
+      globalIndex += 1;
+      let status = lesson.status || "upcoming";
+
+      if (status !== "locked") {
+        if (lesson.id === currentLessonId) {
+          status = "current";
+        } else if (currentIndex > -1 && globalIndex < currentIndex) {
+          status = "completed";
+        } else if (status === "current") {
+          status = "upcoming";
+        }
+      }
+
+      return {
+        ...lesson,
+        status
+      };
+    })
+  }));
+}
+
+function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
+  const baseCourse = playerCourseCatalog[playerCourseId];
+
+  if (!baseCourse) {
+    return null;
+  }
+
+  const flatLessons = flattenLessons(baseCourse.chapters || []);
+  const selectedIndex = flatLessons.findIndex((lesson) => lesson.id === lessonId);
+
+  if (selectedIndex < 0) {
+    return null;
+  }
+
+  const currentState = playerCourseProgressState[playerCourseId] || {
+    completedLessons: 0,
+    totalLessons: flatLessons.length,
+    completedDuration: "累计学习 0 分钟",
+    lastPosition: "",
+    currentLessonId: lessonId
+  };
+
+  const selectedLesson = flatLessons[selectedIndex];
+
+  playerCourseProgressState[playerCourseId] = {
+    ...currentState,
+    totalLessons: currentState.totalLessons || flatLessons.length,
+    completedLessons: Math.max(currentState.completedLessons || 0, selectedIndex + 1),
+    currentLessonId: lessonId,
+    lastPosition: `当前定位 ${selectedLesson.title}`
+  };
+
+  return clone(playerCourseProgressState[playerCourseId]);
+}
+
+function getDetailCourse(courseId = "course-1") {
+  const baseCourse = detailCourseCatalog[courseId] || detailCourseCatalog["course-1"];
+  const clonedCourse = clone(baseCourse);
+
+  if (!clonedCourse.playerCourseId) {
+    return clonedCourse;
+  }
+
+  clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse.playerCourseId);
+  clonedCourse.progressSummary = buildDetailProgressSummary(clonedCourse, clonedCourse.playerCourseId);
+
+  return clonedCourse;
+}
+
+function getPlayerCourse(courseId = "") {
+  const baseCourse = playerCourseCatalog[courseId];
+
+  if (!baseCourse) {
+    return null;
+  }
+
+  const clonedCourse = clone(baseCourse);
+  clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse.id);
+  clonedCourse.progressSummary = buildPlayerProgressSummary(clonedCourse, clonedCourse.id);
+
+  return clonedCourse;
+}
+
+function getLearningCourseMeta(detailCourseId = "") {
+  const detailCourse = getDetailCourse(detailCourseId);
+
+  if (!detailCourse.playerCourseId) {
+    return {
+      title: detailCourse.title,
+      progress: detailCourse.access || detailCourse.meta || "已购课程",
+      last: detailCourse.description || ""
+    };
+  }
+
+  const summary = buildLearningSummary(detailCourse, detailCourse.playerCourseId);
+
+  return {
+    title: detailCourse.title,
+    progress: summary.progress,
+    last: summary.last
+  };
 }
 
 module.exports = {
   detailCourseCatalog,
   playerCourseCatalog,
+  updatePlayerCourseProgress,
   getDetailCourse,
+  getLearningCourseMeta,
   getPlayerCourse
 };

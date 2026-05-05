@@ -71,6 +71,7 @@
               <text class="owned-badge">{{item.badge}}</text>
               <text class="owned-title">{{item.title}}</text>
               <text class="owned-meta">{{item.meta}}</text>
+              <text class="owned-summary">{{item.summary}}</text>
             </view>
             <view class="owned-action">{{item.action}}</view>
           </view>

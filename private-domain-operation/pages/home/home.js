@@ -17,6 +17,11 @@ Page({
   },
 
   onShow() {
+    const latestData = getHomePageData();
+
+    this.setData({
+      purchasedCourses: latestData.purchasedCourses
+    });
     this.resumeBannerAutoplay();
   },
 

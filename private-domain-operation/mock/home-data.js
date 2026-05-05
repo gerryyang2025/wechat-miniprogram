@@ -1,4 +1,32 @@
 const { clone } = require("./shared");
+const { getLearningCourseMeta } = require("./course-data");
+
+const purchasedCourseConfig = [
+  {
+    id: "owned-course-aigc",
+    detailCourseId: "course-aigc-video",
+    badge: "录播课",
+    action: "去学习",
+    theme: "cyan",
+    monogram: "AI"
+  },
+  {
+    id: "owned-course-wechat-game",
+    detailCourseId: "course-wechat-game",
+    badge: "录播课",
+    action: "去学习",
+    theme: "indigo",
+    monogram: "WX"
+  },
+  {
+    id: "owned-course-1",
+    detailCourseId: "course-1",
+    badge: "系列课",
+    action: "继续看",
+    theme: "purple",
+    monogram: "IP"
+  }
+];
 
 const homePageData = {
   currentBannerIndex: 0,
@@ -11,35 +39,6 @@ const homePageData = {
     {
       id: "banner-2",
       src: "/assets/home/banner2.jpg"
-    }
-  ],
-  purchasedCourses: [
-    {
-      id: "owned-course-aigc",
-      badge: "录播课",
-      title: "AIGC 视频制作",
-      meta: "可直接学习 · 03:22",
-      action: "去学习",
-      theme: "cyan",
-      monogram: "AI"
-    },
-    {
-      id: "owned-course-wechat-game",
-      badge: "录播课",
-      title: "微信小游戏开发",
-      meta: "可直接学习 · 项目实战",
-      action: "去学习",
-      theme: "indigo",
-      monogram: "WX"
-    },
-    {
-      id: "owned-course-1",
-      badge: "录播课",
-      title: "个人 IP 内容变现实战课",
-      meta: "已学 4 / 12 节",
-      action: "继续看",
-      theme: "purple",
-      monogram: "IP"
     }
   ],
   recommendedCourses: [
@@ -104,7 +103,8 @@ const homePageData = {
 
 const ownedCoursePlayerCourseMap = {
   "owned-course-aigc": "player-aigc-video",
-  "owned-course-wechat-game": "player-wechat-game"
+  "owned-course-wechat-game": "player-wechat-game",
+  "owned-course-1": "player-ip-course"
 };
 
 const homePrimaryLiveEntry = {
@@ -113,7 +113,29 @@ const homePrimaryLiveEntry = {
 };
 
 function getHomePageData() {
-  return clone(homePageData);
+  const purchasedCourses = purchasedCourseConfig.map((item) => {
+    const courseMeta = getLearningCourseMeta(item.detailCourseId);
+
+    return {
+      id: item.id,
+      badge: item.badge,
+      title: courseMeta.title,
+      meta: courseMeta.progress,
+      summary: courseMeta.last,
+      action: item.action,
+      theme: item.theme,
+      monogram: item.monogram
+    };
+  });
+
+  return {
+    currentBannerIndex: homePageData.currentBannerIndex,
+    bannerAutoplay: homePageData.bannerAutoplay,
+    bannerList: clone(homePageData.bannerList),
+    purchasedCourses,
+    recommendedCourses: clone(homePageData.recommendedCourses),
+    featureCards: clone(homePageData.featureCards)
+  };
 }
 
 function getOwnedCoursePlayerCourseId(ownedId = "") {

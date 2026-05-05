@@ -10,6 +10,10 @@ const {
 Page({
   data: getLearningPageData(),
 
+  onShow() {
+    this.setData(getLearningPageData());
+  },
+
   onSearchTap() {
     wx.showToast({
       title: "原型阶段暂不支持搜索",
