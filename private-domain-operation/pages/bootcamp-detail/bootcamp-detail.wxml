@@ -4,7 +4,7 @@
       <view class="bootcamp-back" bindtap="onBackTap">‹</view>
       <view class="bootcamp-nav-copy">
         <text class="bootcamp-nav-title">训练营详情</text>
-        <text class="bootcamp-nav-subtitle">任务节奏与打卡进度</text>
+        <text class="bootcamp-nav-subtitle">{{navSubtitle}}</text>
       </view>
     </view>
 
@@ -73,7 +73,7 @@
           <view class="schedule-day">{{item.day}}</view>
           <view class="schedule-copy">
             <text class="schedule-title">{{item.title}}</text>
-            <text class="schedule-status schedule-status--{{item.status === '已完成' ? 'done' : item.status === '进行中' ? 'active' : 'pending'}}">{{item.status}}</text>
+            <text class="schedule-status schedule-status--{{item.statusTone}}">{{item.status}}</text>
           </view>
         </view>
       </view>
@@ -82,7 +82,7 @@
     <view class="bootcamp-section card-surface">
       <view class="bootcamp-section-head">
         <text class="bootcamp-section-title">最新公告</text>
-        <text class="bootcamp-section-note" bindtap="onNoticeTap">查看详情</text>
+        <text class="bootcamp-section-note" bindtap="onNoticeTap">{{noticeActionLabel}}</text>
       </view>
       <view class="notice-list">
         <view wx:for="{{bootcamp.notices}}" wx:key="*this" class="notice-item">
@@ -97,8 +97,8 @@
 
   <view class="bootcamp-footer">
     <view class="bootcamp-footer-inner">
-      <view class="bootcamp-footer-tip">今日任务已解锁</view>
-      <view class="bootcamp-primary" bindtap="onCheckInTap">去打卡</view>
+      <view class="bootcamp-footer-tip">{{footerTip}}</view>
+      <view class="bootcamp-primary" bindtap="onCheckInTap">{{checkInActionLabel}}</view>
     </view>
   </view>
 </view>

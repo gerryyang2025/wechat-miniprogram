@@ -1,4 +1,12 @@
 const { clone } = require("./shared");
+const {
+  buildPageEntry,
+  toConsultation,
+  toMemberRights,
+  toMerchantDashboard,
+  toNotifications,
+  toSettings
+} = require("../utils/navigation");
 
 const profilePageData = {
   profileCard: {
@@ -23,11 +31,29 @@ const profilePageData = {
     { label: "消息通知" },
     { label: "咨询反馈" },
     { label: "系统设置" }
-  ]
+  ],
+  fallbackFeedback: "功能后续接入"
 };
 
 function getProfilePageData() {
-  return clone(profilePageData);
+  const pageData = clone(profilePageData);
+
+  pageData.memberCard.entry = buildPageEntry(toMemberRights());
+  pageData.merchantEntry.entry = buildPageEntry(toMerchantDashboard());
+  pageData.serviceItems = pageData.serviceItems.map((item) => ({
+    ...item,
+    entry:
+      item.label === "消息通知"
+        ? buildPageEntry(toNotifications())
+        : item.label === "咨询反馈"
+          ? buildPageEntry(toConsultation("profile", "咨询反馈"))
+          : item.label === "系统设置"
+            ? buildPageEntry(toSettings())
+            : null,
+    feedback: `${item.label}功能后续接入`
+  }));
+
+  return pageData;
 }
 
 module.exports = {

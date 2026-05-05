@@ -1,7 +1,9 @@
 const { clone } = require("./shared");
 const {
   buildPageEntry,
-  toLiveDetail
+  toConsultation,
+  toLiveDetail,
+  toLiveRoom
 } = require("../utils/navigation");
 
 const liveCatalog = {
@@ -316,6 +318,7 @@ function getLiveDetailPageData(liveId = "live-private-domain-qa", mode = "upcomi
   const live = getLiveDetail(liveId);
   const isReplay = mode === "replay";
   const isLive = mode === "live";
+  const roomMode = isReplay ? "replay" : "live";
 
   return {
     live,
@@ -334,7 +337,19 @@ function getLiveDetailPageData(liveId = "live-private-domain-qa", mode = "upcomi
     sectionIntroTitle: isReplay ? "回放说明" : "准入说明",
     sectionHighlightTitle: isReplay ? "回放重点" : "本场看点",
     primaryActionText: isReplay ? "查看回放" : "进入直播间",
-    secondaryActionText: isReplay ? "咨询回放" : "咨询直播"
+    secondaryActionText: isReplay ? "咨询回放" : "咨询直播",
+    primaryFeedback: isReplay ? "查看回放" : "进入直播间",
+    secondaryFeedback: isReplay ? "咨询回放" : "咨询直播",
+    posterActionText: "保存海报",
+    posterSavingText: "保存中",
+    posterMessages: {
+      generatingTitle: "海报生成中",
+      savingTitle: "正在保存",
+      successTitle: "海报已保存",
+      failureTitle: "海报保存失败"
+    },
+    primaryEntry: buildPageEntry(toLiveRoom(live.id, roomMode, live.title)),
+    secondaryEntry: buildPageEntry(toConsultation("live", live.title))
   };
 }
 
@@ -355,7 +370,9 @@ function getLiveRoomPageData(liveId = "live-private-domain-qa", mode = "live", t
     replayProgress: isReplay ? room.replayProgress : "",
     replaySummary: isReplay ? room.replaySummary : "",
     replayHighlights: isReplay ? room.replayHighlights : [],
-    inputPlaceholder: isReplay ? "记录回放笔记或复盘想法" : "输入问题或记录想法"
+    inputPlaceholder: isReplay ? "记录回放笔记或复盘想法" : "输入问题或记录想法",
+    actionLabel: isReplay ? "记笔记" : "去提问",
+    askFeedback: isReplay ? "笔记功能后续接入" : "提问功能后续接入"
   };
 }
 

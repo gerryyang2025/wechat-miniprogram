@@ -1,4 +1,11 @@
 const { clone } = require("./shared");
+const {
+  buildPageEntry,
+  toContentOps,
+  toLiveManagement,
+  toProductManagement,
+  toUserManagement
+} = require("../utils/navigation");
 
 const merchantDashboardData = {
   metrics: [
@@ -248,7 +255,27 @@ const merchantFeedback = {
 };
 
 function getMerchantDashboardPageData() {
-  return clone(merchantDashboardData);
+  return {
+    ...clone(merchantDashboardData),
+    shortcuts: clone(merchantDashboardData.shortcuts).map((item) => ({
+      ...item,
+      entry:
+        item.key === "product"
+          ? buildPageEntry(toProductManagement())
+          : item.key === "live"
+            ? buildPageEntry(toLiveManagement())
+            : item.key === "user"
+              ? buildPageEntry(toUserManagement())
+              : item.key === "content"
+                ? buildPageEntry(toContentOps())
+                : null,
+      feedback: `${item.label}下一步接入`
+    })),
+    todos: clone(merchantDashboardData.todos).map((item) => ({
+      ...item,
+      feedback: item.title
+    }))
+  };
 }
 
 function getProductManagementPageData(activeTab = "all") {

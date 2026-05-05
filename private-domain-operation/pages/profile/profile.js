@@ -1,56 +1,24 @@
 const { getProfilePageData } = require("../../mock/profile-data");
-const {
-  toMemberRights,
-  toMerchantDashboard,
-  toNotifications,
-  toConsultation,
-  toSettings
-} = require("../../utils/navigation");
+const { openPageEntry } = require("../../utils/navigation");
 
 Page({
   data: getProfilePageData(),
 
   onFeatureTap(event) {
     const { label } = event.currentTarget.dataset;
+    const { memberCard, merchantEntry, serviceItems, fallbackFeedback } = this.data;
 
-    if (label === "会员权益") {
-      wx.navigateTo({
-        url: toMemberRights()
-      });
+    if (label === memberCard.actionTarget) {
+      openPageEntry(memberCard.entry, "查看权益");
       return;
     }
 
-    if (label === "商家工作台") {
-      wx.navigateTo({
-        url: toMerchantDashboard()
-      });
+    if (label === merchantEntry.actionTarget) {
+      openPageEntry(merchantEntry.entry, "进入预览");
       return;
     }
 
-    if (label === "消息通知") {
-      wx.navigateTo({
-        url: toNotifications()
-      });
-      return;
-    }
-
-    if (label === "咨询反馈") {
-      wx.navigateTo({
-        url: toConsultation("profile", "咨询反馈")
-      });
-      return;
-    }
-
-    if (label === "系统设置") {
-      wx.navigateTo({
-        url: toSettings()
-      });
-      return;
-    }
-
-    wx.showToast({
-      title: `${label}功能后续接入`,
-      icon: "none"
-    });
+    const targetItem = serviceItems.find((item) => item.label === label);
+    openPageEntry(targetItem ? targetItem.entry : null, targetItem ? targetItem.feedback : `${label}${fallbackFeedback}`);
   }
 });

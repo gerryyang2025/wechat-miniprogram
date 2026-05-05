@@ -70,7 +70,7 @@
   <view class="live-room-footer">
     <view class="live-room-footer-inner">
       <view class="live-room-input">{{inputPlaceholder}}</view>
-      <view class="live-room-action" bindtap="onAskTap">{{mode === 'replay' ? '记笔记' : '去提问'}}</view>
+      <view class="live-room-action" bindtap="onAskTap">{{actionLabel}}</view>
     </view>
   </view>
 </view>

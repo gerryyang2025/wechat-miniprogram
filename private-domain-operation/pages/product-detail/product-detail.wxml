@@ -85,15 +85,14 @@
               wx:for="{{item.lessons}}"
               wx:key="id"
               class="outline-item outline-item--{{item.status}}"
-              data-lesson-status="{{item.status}}"
-              data-player-lesson-id="{{item.playerLessonId || ''}}"
+              data-lesson-id="{{item.id}}"
               bindtap="onOutlineLessonTap"
             >
               <view class="outline-main">
                 <text class="outline-text">{{item.title}}</text>
                 <text class="outline-duration">{{item.duration}}</text>
               </view>
-              <text class="outline-state outline-state--{{item.status}}">{{item.status === "completed" ? "已完成" : item.status === "current" ? "学习中" : item.status === "preview" ? "试看" : item.status === "locked" ? "待解锁" : "待学习"}}</text>
+              <text class="outline-state outline-state--{{item.status}}">{{item.stateLabel}}</text>
             </view>
           </view>
         </view>
@@ -109,7 +108,7 @@
 
   <view class="detail-footer">
     <view class="detail-footer-inner">
-      <view class="detail-share" bindtap="onSavePosterTap">{{posterSaving ? "保存中" : "保存海报"}}</view>
+      <view class="detail-share" bindtap="onSavePosterTap">{{posterSaving ? product.posterSavingText : product.posterActionText}}</view>
       <view class="detail-secondary" bindtap="onSecondaryTap">{{product.secondaryActionText}}</view>
       <view class="detail-primary" bindtap="onPrimaryTap">{{product.primaryActionText}}</view>
     </view>

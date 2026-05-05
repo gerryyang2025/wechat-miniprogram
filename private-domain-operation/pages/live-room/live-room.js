@@ -20,7 +20,7 @@ Page({
 
   onAskTap() {
     wx.showToast({
-      title: this.data.mode === "replay" ? "笔记功能后续接入" : "提问功能后续接入",
+      title: this.data.askFeedback,
       icon: "none"
     });
   }

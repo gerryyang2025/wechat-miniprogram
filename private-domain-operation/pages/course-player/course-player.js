@@ -1,9 +1,15 @@
 const { getPlayerCourse, updatePlayerCourseProgress } = require("../../mock/course-data");
-const { DEFAULT_PLAYER_PAGE_DATA, buildCoursePlayerPageState } = require("../../utils/course-player-state");
 const {
-  parseCoursePlayerOptions,
-  toMemberRights,
-  toConsultation
+  DEFAULT_PLAYER_PAGE_DATA,
+  PLAYER_RETRY_DELAY,
+  buildFallbackPlayerPayload,
+  buildCoursePlayerPageState,
+  buildRetryPendingState,
+  resolvePlayerStatusAction
+} = require("../../utils/course-player-state");
+const {
+  openPageEntry,
+  parseCoursePlayerOptions
 } = require("../../utils/navigation");
 
 Page({
@@ -26,18 +32,7 @@ Page({
       return;
     }
 
-    const fallbackPayload = {
-      title: parsedOptions.title || "课程播放",
-      videoUrl: parsedOptions.videoUrl,
-      coverUrl: parsedOptions.coverUrl,
-      duration: parsedOptions.duration,
-      sourceLabel: parsedOptions.sourceLabel || "录播课程",
-      description: parsedOptions.description,
-      outlineText: parsedOptions.outlineText || parsedOptions.description || "当前课程内容正在整理中。",
-      progressSummary: null,
-      chapters: [],
-      resourceState: parsedOptions.videoUrl ? "ready" : "preparing"
-    };
+    const fallbackPayload = buildFallbackPlayerPayload(parsedOptions);
 
     this.playerPayload = fallbackPayload;
     this.applyPlayerPayload(fallbackPayload);
@@ -61,37 +56,22 @@ Page({
   },
 
   onStatusActionTap() {
-    if (this.data.statusType === "error") {
+    const action = resolvePlayerStatusAction(this.data);
+
+    if (action.type === "retry") {
       this.onRetryTap();
       return;
     }
 
-    wx.navigateTo({
-      url: toConsultation("course", this.data.title)
-    });
+    openPageEntry(action.entry, action.feedback);
   },
 
   handleLockedLessonAction() {
-    const lockedAction = this.playerPayload && this.playerPayload.lockedAction;
-
-    if (lockedAction === "member") {
-      wx.navigateTo({
-        url: toMemberRights("course")
-      });
-      return;
-    }
-
-    if (lockedAction === "consultation") {
-      wx.navigateTo({
-        url: toConsultation("course", this.data.title)
-      });
-      return;
-    }
-
-    wx.showToast({
-      title: "完成上一节后解锁",
-      icon: "none"
-    });
+    const lockedLessonAction = this.playerPayload && this.playerPayload.lockedLessonAction;
+    openPageEntry(
+      lockedLessonAction && lockedLessonAction.entry,
+      (lockedLessonAction && lockedLessonAction.feedback) || "完成上一节后解锁"
+    );
   },
 
   onRetryTap() {
@@ -99,16 +79,13 @@ Page({
       return;
     }
 
-    this.setData({
-      playerVideoUrl: "",
-      isVideoReady: false
-    });
+    this.setData(buildRetryPendingState(this.data));
 
     setTimeout(() => {
       const latestPayload = this.playerCourseId ? getPlayerCourse(this.playerCourseId) || this.playerPayload : this.playerPayload;
       this.playerPayload = latestPayload;
       this.applyPlayerPayload(latestPayload, false);
-    }, 80);
+    }, PLAYER_RETRY_DELAY);
   },
 
   onLessonTap(event) {

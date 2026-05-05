@@ -27,7 +27,7 @@
       <view wx:else class="player-video-placeholder player-video-placeholder--{{statusType}}">
         <text class="player-video-placeholder-title">{{statusTitle}}</text>
         <text class="player-video-placeholder-text">{{statusText}}</text>
-        <view class="ghost-button" bindtap="onStatusActionTap">{{statusActionText}}</view>
+        <view wx:if="{{statusActionText}}" class="ghost-button" bindtap="onStatusActionTap">{{statusActionText}}</view>
       </view>
 
       <view class="player-meta">
@@ -94,7 +94,7 @@
                 <text class="player-lesson-title">{{item.title}}</text>
                 <text class="player-lesson-duration">{{item.duration}}</text>
               </view>
-              <text class="player-lesson-state player-lesson-state--{{item.renderedStatus}}">{{item.renderedStatus === "completed" ? "已完成" : item.renderedStatus === "current" ? "学习中" : item.renderedStatus === "preview" ? "试看" : item.renderedStatus === "locked" ? "待解锁" : "待学习"}}</text>
+              <text class="player-lesson-state player-lesson-state--{{item.renderedStatus}}">{{item.stateLabel}}</text>
             </view>
           </view>
         </view>

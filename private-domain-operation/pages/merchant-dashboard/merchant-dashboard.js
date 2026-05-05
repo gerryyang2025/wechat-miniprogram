@@ -1,9 +1,6 @@
 const { getMerchantDashboardPageData } = require("../../mock/merchant-data");
 const {
-  toProductManagement,
-  toLiveManagement,
-  toUserManagement,
-  toContentOps
+  openPageEntry
 } = require("../../utils/navigation");
 
 Page({
@@ -17,46 +14,16 @@ Page({
 
   onShortcutTap(event) {
     const { label } = event.currentTarget.dataset;
-
-    if (label === "商品管理") {
-      wx.navigateTo({
-        url: toProductManagement()
-      });
-      return;
-    }
-
-    if (label === "直播管理") {
-      wx.navigateTo({
-        url: toLiveManagement()
-      });
-      return;
-    }
-
-    if (label === "用户管理") {
-      wx.navigateTo({
-        url: toUserManagement()
-      });
-      return;
-    }
-
-    if (label === "内容运营") {
-      wx.navigateTo({
-        url: toContentOps()
-      });
-      return;
-    }
-
-    wx.showToast({
-      title: `${label}下一步接入`,
-      icon: "none"
-    });
+    const targetItem = this.data.shortcuts.find((item) => item.label === label);
+    openPageEntry(targetItem ? targetItem.entry : null, targetItem ? targetItem.feedback : `${label}下一步接入`);
   },
 
   onTodoTap(event) {
     const { title } = event.currentTarget.dataset;
+    const targetItem = this.data.todos.find((item) => item.title === title);
 
     wx.showToast({
-      title,
+      title: targetItem ? targetItem.feedback : title,
       icon: "none"
     });
   }

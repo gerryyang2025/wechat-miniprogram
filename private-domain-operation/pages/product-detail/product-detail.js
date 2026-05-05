@@ -1,16 +1,8 @@
 const { getDetailCourse } = require("../../mock/course-data");
+const { savePosterWithFeedback } = require("../../utils/poster");
 const {
-  POSTER_SIZE,
-  drawPoster,
-  ensureAlbumPermission,
-  saveImageToAlbum
-} = require("../../utils/poster");
-const {
-  parseProductDetailOptions,
-  toCoursePlayer,
-  toMemberRights,
-  toLearning,
-  toConsultation
+  openPageEntry,
+  parseProductDetailOptions
 } = require("../../utils/navigation");
 
 Page({
@@ -46,159 +38,56 @@ Page({
   },
 
   onPrimaryTap() {
-    const { product } = this.data;
-
-    if (product.primaryActionType === "player" && product.primaryActionTarget) {
-      wx.navigateTo({
-        url: toCoursePlayer(product.primaryActionTarget)
-      });
-      return;
-    }
-
-    if (product.primaryActionType === "preview" && product.primaryActionTarget) {
-      wx.navigateTo({
-        url: toCoursePlayer(product.primaryActionTarget)
-      });
-      return;
-    }
-
-    if (product.primaryActionType === "member_rights") {
-      wx.navigateTo({
-        url: toMemberRights("course")
-      });
-      return;
-    }
-
-    if (product.primaryActionType === "learning") {
-      wx.reLaunch({
-        url: toLearning()
-      });
-      return;
-    }
-
-    wx.showToast({
-      title: "购买流程后续接入",
-      icon: "none"
-    });
+    openPageEntry(this.data.product.primaryEntry, this.data.product.primaryFeedback || "购买流程后续接入");
   },
 
   onSecondaryTap() {
-    wx.navigateTo({
-      url: toConsultation("course", this.data.product.title)
-    });
+    openPageEntry(this.data.product.secondaryEntry, this.data.product.secondaryFeedback || "咨询课程");
   },
 
   handleLockedLessonAction() {
-    const { product } = this.data;
-
-    if (product.lockedAction === "member") {
-      wx.navigateTo({
-        url: toMemberRights("course")
-      });
-      return;
-    }
-
-    if (product.lockedAction === "consultation") {
-      wx.navigateTo({
-        url: toConsultation("course", product.title)
-      });
-      return;
-    }
-
-    wx.showToast({
-      title: "完成上一节后解锁",
-      icon: "none"
-    });
+    openPageEntry(
+      this.data.product.lockedLessonAction && this.data.product.lockedLessonAction.entry,
+      (this.data.product.lockedLessonAction && this.data.product.lockedLessonAction.feedback) || "完成上一节后解锁"
+    );
   },
 
   onOutlineLessonTap(event) {
-    const { lessonStatus, playerLessonId } = event.currentTarget.dataset;
-    const { product } = this.data;
-    const targetPlayerCourseId = product.playerCourseId || product.previewPlayerCourseId;
+    const { lessonId } = event.currentTarget.dataset;
+    const targetLesson = (this.data.product.chapters || [])
+      .flatMap((chapter) => chapter.lessons || [])
+      .find((lesson) => lesson.id === lessonId);
 
-    if (lessonStatus === "locked") {
+    if (!targetLesson) {
+      wx.showToast({
+        title: this.data.product.outlineFallbackFeedback || "当前课节播放后续接入",
+        icon: "none"
+      });
+      return;
+    }
+
+    if (targetLesson.status === "locked") {
       this.handleLockedLessonAction();
       return;
     }
 
-    if (!targetPlayerCourseId || !playerLessonId) {
+    if (!targetLesson.entry) {
       wx.showToast({
-        title: lessonStatus === "preview" ? "试看内容整理中" : "当前课节播放后续接入",
+        title: targetLesson.feedback || this.data.product.outlineFallbackFeedback || "当前课节播放后续接入",
         icon: "none"
       });
       return;
     }
 
-    wx.navigateTo({
-      url: toCoursePlayer(targetPlayerCourseId, playerLessonId)
-    });
+    openPageEntry(targetLesson.entry, targetLesson.feedback || this.data.product.outlineFallbackFeedback || "当前课节播放后续接入");
   },
 
   async onSavePosterTap() {
-    if (this.data.posterSaving) {
-      return;
-    }
-
-    this.setData({
-      posterSaving: true
-    });
-
-    wx.showLoading({
-      title: "海报生成中",
-      mask: true
-    });
-
-    try {
-      const filePath = await this.exportPosterImage();
-
-      wx.hideLoading();
-      wx.showLoading({
-        title: "正在保存",
-        mask: true
-      });
-
-      await ensureAlbumPermission();
-      await saveImageToAlbum(filePath);
-
-      wx.hideLoading();
-      wx.showToast({
-        title: "海报已保存",
-        icon: "success"
-      });
-    } catch (error) {
-      wx.hideLoading();
-      wx.showToast({
-        title: "海报保存失败",
-        icon: "none"
-      });
-    } finally {
-      this.setData({
-        posterSaving: false
-      });
-    }
-  },
-
-  getPosterCanvas() {
-    if (this.posterCanvas) {
-      return Promise.resolve(this.posterCanvas);
-    }
-
-    return new Promise((resolve, reject) => {
-      wx.createSelectorQuery()
-        .in(this)
-        .select("#product-poster-canvas")
-        .fields({ node: true, size: true })
-        .exec((res) => {
-          const canvasRef = res && res[0];
-
-          if (!canvasRef || !canvasRef.node) {
-            reject(new Error("poster canvas not found"));
-            return;
-          }
-
-          this.posterCanvas = canvasRef.node;
-          resolve(this.posterCanvas);
-        });
+    await savePosterWithFeedback(this, {
+      selector: "#product-poster-canvas",
+      posterOptions: this.buildPosterOptions(),
+      savingKey: "posterSaving",
+      messages: this.data.product.posterMessages || {}
     });
   },
 
@@ -232,31 +121,5 @@ Page({
         footerBg: "#eef2ff"
       }
     };
-  },
-
-  async exportPosterImage() {
-    const canvas = await this.getPosterCanvas();
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = POSTER_SIZE.width;
-    canvas.height = POSTER_SIZE.height;
-
-    drawPoster(ctx, this.buildPosterOptions());
-
-    return new Promise((resolve, reject) => {
-      wx.canvasToTempFilePath({
-        canvas,
-        width: POSTER_SIZE.width,
-        height: POSTER_SIZE.height,
-        destWidth: POSTER_SIZE.width,
-        destHeight: POSTER_SIZE.height,
-        success: (res) => {
-          resolve(res.tempFilePath);
-        },
-        fail: (error) => {
-          reject(error || new Error("canvas export failed"));
-        }
-      });
-    });
   }
 });

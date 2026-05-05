@@ -323,9 +323,125 @@ function saveImageToAlbum(filePath) {
   });
 }
 
+function getCanvasNode(page, selector = "") {
+  const cacheKey = selector || "__default__";
+  page.__posterCanvasMap = page.__posterCanvasMap || {};
+
+  if (page.__posterCanvasMap[cacheKey]) {
+    return Promise.resolve(page.__posterCanvasMap[cacheKey]);
+  }
+
+  return new Promise((resolve, reject) => {
+    wx.createSelectorQuery()
+      .in(page)
+      .select(selector)
+      .fields({ node: true, size: true })
+      .exec((res) => {
+        const canvasRef = res && res[0];
+
+        if (!canvasRef || !canvasRef.node) {
+          reject(new Error("poster canvas not found"));
+          return;
+        }
+
+        page.__posterCanvasMap[cacheKey] = canvasRef.node;
+        resolve(page.__posterCanvasMap[cacheKey]);
+      });
+  });
+}
+
+async function exportPosterTempFile(page, selector = "", posterOptions = {}) {
+  const canvas = await getCanvasNode(page, selector);
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = POSTER_SIZE.width;
+  canvas.height = POSTER_SIZE.height;
+
+  drawPoster(ctx, posterOptions);
+
+  return new Promise((resolve, reject) => {
+    wx.canvasToTempFilePath({
+      canvas,
+      width: POSTER_SIZE.width,
+      height: POSTER_SIZE.height,
+      destWidth: POSTER_SIZE.width,
+      destHeight: POSTER_SIZE.height,
+      success: (res) => {
+        resolve(res.tempFilePath);
+      },
+      fail: (error) => {
+        reject(error || new Error("canvas export failed"));
+      }
+    });
+  });
+}
+
+async function savePosterWithFeedback(page, options = {}) {
+  const {
+    selector,
+    posterOptions,
+    savingKey = "posterSaving",
+    messages = {}
+  } = options;
+
+  const normalizedMessages = {
+    generatingTitle: messages.generatingTitle || "海报生成中",
+    savingTitle: messages.savingTitle || "正在保存",
+    successTitle: messages.successTitle || "海报已保存",
+    failureTitle: messages.failureTitle || "海报保存失败"
+  };
+
+  if (page.data && page.data[savingKey]) {
+    return false;
+  }
+
+  page.setData({
+    [savingKey]: true
+  });
+
+  wx.showLoading({
+    title: normalizedMessages.generatingTitle,
+    mask: true
+  });
+
+  try {
+    const filePath = await exportPosterTempFile(page, selector, posterOptions);
+
+    wx.hideLoading();
+    wx.showLoading({
+      title: normalizedMessages.savingTitle,
+      mask: true
+    });
+
+    await ensureAlbumPermission();
+    await saveImageToAlbum(filePath);
+
+    wx.hideLoading();
+    wx.showToast({
+      title: normalizedMessages.successTitle,
+      icon: "success"
+    });
+
+    return true;
+  } catch (error) {
+    wx.hideLoading();
+    wx.showToast({
+      title: normalizedMessages.failureTitle,
+      icon: "none"
+    });
+    return false;
+  } finally {
+    page.setData({
+      [savingKey]: false
+    });
+  }
+}
+
 module.exports = {
   POSTER_SIZE,
   drawPoster,
   ensureAlbumPermission,
-  saveImageToAlbum
+  saveImageToAlbum,
+  exportPosterTempFile,
+  savePosterWithFeedback
 };

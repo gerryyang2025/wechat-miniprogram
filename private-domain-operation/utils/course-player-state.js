@@ -1,5 +1,7 @@
 const DEFAULT_COVER_URL = "/assets/home/banner1.jpg";
 const VIDEO_URL_PATTERN = /^https?:\/\//i;
+const { buildPageEntry, toConsultation } = require("./navigation");
+const PLAYER_RETRY_DELAY = 80;
 
 const DEFAULT_PLAYER_PAGE_DATA = {
   title: "课程播放",
@@ -27,10 +29,15 @@ const DEFAULT_PLAYER_PAGE_DATA = {
   statusType: "preparing",
   statusTitle: "内容准备中",
   statusText: "当前课节暂未上线，先看看目录和学习进度。",
-  statusActionText: "咨询课程"
+  statusActionText: "咨询课程",
+  statusActionType: "entry",
+  statusActionEntry: null,
+  statusActionFeedback: "咨询课程"
 };
 
 function buildPlayerStatus(payload = {}, hasVideoError = false) {
+  const consultationEntry = buildPageEntry(toConsultation("course", payload.title || "课程播放"));
+
   const videoUrl = (payload.videoUrl || "").trim();
   const resourceState = payload.resourceState || "";
 
@@ -39,7 +46,10 @@ function buildPlayerStatus(payload = {}, hasVideoError = false) {
       statusType: "error",
       statusTitle: "暂时无法播放",
       statusText: "当前视频加载失败，可重新加载或咨询课程。",
-      statusActionText: "重新加载"
+      statusActionText: "重新加载",
+      statusActionType: "retry",
+      statusActionEntry: null,
+      statusActionFeedback: "重新加载"
     };
   }
 
@@ -48,7 +58,10 @@ function buildPlayerStatus(payload = {}, hasVideoError = false) {
       statusType: "invalid",
       statusTitle: "内容待更新",
       statusText: "当前资源地址不可用，可先查看目录或咨询课程。",
-      statusActionText: "咨询课程"
+      statusActionText: "咨询课程",
+      statusActionType: "entry",
+      statusActionEntry: consultationEntry,
+      statusActionFeedback: "咨询课程"
     };
   }
 
@@ -57,7 +70,10 @@ function buildPlayerStatus(payload = {}, hasVideoError = false) {
       statusType: "preparing",
       statusTitle: "内容准备中",
       statusText: "当前课节暂未上线，先看看目录和学习进度。",
-      statusActionText: "咨询课程"
+      statusActionText: "咨询课程",
+      statusActionType: "entry",
+      statusActionEntry: consultationEntry,
+      statusActionFeedback: "咨询课程"
     };
   }
 
@@ -65,8 +81,46 @@ function buildPlayerStatus(payload = {}, hasVideoError = false) {
     statusType: "ready",
     statusTitle: "",
     statusText: "",
-    statusActionText: ""
+    statusActionText: "",
+    statusActionType: "",
+    statusActionEntry: null,
+    statusActionFeedback: ""
   };
+}
+
+function buildFallbackPlayerPayload(options = {}) {
+  return {
+    title: options.title || "课程播放",
+    videoUrl: options.videoUrl,
+    coverUrl: options.coverUrl,
+    duration: options.duration,
+    sourceLabel: options.sourceLabel || "录播课程",
+    description: options.description,
+    outlineText: options.outlineText || options.description || "当前课程内容正在整理中。",
+    progressSummary: null,
+    chapters: [],
+    resourceState: options.videoUrl ? "ready" : "preparing"
+  };
+}
+
+function getRenderedLessonStateLabel(status = "") {
+  if (status === "completed") {
+    return "已完成";
+  }
+
+  if (status === "current") {
+    return "学习中";
+  }
+
+  if (status === "preview") {
+    return "试看";
+  }
+
+  if (status === "locked") {
+    return "待解锁";
+  }
+
+  return "待学习";
 }
 
 function flattenLessons(chapters = []) {
@@ -131,7 +185,8 @@ function buildRenderedChapters(chapters = [], selectedLessonId = "") {
 
       return {
         ...lesson,
-        renderedStatus
+        renderedStatus,
+        stateLabel: getRenderedLessonStateLabel(renderedStatus)
       };
     })
   }));
@@ -196,6 +251,30 @@ function buildPageSubtitle(payload = {}, statusType = "ready") {
   return "先看目录或咨询课程";
 }
 
+function resolvePlayerStatusAction(pageData = {}) {
+  return {
+    type: pageData.statusActionType || "",
+    entry: pageData.statusActionEntry || null,
+    feedback: pageData.statusActionFeedback || pageData.statusActionText || "咨询课程"
+  };
+}
+
+function buildRetryPendingState(pageData = {}) {
+  return {
+    playerVideoUrl: "",
+    isVideoReady: false,
+    isVideoError: false,
+    statusType: "retrying",
+    statusTitle: "正在重新加载",
+    statusText: "正在重新尝试加载当前视频，请稍候。",
+    statusActionText: "",
+    statusActionType: "",
+    statusActionEntry: null,
+    statusActionFeedback: "",
+    pageSubtitle: pageData.pageSubtitle || "继续学习当前内容"
+  };
+}
+
 function buildCoursePlayerPageState(payload = {}, preferredLessonId = "", hasVideoError = false) {
   const normalizedVideoUrl = (payload.videoUrl || "").trim();
   const normalizedCoverUrl = (payload.coverUrl || "").trim() || DEFAULT_COVER_URL;
@@ -243,12 +322,19 @@ function buildCoursePlayerPageState(payload = {}, preferredLessonId = "", hasVid
       statusType: status.statusType,
       statusTitle: status.statusTitle,
       statusText: status.statusText,
-      statusActionText: status.statusActionText
+      statusActionText: status.statusActionText,
+      statusActionType: status.statusActionType,
+      statusActionEntry: status.statusActionEntry,
+      statusActionFeedback: status.statusActionFeedback
     }
   };
 }
 
 module.exports = {
   DEFAULT_PLAYER_PAGE_DATA,
-  buildCoursePlayerPageState
+  PLAYER_RETRY_DELAY,
+  buildFallbackPlayerPayload,
+  buildCoursePlayerPageState,
+  buildRetryPendingState,
+  resolvePlayerStatusAction
 };

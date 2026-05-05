@@ -72,7 +72,7 @@
 
   <view class="live-detail-footer">
     <view class="live-detail-footer-inner">
-      <view class="live-detail-share" bindtap="onSavePosterTap">{{posterSaving ? "保存中" : "保存海报"}}</view>
+      <view class="live-detail-share" bindtap="onSavePosterTap">{{posterSaving ? posterSavingText : posterActionText}}</view>
       <view class="live-detail-secondary" bindtap="onSecondaryTap">{{secondaryActionText}}</view>
       <view class="live-detail-primary" bindtap="onPrimaryTap">{{primaryActionText}}</view>
     </view>

@@ -1,5 +1,12 @@
 const { clone } = require("./shared");
 const { getCourseMedia } = require("./media-data");
+const {
+  buildPageEntry,
+  toConsultation,
+  toCoursePlayer,
+  toLearning,
+  toMemberRights
+} = require("../utils/navigation");
 
 const detailCourseCatalog = {
   "course-aigc-video": {
@@ -826,15 +833,115 @@ function updatePlayerCourseProgress(playerCourseId = "", lessonId = "") {
   return clone(playerCourseProgressState[playerCourseId]);
 }
 
+function getLessonStateLabel(status = "") {
+  if (status === "completed") {
+    return "已完成";
+  }
+
+  if (status === "current") {
+    return "学习中";
+  }
+
+  if (status === "preview") {
+    return "试看";
+  }
+
+  if (status === "locked") {
+    return "待解锁";
+  }
+
+  return "待学习";
+}
+
+function getDetailPrimaryEntry(course = {}) {
+  if (
+    (course.primaryActionType === "player" || course.primaryActionType === "preview") &&
+    course.primaryActionTarget
+  ) {
+    return buildPageEntry(toCoursePlayer(course.primaryActionTarget));
+  }
+
+  if (course.primaryActionType === "member_rights") {
+    return buildPageEntry(toMemberRights("course"));
+  }
+
+  if (course.primaryActionType === "learning") {
+    return buildPageEntry(toLearning(), "reLaunch");
+  }
+
+  return null;
+}
+
+function getLockedLessonAction(course = {}) {
+  if (course.lockedAction === "member") {
+    return {
+      entry: buildPageEntry(toMemberRights("course")),
+      feedback: "查看会员权益"
+    };
+  }
+
+  if (course.lockedAction === "consultation") {
+    return {
+      entry: buildPageEntry(toConsultation("course", course.title)),
+      feedback: "咨询课程"
+    };
+  }
+
+  return {
+    entry: null,
+    feedback: "完成上一节后解锁"
+  };
+}
+
 function getDetailCourse(courseId = "course-1") {
   const baseCourse = detailCourseCatalog[courseId] || detailCourseCatalog["course-1"];
   const clonedCourse = clone(baseCourse);
 
   const targetPlayerCourseId = clonedCourse.playerCourseId || clonedCourse.previewPlayerCourseId;
+  const lockedLessonAction = getLockedLessonAction(clonedCourse);
 
   if (targetPlayerCourseId) {
-    clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse, targetPlayerCourseId, "detail");
+    clonedCourse.chapters = buildRenderedChapters(
+      clonedCourse.chapters || [],
+      clonedCourse,
+      targetPlayerCourseId,
+      "detail"
+    ).map((chapter) => ({
+      ...chapter,
+      lessons: (chapter.lessons || []).map((lesson) => {
+        const isLocked = lesson.status === "locked";
+        const hasPlayerEntry = !isLocked && lesson.playerLessonId && targetPlayerCourseId;
+
+        return {
+          ...lesson,
+          stateLabel: getLessonStateLabel(lesson.status),
+          entry: hasPlayerEntry ? buildPageEntry(toCoursePlayer(targetPlayerCourseId, lesson.playerLessonId)) : null,
+          feedback: isLocked
+            ? lockedLessonAction.feedback
+            : hasPlayerEntry
+              ? ""
+              : lesson.status === "preview"
+                ? "试看内容整理中"
+                : "当前课节播放后续接入"
+        };
+      })
+    }));
   }
+
+  clonedCourse.secondaryEntry = buildPageEntry(toConsultation("course", clonedCourse.title));
+  clonedCourse.primaryEntry = getDetailPrimaryEntry(clonedCourse);
+  clonedCourse.primaryFeedback = "购买流程后续接入";
+  clonedCourse.secondaryFeedback = "咨询课程";
+  clonedCourse.outlineFallbackFeedback = "当前课节播放后续接入";
+  clonedCourse.posterActionText = "保存海报";
+  clonedCourse.posterSavingText = "保存中";
+  clonedCourse.posterMessages = {
+    generatingTitle: "海报生成中",
+    savingTitle: "正在保存",
+    successTitle: "海报已保存",
+    failureTitle: "海报保存失败"
+  };
+  clonedCourse.lockedLessonAction = lockedLessonAction;
 
   if (!clonedCourse.playerCourseId) {
     return clonedCourse;
@@ -855,6 +962,7 @@ function getPlayerCourse(courseId = "") {
   const clonedCourse = clone(baseCourse);
   clonedCourse.chapters = buildRenderedChapters(clonedCourse.chapters || [], clonedCourse, clonedCourse.id, "player");
   clonedCourse.progressSummary = buildPlayerProgressSummary(clonedCourse, clonedCourse.id);
+  clonedCourse.lockedLessonAction = getLockedLessonAction(clonedCourse);
 
   return clonedCourse;
 }

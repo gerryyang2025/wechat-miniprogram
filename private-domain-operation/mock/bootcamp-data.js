@@ -61,10 +61,22 @@ function getBootcamp(campId = "camp-7day-growth") {
 }
 
 function getBootcampDetailPageData(campId = "camp-7day-growth") {
+  const bootcamp = getBootcamp(campId);
+
   return {
-    bootcamp: getBootcamp(campId),
-    checkInActionText: "打卡功能后续接入",
-    noticeActionText: "公告详情后续接入"
+    navSubtitle: "任务节奏与打卡进度",
+    footerTip: "今日任务已解锁",
+    checkInActionLabel: "去打卡",
+    checkInFeedback: "打卡功能后续接入",
+    noticeActionLabel: "查看详情",
+    noticeFeedback: "公告详情后续接入",
+    bootcamp: {
+      ...bootcamp,
+      schedule: (bootcamp.schedule || []).map((item) => ({
+        ...item,
+        statusTone: item.status === "已完成" ? "done" : item.status === "进行中" ? "active" : "pending"
+      }))
+    }
   };
 }
 

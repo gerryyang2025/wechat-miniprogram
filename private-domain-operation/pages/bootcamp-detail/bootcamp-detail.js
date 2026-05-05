@@ -1,7 +1,4 @@
-const {
-  getBootcampDetailPageData,
-  getBootcampActionMessage
-} = require("../../mock/bootcamp-data");
+const { getBootcampDetailPageData } = require("../../mock/bootcamp-data");
 const { parseBootcampDetailOptions } = require("../../utils/navigation");
 
 Page({
@@ -23,14 +20,14 @@ Page({
 
   onCheckInTap() {
     wx.showToast({
-      title: getBootcampActionMessage("checkin"),
+      title: this.data.checkInFeedback,
       icon: "none"
     });
   },
 
   onNoticeTap() {
     wx.showToast({
-      title: getBootcampActionMessage("notice"),
+      title: this.data.noticeFeedback,
       icon: "none"
     });
   }
