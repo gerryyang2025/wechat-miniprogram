@@ -345,6 +345,7 @@
   gap: 16rpx;
 }
 
+.detail-share,
 .detail-secondary,
 .detail-primary {
   height: 88rpx;
@@ -354,6 +355,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.detail-share {
+  flex: 0.96;
+  background: rgba(255, 255, 255, 0.74);
+  color: #5d6fff;
+  border: 1rpx solid rgba(139, 152, 212, 0.28);
 }
 
 .detail-secondary {
@@ -366,6 +374,16 @@
   flex: 1.2;
   background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
   color: #ffffff;
+}
+
+.poster-canvas {
+  position: fixed;
+  left: -9999rpx;
+  top: -9999rpx;
+  width: 750rpx;
+  height: 1334rpx;
+  pointer-events: none;
+  opacity: 0;
 }
 
 .outline-state {

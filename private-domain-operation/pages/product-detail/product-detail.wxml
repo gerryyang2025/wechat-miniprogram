@@ -102,8 +102,11 @@
 
   <view class="detail-footer">
     <view class="detail-footer-inner">
+      <view class="detail-share" bindtap="onSavePosterTap">{{posterSaving ? "保存中" : "保存海报"}}</view>
       <view class="detail-secondary" bindtap="onSecondaryTap">{{product.secondaryActionText}}</view>
       <view class="detail-primary" bindtap="onPrimaryTap">{{product.primaryActionText}}</view>
     </view>
   </view>
+
+  <canvas id="product-poster-canvas" type="2d" class="poster-canvas"></canvas>
 </view>
