@@ -62,6 +62,17 @@
       <text class="player-outline-text">{{outlineText}}</text>
     </view>
 
+    <view wx:if="{{previousLessonId || nextLessonId}}" class="player-lesson-actions card-surface">
+      <view class="player-lesson-button {{previousLessonId ? '' : 'player-lesson-button--disabled'}}" bindtap="onPreviousLessonTap">
+        <text class="player-lesson-button-label">上一节</text>
+        <text class="player-lesson-button-title">{{previousLessonTitle || '已经是第一节'}}</text>
+      </view>
+      <view class="player-lesson-button {{nextLessonId ? '' : 'player-lesson-button--disabled'}}" bindtap="onNextLessonTap">
+        <text class="player-lesson-button-label">下一节</text>
+        <text class="player-lesson-button-title">{{nextLessonTitle || '当前已是最后一节'}}</text>
+      </view>
+    </view>
+
     <view wx:if="{{chapters.length}}" class="player-directory card-surface">
       <view class="player-directory-head">
         <text class="player-outline-title">课程目录</text>

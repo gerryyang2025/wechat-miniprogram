@@ -72,6 +72,7 @@ Page({
   onOutlineLessonTap(event) {
     const { lessonStatus, playerLessonId } = event.currentTarget.dataset;
     const { product } = this.data;
+    const targetPlayerCourseId = product.playerCourseId || product.previewPlayerCourseId;
 
     if (lessonStatus === "locked") {
       wx.showToast({
@@ -81,9 +82,9 @@ Page({
       return;
     }
 
-    if (!product.playerCourseId || !playerLessonId) {
+    if (!targetPlayerCourseId || !playerLessonId) {
       wx.showToast({
-        title: "当前课节播放后续接入",
+        title: lessonStatus === "preview" ? "试看内容整理中" : "当前课节播放后续接入",
         icon: "none"
       });
       return;
@@ -91,7 +92,7 @@ Page({
 
     wx.navigateTo({
       url:
-        `/pages/course-player/course-player?courseId=${encodeURIComponent(product.playerCourseId)}` +
+        `/pages/course-player/course-player?courseId=${encodeURIComponent(targetPlayerCourseId)}` +
         `&lessonId=${encodeURIComponent(playerLessonId)}`
     });
   },

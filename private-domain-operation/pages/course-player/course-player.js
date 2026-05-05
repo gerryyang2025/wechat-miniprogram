@@ -115,6 +115,21 @@ function buildRenderedChapters(chapters = [], selectedLessonId = "") {
   }));
 }
 
+function getAdjacentLesson(chapters = [], currentLessonId = "", direction = "next") {
+  const flatLessons = flattenLessons(chapters).filter((lesson) => lesson.status !== "locked");
+  const currentIndex = flatLessons.findIndex((lesson) => lesson.id === currentLessonId);
+
+  if (currentIndex < 0) {
+    return null;
+  }
+
+  if (direction === "prev") {
+    return currentIndex > 0 ? flatLessons[currentIndex - 1] : null;
+  }
+
+  return currentIndex < flatLessons.length - 1 ? flatLessons[currentIndex + 1] : null;
+}
+
 function buildOutlineText(payload = {}, selectedLesson = null, nextLesson = null) {
   if (!selectedLesson) {
     return payload.outlineText || payload.description || "当前课程内容正在整理中。";
@@ -142,6 +157,10 @@ Page({
     currentLessonId: "",
     currentLessonTitle: "",
     currentLessonDuration: "",
+    previousLessonId: "",
+    previousLessonTitle: "",
+    nextLessonId: "",
+    nextLessonTitle: "",
     isVideoError: false,
     isVideoReady: false,
     statusType: "preparing",
@@ -196,8 +215,8 @@ Page({
     const selectedLesson = getSelectableLesson(lessons, this.selectedLessonId);
     const selectedLessonId = selectedLesson ? selectedLesson.id : "";
     const renderedChapters = buildRenderedChapters(payload.chapters || [], selectedLessonId);
-    const selectedIndex = lessons.findIndex((lesson) => lesson.id === selectedLessonId);
-    const nextLesson = selectedIndex > -1 && selectedIndex < lessons.length - 1 ? lessons[selectedIndex + 1] : null;
+    const previousLesson = getAdjacentLesson(payload.chapters || [], selectedLessonId, "prev");
+    const nextLesson = getAdjacentLesson(payload.chapters || [], selectedLessonId, "next");
     const progressSummary = payload.progressSummary
       ? {
           ...payload.progressSummary,
@@ -224,6 +243,10 @@ Page({
       currentLessonId: selectedLessonId,
       currentLessonTitle: selectedLesson ? selectedLesson.title : "",
       currentLessonDuration: selectedLesson ? selectedLesson.duration || "" : "",
+      previousLessonId: previousLesson ? previousLesson.id : "",
+      previousLessonTitle: previousLesson ? previousLesson.title : "",
+      nextLessonId: nextLesson ? nextLesson.id : "",
+      nextLessonTitle: nextLesson ? nextLesson.title : "",
       isVideoError: hasVideoError,
       isVideoReady: status.statusType === "ready",
       statusType: status.statusType,
@@ -296,5 +319,35 @@ Page({
     }
 
     this.applyPlayerPayload(this.playerPayload, false);
+  },
+
+  onPreviousLessonTap() {
+    if (!this.data.previousLessonId) {
+      return;
+    }
+
+    this.onLessonTap({
+      currentTarget: {
+        dataset: {
+          lessonId: this.data.previousLessonId,
+          lessonStatus: "upcoming"
+        }
+      }
+    });
+  },
+
+  onNextLessonTap() {
+    if (!this.data.nextLessonId) {
+      return;
+    }
+
+    this.onLessonTap({
+      currentTarget: {
+        dataset: {
+          lessonId: this.data.nextLessonId,
+          lessonStatus: "upcoming"
+        }
+      }
+    });
   }
 });

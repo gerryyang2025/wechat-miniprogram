@@ -178,6 +178,7 @@ const detailCourseCatalog = {
   },
   "course-2": {
     id: "course-2",
+    previewPlayerCourseId: "player-short-video",
     tag: "视频课",
     title: "短视频表达与节奏训练",
     author: "Gerry",
@@ -221,6 +222,7 @@ const detailCourseCatalog = {
   },
   "course-3": {
     id: "course-3",
+    previewPlayerCourseId: "player-circle-conversion",
     tag: "图文课",
     title: "朋友圈内容转化模型",
     author: "Gerry",
@@ -381,6 +383,62 @@ const playerCourseCatalog = {
         lessons: [
           { id: "player-wxgame-l3", title: "第 3 节 飞机大战交互循环", duration: "项目演示", status: "current" },
           { id: "player-wxgame-l4", title: "第 4 节 真机调试与发布", duration: "09:42", status: "upcoming" }
+        ]
+      }
+    ]
+  },
+  "player-short-video": {
+    id: "player-short-video",
+    title: "短视频表达与节奏训练",
+    coverUrl: "/assets/home/banner1.jpg",
+    duration: "试看内容",
+    sourceLabel: "会员试看",
+    videoUrl: "",
+    description: "这是一组用于展示短视频表达训练结构的试看内容，帮助你先理解课程模块和训练节奏。",
+    outlineText: "当前为试看内容示例，你可以查看课程结构、课节状态和推荐学习路径，正式内容与会员权益后续接入。",
+    chapters: [
+      {
+        id: "player-short-video-chapter-1",
+        title: "模块 1 · 镜头表达基础",
+        lessons: [
+          { id: "player-short-video-l1", title: "第 1 节 开场 5 秒如何抓住注意力", duration: "08:35", status: "preview" },
+          { id: "player-short-video-l2", title: "第 2 节 口播节奏与停顿训练", duration: "10:24", status: "preview" }
+        ]
+      },
+      {
+        id: "player-short-video-chapter-2",
+        title: "模块 2 · 结构化表达训练",
+        lessons: [
+          { id: "player-short-video-l3", title: "第 3 节 镜头状态与眼神控制", duration: "09:18", status: "locked" },
+          { id: "player-short-video-l4", title: "第 4 节 结构化表达与复盘方法", duration: "12:05", status: "locked" }
+        ]
+      }
+    ]
+  },
+  "player-circle-conversion": {
+    id: "player-circle-conversion",
+    title: "朋友圈内容转化模型",
+    coverUrl: "/assets/home/banner2.jpg",
+    duration: "图文试看",
+    sourceLabel: "图文内容",
+    videoUrl: "",
+    description: "这是一组用于展示朋友圈内容转化结构的图文课程示例，帮助你先理解信任内容和转化动作的编排方式。",
+    outlineText: "当前为图文课程原型示例，你可以查看目录、课节状态和内容结构，正式图文内容后续接入。",
+    chapters: [
+      {
+        id: "player-circle-conversion-chapter-1",
+        title: "模块 1 · 信任内容设计",
+        lessons: [
+          { id: "player-circle-conversion-l1", title: "第 1 节 朋友圈内容的角色分层", duration: "图文 1", status: "preview" },
+          { id: "player-circle-conversion-l2", title: "第 2 节 信任内容与转化内容的配比", duration: "图文 2", status: "preview" }
+        ]
+      },
+      {
+        id: "player-circle-conversion-chapter-2",
+        title: "模块 2 · 转化动作设计",
+        lessons: [
+          { id: "player-circle-conversion-l3", title: "第 3 节 日常发圈模板与节奏", duration: "图文 3", status: "locked" },
+          { id: "player-circle-conversion-l4", title: "第 4 节 转化动作与成交提醒", duration: "图文 4", status: "locked" }
         ]
       }
     ]

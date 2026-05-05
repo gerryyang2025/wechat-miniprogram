@@ -93,7 +93,7 @@
                 <text class="outline-text">{{item.title}}</text>
                 <text class="outline-duration">{{item.duration}}</text>
               </view>
-              <text class="outline-state outline-state--{{item.status}}">{{item.status === "completed" ? "已完成" : item.status === "current" ? "学习中" : item.status === "preview" ? "可试看" : "待学习"}}</text>
+              <text class="outline-state outline-state--{{item.status}}">{{item.status === "completed" ? "已完成" : item.status === "current" ? "学习中" : item.status === "preview" ? "可试看" : item.status === "locked" ? "待解锁" : "待学习"}}</text>
             </view>
           </view>
         </view>
