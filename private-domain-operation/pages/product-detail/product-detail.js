@@ -58,6 +58,33 @@ Page({
     });
   },
 
+  onOutlineLessonTap(event) {
+    const { lessonStatus, playerLessonId } = event.currentTarget.dataset;
+    const { product } = this.data;
+
+    if (lessonStatus === "locked") {
+      wx.showToast({
+        title: "当前课节暂未解锁",
+        icon: "none"
+      });
+      return;
+    }
+
+    if (!product.playerCourseId || !playerLessonId) {
+      wx.showToast({
+        title: "当前课节播放后续接入",
+        icon: "none"
+      });
+      return;
+    }
+
+    wx.navigateTo({
+      url:
+        `/pages/course-player/course-player?courseId=${encodeURIComponent(product.playerCourseId)}` +
+        `&lessonId=${encodeURIComponent(playerLessonId)}`
+    });
+  },
+
   async onSavePosterTap() {
     if (this.data.posterSaving) {
       return;

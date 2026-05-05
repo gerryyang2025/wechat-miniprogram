@@ -245,6 +245,22 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 18rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 20rpx;
+  transition: all 0.2s ease;
+}
+
+.player-lesson-item--current {
+  background: rgba(96, 109, 255, 0.08);
+  border: 1rpx solid rgba(96, 109, 255, 0.16);
+}
+
+.player-lesson-item--preview {
+  background: rgba(83, 198, 255, 0.06);
+}
+
+.player-lesson-item--locked {
+  opacity: 0.72;
 }
 
 .player-lesson-main {
@@ -259,6 +275,11 @@
   font-size: 24rpx;
   line-height: 1.65;
   color: #5e688d;
+}
+
+.player-lesson-item--current .player-lesson-title {
+  color: #283764;
+  font-weight: 700;
 }
 
 .player-lesson-state {
@@ -283,4 +304,14 @@
 .player-lesson-state--upcoming {
   background: rgba(228, 233, 249, 0.94);
   color: #8d96b7;
+}
+
+.player-lesson-state--preview {
+  background: rgba(86, 201, 255, 0.14);
+  color: #2f90ff;
+}
+
+.player-lesson-state--locked {
+  background: rgba(228, 233, 249, 0.72);
+  color: #98a2c3;
 }

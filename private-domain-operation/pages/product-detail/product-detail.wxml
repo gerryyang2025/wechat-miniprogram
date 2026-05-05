@@ -81,7 +81,14 @@
             <text class="chapter-count">{{item.lessons.length}} 节</text>
           </view>
           <view class="outline-list">
-            <view wx:for="{{item.lessons}}" wx:key="id" class="outline-item">
+            <view
+              wx:for="{{item.lessons}}"
+              wx:key="id"
+              class="outline-item outline-item--{{item.status}}"
+              data-lesson-status="{{item.status}}"
+              data-player-lesson-id="{{item.playerLessonId || ''}}"
+              bindtap="onOutlineLessonTap"
+            >
               <view class="outline-main">
                 <text class="outline-text">{{item.title}}</text>
                 <text class="outline-duration">{{item.duration}}</text>

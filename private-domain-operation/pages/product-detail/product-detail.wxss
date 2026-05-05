@@ -319,6 +319,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 18rpx;
+}
+
+.outline-item--current {
+  background: rgba(96, 109, 255, 0.08);
+}
+
+.outline-item--preview {
+  background: rgba(86, 201, 255, 0.06);
+}
+
+.outline-item--locked {
+  opacity: 0.72;
 }
 
 .outline-main {

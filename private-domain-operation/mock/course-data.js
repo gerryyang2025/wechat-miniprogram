@@ -3,6 +3,7 @@ const { clone } = require("./shared");
 const detailCourseCatalog = {
   "course-aigc-video": {
     id: "course-aigc-video",
+    playerCourseId: "player-aigc-video",
     tag: "录播课",
     title: "AIGC 视频制作",
     author: "Gerry",
@@ -34,8 +35,8 @@ const detailCourseCatalog = {
         title: "模块 1 · 选题与脚本",
         summary: "先明确题材方向，再搭起可直接拍摄的脚本结构。",
         lessons: [
-          { id: "course-aigc-l1", title: "第 1 节 AIGC 视频选题方向", duration: "09:24", status: "completed" },
-          { id: "course-aigc-l2", title: "第 2 节 AIGC 视频脚本拆解", duration: "03:22", status: "current" }
+          { id: "course-aigc-l1", playerLessonId: "player-aigc-l1", title: "第 1 节 AIGC 视频选题方向", duration: "09:24", status: "completed" },
+          { id: "course-aigc-l2", playerLessonId: "player-aigc-l2", title: "第 2 节 AIGC 视频脚本拆解", duration: "03:22", status: "current" }
         ]
       },
       {
@@ -43,9 +44,9 @@ const detailCourseCatalog = {
         title: "模块 2 · 口播与成片",
         summary: "围绕口播表达、画面节奏与发布动作完成第一条作品。",
         lessons: [
-          { id: "course-aigc-l3", title: "第 3 节 口播结构与节奏", duration: "08:11", status: "upcoming" },
-          { id: "course-aigc-l4", title: "第 4 节 画面与字幕组织", duration: "06:48", status: "upcoming" },
-          { id: "course-aigc-l5", title: "第 5 节 发布与复盘动作", duration: "07:35", status: "upcoming" }
+          { id: "course-aigc-l3", playerLessonId: "player-aigc-l3", title: "第 3 节 口播结构与节奏", duration: "08:11", status: "upcoming" },
+          { id: "course-aigc-l4", playerLessonId: "player-aigc-l4", title: "第 4 节 画面与字幕组织", duration: "06:48", status: "upcoming" },
+          { id: "course-aigc-l5", playerLessonId: "player-aigc-l5", title: "第 5 节 发布与复盘动作", duration: "07:35", status: "upcoming" }
         ]
       }
     ],
@@ -57,6 +58,7 @@ const detailCourseCatalog = {
   },
   "course-wechat-game": {
     id: "course-wechat-game",
+    playerCourseId: "player-wechat-game",
     tag: "项目实战",
     title: "微信小游戏开发",
     author: "Gerry",
@@ -88,8 +90,8 @@ const detailCourseCatalog = {
         title: "模块 1 · 项目结构搭建",
         summary: "先把目录、资源和基础场景搭起来。",
         lessons: [
-          { id: "course-wechat-game-l1", title: "第 1 节 小游戏初始化与目录组织", duration: "12:06", status: "completed" },
-          { id: "course-wechat-game-l2", title: "第 2 节 资源加载与场景布局", duration: "11:10", status: "completed" }
+          { id: "course-wechat-game-l1", playerLessonId: "player-wxgame-l1", title: "第 1 节 小游戏初始化与目录组织", duration: "12:06", status: "completed" },
+          { id: "course-wechat-game-l2", playerLessonId: "player-wxgame-l2", title: "第 2 节 资源加载与场景布局", duration: "11:10", status: "completed" }
         ]
       },
       {
@@ -97,8 +99,8 @@ const detailCourseCatalog = {
         title: "模块 2 · 飞机大战实战",
         summary: "围绕核心交互和发布流程完成一个最小可运行案例。",
         lessons: [
-          { id: "course-wechat-game-l3", title: "第 3 节 飞机大战交互循环", duration: "项目演示", status: "current" },
-          { id: "course-wechat-game-l4", title: "第 4 节 真机调试与发布", duration: "09:42", status: "upcoming" }
+          { id: "course-wechat-game-l3", playerLessonId: "player-wxgame-l3", title: "第 3 节 飞机大战交互循环", duration: "项目演示", status: "current" },
+          { id: "course-wechat-game-l4", playerLessonId: "player-wxgame-l4", title: "第 4 节 真机调试与发布", duration: "09:42", status: "upcoming" }
         ]
       }
     ],
@@ -110,6 +112,7 @@ const detailCourseCatalog = {
   },
   "course-1": {
     id: "course-1",
+    playerCourseId: "player-ip-course",
     tag: "系列课",
     title: "个人 IP 内容变现实战课",
     author: "Gerry",
@@ -141,9 +144,9 @@ const detailCourseCatalog = {
         title: "模块 1 · 定位与内容起步",
         summary: "先梳理个人优势，再建立内容边界与表达主题。",
         lessons: [
-          { id: "course-1-l1", title: "第 1 节 个人品牌定位与优势梳理", duration: "14:28", status: "completed" },
-          { id: "course-1-l2", title: "第 2 节 高转化选题的搭建方式", duration: "12:16", status: "completed" },
-          { id: "course-1-l3", title: "第 3 节 内容表达结构与开场设计", duration: "15:02", status: "completed" }
+          { id: "course-1-l1", playerLessonId: "player-ip-l1", title: "第 1 节 个人品牌定位与优势梳理", duration: "14:28", status: "completed" },
+          { id: "course-1-l2", playerLessonId: "player-ip-l2", title: "第 2 节 高转化选题的搭建方式", duration: "12:16", status: "completed" },
+          { id: "course-1-l3", playerLessonId: "player-ip-l3", title: "第 3 节 内容表达结构与开场设计", duration: "15:02", status: "completed" }
         ]
       },
       {
@@ -151,9 +154,9 @@ const detailCourseCatalog = {
         title: "模块 2 · 转化路径与私域承接",
         summary: "把内容输出和私域转化节奏真正接起来。",
         lessons: [
-          { id: "course-1-l4", title: "第 4 节 内容成交链路拆解", duration: "11:41", status: "current" },
-          { id: "course-1-l5", title: "第 5 节 朋友圈内容节奏设计", duration: "13:19", status: "upcoming" },
-          { id: "course-1-l6", title: "第 6 节 咨询承接与内容互动动作", duration: "10:08", status: "upcoming" }
+          { id: "course-1-l4", playerLessonId: "player-ip-l4", title: "第 4 节 内容成交链路拆解", duration: "11:41", status: "current" },
+          { id: "course-1-l5", playerLessonId: "player-ip-l5", title: "第 5 节 朋友圈内容节奏设计", duration: "13:19", status: "upcoming" },
+          { id: "course-1-l6", playerLessonId: "player-ip-l6", title: "第 6 节 咨询承接与内容互动动作", duration: "10:08", status: "upcoming" }
         ]
       },
       {
@@ -161,15 +164,16 @@ const detailCourseCatalog = {
         title: "模块 3 · 日常复盘与内容经营",
         summary: "沉淀你的复盘方法和内容经营节奏。",
         lessons: [
-          { id: "course-1-l7", title: "第 7 节 周更节奏与内容复盘", duration: "09:56", status: "upcoming" },
-          { id: "course-1-l8", title: "第 8 节 产品化表达模板", duration: "11:52", status: "upcoming" },
-          { id: "course-1-l9", title: "第 9 节 咨询服务的内容包装", duration: "08:44", status: "upcoming" }
+          { id: "course-1-l7", playerLessonId: "player-ip-l7", title: "第 7 节 周更节奏与内容复盘", duration: "09:56", status: "upcoming" },
+          { id: "course-1-l8", playerLessonId: "player-ip-l8", title: "第 8 节 产品化表达模板", duration: "11:52", status: "upcoming" },
+          { id: "course-1-l9", playerLessonId: "player-ip-l9", title: "第 9 节 咨询服务的内容包装", duration: "08:44", status: "upcoming" }
         ]
       }
     ],
     note: "当前原型阶段以课程目录和学习进度为主，购买与正式交付流程后续接入。",
-    primaryActionType: "learning",
-    primaryActionText: "回到学习页继续",
+    primaryActionType: "player",
+    primaryActionTarget: "player-ip-course",
+    primaryActionText: "继续学习",
     secondaryActionText: "咨询课程"
   },
   "course-2": {

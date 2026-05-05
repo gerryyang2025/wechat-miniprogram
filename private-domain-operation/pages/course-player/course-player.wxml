@@ -33,6 +33,8 @@
       <view class="player-meta">
         <text class="player-meta-item">时长 {{duration}}</text>
         <text class="player-meta-item">来源 {{sourceLabel}}</text>
+        <text wx:if="{{currentLessonTitle}}" class="player-meta-item">当前 {{currentLessonTitle}}</text>
+        <text wx:if="{{currentLessonDuration}}" class="player-meta-item">课节时长 {{currentLessonDuration}}</text>
         <text wx:if="{{isFallbackCover}}" class="player-meta-item">封面已使用默认图</text>
       </view>
     </view>
@@ -69,12 +71,19 @@
         <view wx:for="{{chapters}}" wx:key="id" class="player-chapter-item">
           <text class="player-chapter-title">{{item.title}}</text>
           <view class="player-lesson-list">
-            <view wx:for="{{item.lessons}}" wx:key="id" class="player-lesson-item">
+            <view
+              wx:for="{{item.lessons}}"
+              wx:key="id"
+              class="player-lesson-item player-lesson-item--{{item.renderedStatus}}"
+              data-lesson-id="{{item.id}}"
+              data-lesson-status="{{item.status}}"
+              bindtap="onLessonTap"
+            >
               <view class="player-lesson-main">
                 <text class="player-lesson-title">{{item.title}}</text>
                 <text class="player-lesson-duration">{{item.duration}}</text>
               </view>
-              <text class="player-lesson-state player-lesson-state--{{item.status}}">{{item.status === "completed" ? "已完成" : item.status === "current" ? "当前播放" : "待学习"}}</text>
+              <text class="player-lesson-state player-lesson-state--{{item.renderedStatus}}">{{item.renderedStatus === "completed" ? "已完成" : item.renderedStatus === "current" ? "当前播放" : item.renderedStatus === "preview" ? "可试看" : item.renderedStatus === "locked" ? "待解锁" : "待学习"}}</text>
             </view>
           </view>
         </view>
