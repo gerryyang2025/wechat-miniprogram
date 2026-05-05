@@ -1,0 +1,226 @@
+.live-management-scroll {
+  min-height: 100vh;
+  padding: calc(108rpx + env(safe-area-inset-top)) 28rpx 0;
+  box-sizing: border-box;
+}
+
+.live-management-nav {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-bottom: 28rpx;
+}
+
+.live-management-back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 44rpx;
+  line-height: 72rpx;
+  text-align: center;
+}
+
+.live-management-nav-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.live-management-nav-title {
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.live-management-nav-subtitle {
+  font-size: 24rpx;
+  color: rgba(241, 244, 255, 0.82);
+}
+
+.live-management-hero,
+.live-management-filter {
+  margin-top: 24rpx;
+  padding: 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.live-management-badge {
+  align-self: flex-start;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(83, 112, 255, 0.1);
+  color: #5b6dfc;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.live-management-title {
+  font-size: 34rpx;
+  line-height: 1.4;
+  font-weight: 800;
+  color: #222946;
+}
+
+.live-management-desc {
+  font-size: 24rpx;
+  line-height: 1.72;
+  color: #7f89ab;
+}
+
+.filter-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.filter-chip {
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(239, 243, 255, 0.96);
+  color: #7380a6;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.filter-chip--active {
+  background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
+  color: #ffffff;
+}
+
+.live-management-list {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.live-card {
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.live-card-cover {
+  height: 220rpx;
+  border-radius: 24rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #ffffff;
+}
+
+.live-card-cover--purple {
+  background: linear-gradient(145deg, #6f57ff 0%, #4f90ff 100%);
+}
+
+.live-card-cover--blue {
+  background: linear-gradient(145deg, #4d72ff 0%, #7a59ff 100%);
+}
+
+.live-card-cover--indigo {
+  background: linear-gradient(145deg, #4250d8 0%, #7f73ff 100%);
+}
+
+.live-card-status {
+  align-self: flex-start;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.live-card-status--upcoming,
+.live-card-status--live,
+.live-card-status--ended {
+  color: #ffffff;
+}
+
+.live-card-hint {
+  width: 74%;
+  font-size: 30rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.live-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.live-card-title {
+  font-size: 30rpx;
+  line-height: 1.45;
+  color: #202742;
+  font-weight: 800;
+}
+
+.live-card-schedule,
+.live-card-audience,
+.live-card-meta {
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #7f89ab;
+}
+
+.live-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.live-card-action {
+  flex-shrink: 0;
+  min-width: 144rpx;
+  height: 60rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(92, 108, 255, 0.08);
+  color: #5a6efa;
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.live-management-bottom-spacer {
+  height: calc(148rpx + env(safe-area-inset-bottom));
+}
+
+.live-management-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(247, 249, 255, 0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -18rpx 40rpx rgba(69, 82, 147, 0.08);
+}
+
+.live-management-create {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #4f80ff 0%, #7258ff 100%);
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

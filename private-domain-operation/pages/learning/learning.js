@@ -1,79 +1,13 @@
 const { getPlayerCourse } = require("../../mock/course-data");
+const {
+  getLearningPageData,
+  getPlayerCourseIdByLearningId,
+  getBootcampIdByLearningId,
+  getLiveEntryByLearningId
+} = require("../../mock/learning-data");
 
 Page({
-  data: {
-    bootcampMap: {
-      "learn-2": "camp-7day-growth"
-    },
-    liveMap: {
-      "learn-3": {
-        liveId: "live-private-domain-qa",
-        mode: "replay"
-      }
-    },
-    playableCourses: [
-      {
-        id: "learn-aigc",
-        playerCourseId: "player-aigc-video"
-      },
-      {
-        id: "learn-wechat-game",
-        playerCourseId: "player-wechat-game"
-      }
-    ],
-    metrics: [
-      { label: "今日学习", value: "46 分钟" },
-      { label: "累计时长", value: "18.5 小时" },
-      { label: "累计天数", value: "12 天" }
-    ],
-    learningList: [
-      {
-        id: "learn-aigc",
-        type: "课程",
-        title: "AIGC 视频制作",
-        progress: "已购课程 · 随时学习",
-        last: "课程示例：AI 视频脚本、口播和剪辑流程",
-        theme: "cyan",
-        actionLabel: "继续学习"
-      },
-      {
-        id: "learn-wechat-game",
-        type: "课程",
-        title: "微信小游戏开发",
-        progress: "已购课程 · 项目实战",
-        last: "课程示例：飞机大战项目结构与资源组织",
-        theme: "indigo",
-        actionLabel: "继续学习"
-      },
-      {
-        id: "learn-1",
-        type: "课程",
-        title: "个人 IP 内容变现实战课",
-        progress: "已学 4 / 12 节",
-        last: "最近看到：第 4 节 个人品牌定位",
-        theme: "purple",
-        actionLabel: "继续学习"
-      },
-      {
-        id: "learn-2",
-        type: "训练营",
-        title: "7 天私域增长训练营",
-        progress: "Day 2 / 7",
-        last: "最近任务：朋友圈内容拆解",
-        theme: "blue",
-        actionLabel: "继续打卡"
-      },
-      {
-        id: "learn-3",
-        type: "直播回放",
-        title: "私域运营直播答疑回放",
-        progress: "已观看至 23:18 / 90:00",
-        last: "推荐先回看：社群转化节奏与直播答疑结构",
-        theme: "indigo",
-        actionLabel: "继续回看"
-      }
-    ]
-  },
+  data: getLearningPageData(),
 
   onSearchTap() {
     wx.showToast({
@@ -90,23 +24,14 @@ Page({
 
   onContinueTap(event) {
     const { itemId } = event.currentTarget.dataset;
-    const targetCourse = this.data.playableCourses.find((course) => course.id === itemId);
-    const targetBootcampId = this.data.bootcampMap[itemId];
-    const targetLive = this.data.liveMap[itemId];
+    const playerCourseId = getPlayerCourseIdByLearningId(itemId);
+    const targetCourse = playerCourseId ? getPlayerCourse(playerCourseId) : null;
+    const targetBootcampId = getBootcampIdByLearningId(itemId);
+    const targetLive = getLiveEntryByLearningId(itemId);
 
     if (targetCourse) {
-      const playerCourse = getPlayerCourse(targetCourse.playerCourseId);
-
-      if (!playerCourse) {
-        wx.showToast({
-          title: "课程资源准备中",
-          icon: "none"
-        });
-        return;
-      }
-
       wx.navigateTo({
-        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(playerCourse.id)}`
+        url: `/pages/course-player/course-player?courseId=${encodeURIComponent(targetCourse.id)}`
       });
       return;
     }

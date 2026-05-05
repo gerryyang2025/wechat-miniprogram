@@ -2,32 +2,38 @@
   <scroll-view scroll-y class="profile-scroll content-safe-bottom">
     <view class="profile-head">
       <view class="profile-card card-surface">
-        <view class="avatar-circle">时</view>
+        <view class="avatar-circle">{{profileCard.avatarText}}</view>
         <view class="profile-copy">
-          <text class="profile-name">时昕同学</text>
-          <text class="profile-meta">已绑定手机号 · 138 **** 8821</text>
-          <text class="profile-badge">年度会员</text>
+          <text class="profile-name">{{profileCard.name}}</text>
+          <text class="profile-meta">{{profileCard.meta}}</text>
+          <text class="profile-badge">{{profileCard.badge}}</text>
         </view>
       </view>
     </view>
 
     <view class="member-card card-surface">
-      <text class="member-title">年度会员计划</text>
-      <text class="member-desc">查看课程权益、训练营精选内容和直播回放说明。</text>
-      <view class="ghost-button" data-label="会员权益" bindtap="onFeatureTap">查看权益</view>
+      <text class="member-title">{{memberCard.title}}</text>
+      <text class="member-desc">{{memberCard.desc}}</text>
+      <view class="ghost-button" data-label="{{memberCard.actionTarget}}" bindtap="onFeatureTap">{{memberCard.actionLabel}}</view>
+    </view>
+
+    <view class="merchant-entry card-surface" data-label="{{merchantEntry.actionTarget}}" bindtap="onFeatureTap">
+      <view class="merchant-entry-copy">
+        <text class="merchant-entry-title">{{merchantEntry.title}}</text>
+        <text class="merchant-entry-desc">{{merchantEntry.desc}}</text>
+      </view>
+      <text class="merchant-entry-action">{{merchantEntry.actionLabel}}</text>
     </view>
 
     <view class="service-list card-surface">
-      <view class="service-item" data-label="消息通知" bindtap="onFeatureTap">
-        <text class="service-label">消息通知</text>
-        <text class="service-arrow">›</text>
-      </view>
-      <view class="service-item" data-label="咨询反馈" bindtap="onFeatureTap">
-        <text class="service-label">咨询反馈</text>
-        <text class="service-arrow">›</text>
-      </view>
-      <view class="service-item" data-label="系统设置" bindtap="onFeatureTap">
-        <text class="service-label">系统设置</text>
+      <view
+        wx:for="{{serviceItems}}"
+        wx:key="label"
+        class="service-item"
+        data-label="{{item.label}}"
+        bindtap="onFeatureTap"
+      >
+        <text class="service-label">{{item.label}}</text>
         <text class="service-arrow">›</text>
       </view>
     </view>

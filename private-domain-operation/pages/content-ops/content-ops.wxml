@@ -1,0 +1,69 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="content-ops-scroll content-safe-bottom">
+    <view class="content-ops-nav">
+      <view class="content-ops-back" bindtap="onBackTap">‹</view>
+      <view class="content-ops-nav-copy">
+        <text class="content-ops-nav-title">内容运营</text>
+        <text class="content-ops-nav-subtitle">配置 Banner、推荐位与公告内容的原型示例</text>
+      </view>
+    </view>
+
+    <view class="content-ops-hero card-surface">
+      <text class="content-ops-badge">商家侧</text>
+      <text class="content-ops-title">首页内容运营概览</text>
+      <text class="content-ops-desc">本页先展示轻量内容运营原型，后续再补齐 Banner 编辑、推荐位排序、公告发布和内容生效逻辑。</text>
+    </view>
+
+    <view class="content-ops-section card-surface">
+      <view class="content-ops-section-head">
+        <text class="content-ops-section-title">Banner 配置</text>
+        <text class="content-ops-section-note">首页首屏运营位</text>
+      </view>
+      <view class="banner-config-list">
+        <view wx:for="{{banners}}" wx:key="id" class="banner-config-item">
+          <view class="banner-config-preview">
+            <text class="banner-config-mark">Banner</text>
+          </view>
+          <view class="banner-config-copy">
+            <text class="banner-config-title">{{item.title}}</text>
+            <text class="banner-config-current">{{item.current}}</text>
+            <text class="banner-config-note">{{item.note}}</text>
+          </view>
+          <view class="banner-config-action" data-label="编辑 Banner" bindtap="onActionTap">编辑</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="content-ops-section card-surface">
+      <view class="content-ops-section-head">
+        <text class="content-ops-section-title">首页推荐位配置</text>
+        <text class="content-ops-section-note">课程 / 训练营 / 直播 / 会员</text>
+      </view>
+      <view class="slot-list">
+        <view wx:for="{{recommendationSlots}}" wx:key="id" class="slot-item">
+          <view class="slot-copy">
+            <text class="slot-label">{{item.label}}</text>
+            <text class="slot-content">{{item.content}}</text>
+          </view>
+          <view class="slot-action" data-label="{{item.action}}" bindtap="onActionTap">{{item.action}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="content-ops-section card-surface">
+      <view class="content-ops-section-head">
+        <text class="content-ops-section-title">公告配置</text>
+        <text class="content-ops-section-note">同步课程与直播动态</text>
+      </view>
+      <view class="notice-list">
+        <view wx:for="{{notices}}" wx:key="id" class="notice-item">
+          <text class="notice-title">{{item.title}}</text>
+          <text class="notice-content">{{item.content}}</text>
+          <view class="notice-action" data-label="编辑公告" bindtap="onActionTap">编辑公告</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="content-ops-bottom-spacer"></view>
+  </scroll-view>
+</view>

@@ -1,0 +1,53 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="live-management-scroll content-safe-bottom">
+    <view class="live-management-nav">
+      <view class="live-management-back" bindtap="onBackTap">‹</view>
+      <view class="live-management-nav-copy">
+        <text class="live-management-nav-title">直播管理</text>
+        <text class="live-management-nav-subtitle">查看直播状态、观看范围和回放准备情况</text>
+      </view>
+    </view>
+
+    <view class="live-management-hero card-surface">
+      <text class="live-management-badge">商家侧</text>
+      <text class="live-management-title">当前直播概览</text>
+      <text class="live-management-desc">本页先展示轻量直播管理原型，后续继续补齐直播编辑、准入配置与回放整理流程。</text>
+    </view>
+
+    <view class="live-management-filter card-surface">
+      <view class="filter-chip-row">
+        <view
+          wx:for="{{filterTabs}}"
+          wx:key="key"
+          class="filter-chip {{item.key === activeTab ? 'filter-chip--active' : ''}}"
+          data-tab-key="{{item.key}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="live-management-list">
+      <view wx:for="{{liveList}}" wx:key="id" class="live-card card-surface">
+        <view class="live-card-cover live-card-cover--{{item.theme}}">
+          <text class="live-card-status live-card-status--{{item.status}}">{{item.status === 'upcoming' ? '未开始' : item.status === 'live' ? '直播中' : '已结束'}}</text>
+          <text class="live-card-hint">{{item.coverHint}}</text>
+        </view>
+        <view class="live-card-body">
+          <text class="live-card-title">{{item.title}}</text>
+          <text class="live-card-schedule">{{item.schedule}}</text>
+          <text class="live-card-audience">{{item.audience}}</text>
+          <view class="live-card-foot">
+            <text class="live-card-meta">直播管理项</text>
+            <view class="live-card-action" data-title="{{item.title}}" data-action="{{item.actionText}}" bindtap="onActionTap">{{item.actionText}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="live-management-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="live-management-footer">
+    <view class="live-management-create" bindtap="onCreateTap">新建直播</view>
+  </view>
+</view>

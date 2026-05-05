@@ -12,7 +12,12 @@
     "pages/profile/profile",
     "pages/member-rights/member-rights",
     "pages/notifications/notifications",
-    "pages/settings/settings"
+    "pages/settings/settings",
+    "pages/merchant-dashboard/merchant-dashboard",
+    "pages/product-management/product-management",
+    "pages/live-management/live-management",
+    "pages/user-management/user-management",
+    "pages/content-ops/content-ops"
   ],
   "window": {
     "navigationStyle": "custom",

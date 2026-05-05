@@ -1,0 +1,74 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="merchant-scroll">
+    <view class="merchant-nav">
+      <view class="merchant-back" bindtap="onBackTap">‹</view>
+      <view class="merchant-nav-copy">
+        <text class="merchant-nav-title">时昕有点懒工作台</text>
+        <text class="merchant-nav-subtitle">查看今日经营数据、待办事项和内容运营动态</text>
+      </view>
+    </view>
+
+    <view class="merchant-hero card-surface">
+      <text class="merchant-badge">商家工作台</text>
+      <text class="merchant-title">今日经营概览</text>
+      <text class="merchant-desc">当前阶段先提供轻量工作台原型，用于承接后续的商品管理、直播管理、用户管理和内容运营页面。</text>
+    </view>
+
+    <view class="merchant-section card-surface">
+      <view class="merchant-section-head">
+        <text class="merchant-section-title">今日经营数据</text>
+        <text class="merchant-section-note">原型示例</text>
+      </view>
+      <view class="metric-grid">
+        <view wx:for="{{metrics}}" wx:key="label" class="metric-card">
+          <text class="metric-value">{{item.value}}</text>
+          <text class="metric-label">{{item.label}}</text>
+          <text class="metric-note">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="merchant-section card-surface">
+      <view class="merchant-section-head">
+        <text class="merchant-section-title">待办事项</text>
+        <text class="merchant-section-note">优先处理</text>
+      </view>
+      <view class="todo-list">
+        <view wx:for="{{todos}}" wx:key="id" class="todo-item" data-title="{{item.title}}" bindtap="onTodoTap">
+          <text class="todo-tag">{{item.tag}}</text>
+          <view class="todo-copy">
+            <text class="todo-title">{{item.title}}</text>
+            <text class="todo-note">{{item.note}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="merchant-section card-surface">
+      <view class="merchant-section-head">
+        <text class="merchant-section-title">快捷入口</text>
+        <text class="merchant-section-note">后续继续接入</text>
+      </view>
+      <view class="shortcut-grid">
+        <view wx:for="{{shortcuts}}" wx:key="key" class="shortcut-item" data-label="{{item.label}}" bindtap="onShortcutTap">
+          <text class="shortcut-title">{{item.label}}</text>
+          <text class="shortcut-hint">{{item.hint}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="merchant-section card-surface">
+      <view class="merchant-section-head">
+        <text class="merchant-section-title">最近动态</text>
+        <text class="merchant-section-note">内容更新与运营节奏</text>
+      </view>
+      <view class="activity-list">
+        <view wx:for="{{activities}}" wx:key="id" class="activity-item">
+          <text class="activity-title">{{item.title}}</text>
+          <text class="activity-time">{{item.time}}</text>
+          <text class="activity-note">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

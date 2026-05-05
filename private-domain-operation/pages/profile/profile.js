@@ -1,10 +1,21 @@
+const { getProfilePageData } = require("../../mock/profile-data");
+
 Page({
+  data: getProfilePageData(),
+
   onFeatureTap(event) {
     const { label } = event.currentTarget.dataset;
 
     if (label === "会员权益") {
       wx.navigateTo({
         url: "/pages/member-rights/member-rights"
+      });
+      return;
+    }
+
+    if (label === "商家工作台") {
+      wx.navigateTo({
+        url: "/pages/merchant-dashboard/merchant-dashboard"
       });
       return;
     }

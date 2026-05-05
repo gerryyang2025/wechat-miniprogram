@@ -1,6 +1,4 @@
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+const { clone } = require("./shared");
 
 const detailCourseCatalog = {
   "course-1": {

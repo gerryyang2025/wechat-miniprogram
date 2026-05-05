@@ -1,0 +1,53 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="user-management-scroll content-safe-bottom">
+    <view class="user-management-nav">
+      <view class="user-management-back" bindtap="onBackTap">‹</view>
+      <view class="user-management-nav-copy">
+        <text class="user-management-nav-title">用户管理</text>
+        <text class="user-management-nav-subtitle">查看学员分层、活跃状态与学习摘要</text>
+      </view>
+    </view>
+
+    <view class="user-management-hero card-surface">
+      <text class="user-management-badge">商家侧</text>
+      <text class="user-management-title">用户与学习档案概览</text>
+      <text class="user-management-desc">本页先展示轻量用户管理原型，后续继续补齐搜索、标签跟进、用户详情和学习档案能力。</text>
+    </view>
+
+    <view class="user-search card-surface" bindtap="onSearchTap">
+      <text class="user-search-text">搜索用户昵称 / 手机号</text>
+      <text class="user-search-icon">⌕</text>
+    </view>
+
+    <view class="user-management-filter card-surface">
+      <view class="filter-chip-row">
+        <view
+          wx:for="{{filterTabs}}"
+          wx:key="key"
+          class="filter-chip {{item.key === activeTab ? 'filter-chip--active' : ''}}"
+          data-tab-key="{{item.key}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="user-management-list">
+      <view wx:for="{{userList}}" wx:key="id" class="user-card card-surface" data-name="{{item.name}}" bindtap="onUserTap">
+        <view class="user-card-head">
+          <view class="user-avatar">{{item.name.slice(0, 1)}}</view>
+          <view class="user-copy">
+            <text class="user-name">{{item.name}}</text>
+            <text class="user-phone">{{item.phone}}</text>
+            <text class="user-active">最近活跃：{{item.activeAt}}</text>
+          </view>
+        </view>
+        <text class="user-progress">{{item.progress}}</text>
+        <view class="user-tag-row">
+          <text wx:for="{{item.tags}}" wx:key="*this" class="user-tag">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="user-management-bottom-spacer"></view>
+  </scroll-view>
+</view>

@@ -1,0 +1,55 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="product-management-scroll content-safe-bottom">
+    <view class="product-management-nav">
+      <view class="product-management-back" bindtap="onBackTap">‹</view>
+      <view class="product-management-nav-copy">
+        <text class="product-management-nav-title">商品管理</text>
+        <text class="product-management-nav-subtitle">查看课程、训练营和会员商品的当前状态</text>
+      </view>
+    </view>
+
+    <view class="product-management-hero card-surface">
+      <text class="product-management-badge">商家侧</text>
+      <text class="product-management-title">当前商品概览</text>
+      <text class="product-management-desc">本页先展示轻量商品管理原型，后续会继续补齐编辑表单、上架流程和更细的筛选能力。</text>
+    </view>
+
+    <view class="product-management-filter card-surface">
+      <view class="filter-chip-row">
+        <view
+          wx:for="{{filterTabs}}"
+          wx:key="key"
+          class="filter-chip {{item.key === activeTab ? 'filter-chip--active' : ''}}"
+          data-tab-key="{{item.key}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="product-management-list">
+      <view wx:for="{{productList}}" wx:key="id" class="product-card card-surface">
+        <view class="product-card-cover product-card-cover--{{item.theme}}">
+          <text class="product-card-type">{{item.typeLabel}}</text>
+          <text class="product-card-hint">{{item.coverHint}}</text>
+        </view>
+        <view class="product-card-body">
+          <view class="product-card-head">
+            <text class="product-card-title">{{item.title}}</text>
+            <text class="product-card-status product-card-status--{{item.status === '草稿' ? 'draft' : item.status === '进行中' ? 'active' : 'published'}}">{{item.status}}</text>
+          </view>
+          <text class="product-card-update">最近更新：{{item.updatedAt}}</text>
+          <view class="product-card-foot">
+            <text class="product-card-meta">{{item.typeLabel}}商品</text>
+            <view class="product-card-action" data-title="{{item.title}}" bindtap="onEditTap">编辑</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="product-management-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="product-management-footer">
+    <view class="product-management-create" bindtap="onCreateTap">新建商品</view>
+  </view>
+</view>
