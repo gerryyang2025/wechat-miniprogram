@@ -29,9 +29,14 @@ Page({
   },
 
   onSearchTap() {
-    wx.showToast({
-      title: "原型阶段暂不支持搜索",
-      icon: "none"
+    wx.navigateTo({
+      url: "/pages/product-list/product-list?category=all"
+    });
+  },
+
+  onOpenCategories() {
+    wx.navigateTo({
+      url: "/pages/product-categories/product-categories"
     });
   },
 

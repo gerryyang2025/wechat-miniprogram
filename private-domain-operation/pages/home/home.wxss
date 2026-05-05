@@ -136,7 +136,8 @@
 }
 
 .section-head,
-.recommend-header {
+.recommend-header,
+.feature-stack-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -156,8 +157,7 @@
   color: #1e2543;
 }
 
-.section-subtitle,
-.recommend-note {
+.section-subtitle {
   font-size: 24rpx;
   color: #8690b6;
 }

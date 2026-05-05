@@ -79,10 +79,11 @@
 
       <view class="recommend-section">
         <view class="recommend-header">
-          <view class="section-title">
-            <text>课程推荐</text>
+          <view class="section-title-wrap">
+            <text class="section-title-text">课程推荐</text>
+            <text class="section-subtitle">精选内容示例</text>
           </view>
-          <text class="recommend-note">精选内容示例</text>
+          <view class="ghost-button" bindtap="onOpenCategories">分类浏览</view>
         </view>
 
         <view

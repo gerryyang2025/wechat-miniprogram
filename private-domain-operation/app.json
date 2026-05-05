@@ -1,6 +1,8 @@
 {
   "pages": [
     "pages/home/home",
+    "pages/product-categories/product-categories",
+    "pages/product-list/product-list",
     "pages/product-detail/product-detail",
     "pages/bootcamp-detail/bootcamp-detail",
     "pages/live-detail/live-detail",

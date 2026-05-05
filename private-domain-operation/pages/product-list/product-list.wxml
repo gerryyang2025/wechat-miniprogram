@@ -1,0 +1,47 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="product-list-scroll content-safe-bottom">
+    <view class="product-list-nav">
+      <view class="product-list-back" bindtap="onBackTap">‹</view>
+      <view class="product-list-nav-copy">
+        <text class="product-list-nav-title">商品列表</text>
+        <text class="product-list-nav-subtitle">浏览课程、训练营与会员权益内容</text>
+      </view>
+    </view>
+
+    <view class="product-list-filter card-surface">
+      <view class="filter-chip-row">
+        <view
+          wx:for="{{filterTabs}}"
+          wx:key="key"
+          class="filter-chip {{item.key === activeTab ? 'filter-chip--active' : ''}}"
+          data-tab-key="{{item.key}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="product-list-wrap">
+      <view
+        wx:for="{{productList}}"
+        wx:key="id"
+        class="product-list-card card-surface"
+        data-product-id="{{item.id}}"
+        data-product-type="{{item.type}}"
+        bindtap="onProductTap"
+      >
+        <view class="product-list-cover {{item.coverTheme}}">
+          <text class="product-list-tag">{{item.tag}}</text>
+        </view>
+        <view class="product-list-body">
+          <text class="product-list-title">{{item.title}}</text>
+          <text class="product-list-subtitle">{{item.subtitle}}</text>
+          <text class="product-list-summary">{{item.summary}}</text>
+          <view class="product-list-foot">
+            <text class="product-list-price">{{item.price}}</text>
+            <text class="product-list-action">{{item.actionText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

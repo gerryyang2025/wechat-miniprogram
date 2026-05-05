@@ -1,0 +1,131 @@
+.category-scroll {
+  min-height: 100vh;
+  padding: calc(108rpx + env(safe-area-inset-top)) 28rpx calc(132rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.category-nav {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-bottom: 28rpx;
+}
+
+.category-back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 44rpx;
+  line-height: 72rpx;
+  text-align: center;
+}
+
+.category-nav-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.category-nav-title {
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.category-nav-subtitle {
+  font-size: 24rpx;
+  color: rgba(241, 244, 255, 0.82);
+}
+
+.category-hero {
+  padding: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.category-hero-title {
+  font-size: 34rpx;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #202742;
+}
+
+.category-hero-desc {
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #7f89ab;
+}
+
+.category-list {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.category-card {
+  padding: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.category-card--purple {
+  background: linear-gradient(160deg, rgba(111, 87, 255, 0.08) 0%, #ffffff 38%);
+}
+
+.category-card--blue {
+  background: linear-gradient(160deg, rgba(79, 128, 255, 0.08) 0%, #ffffff 38%);
+}
+
+.category-card--indigo {
+  background: linear-gradient(160deg, rgba(100, 104, 255, 0.08) 0%, #ffffff 38%);
+}
+
+.category-card-head,
+.category-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.category-card-badge {
+  align-self: flex-start;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(89, 114, 255, 0.08);
+  color: #6377f5;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.category-card-label {
+  font-size: 22rpx;
+  color: #8791b4;
+}
+
+.category-card-title {
+  font-size: 32rpx;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #202742;
+}
+
+.category-card-desc {
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #7f89ab;
+}
+
+.category-card-action {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #5a6efa;
+}

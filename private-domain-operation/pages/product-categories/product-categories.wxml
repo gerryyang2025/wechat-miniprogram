@@ -1,0 +1,37 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="category-scroll content-safe-bottom">
+    <view class="category-nav">
+      <view class="category-back" bindtap="onBackTap">‹</view>
+      <view class="category-nav-copy">
+        <text class="category-nav-title">商品分类</text>
+        <text class="category-nav-subtitle">按课程、训练营和会员权益浏览内容</text>
+      </view>
+    </view>
+
+    <view class="category-hero card-surface">
+      <text class="category-hero-title">选择你现在最需要的内容形态</text>
+      <text class="category-hero-desc">先按商品类型浏览，再进入详情查看目录、权益和交付方式。</text>
+      <view class="ghost-button" bindtap="onOpenAllTap">查看全部商品</view>
+    </view>
+
+    <view class="category-list">
+      <view
+        wx:for="{{categoryList}}"
+        wx:key="key"
+        class="category-card category-card--{{item.theme}} card-surface"
+        data-category-key="{{item.key}}"
+        bindtap="onCategoryTap"
+      >
+        <view class="category-card-head">
+          <text class="category-card-badge">{{item.badge}}</text>
+          <text class="category-card-label">{{item.label}}</text>
+        </view>
+        <text class="category-card-title">{{item.title}}</text>
+        <text class="category-card-desc">{{item.desc}}</text>
+        <view class="category-card-foot">
+          <text class="category-card-action">进入分类</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>
