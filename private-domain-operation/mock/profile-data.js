@@ -1,4 +1,5 @@
 const { clone } = require("./shared");
+const { getMemberPlanSummary } = require("./service-data");
 const {
   buildPageEntry,
   toConsultation,
@@ -37,6 +38,10 @@ const profilePageData = {
 
 function getProfilePageData() {
   const pageData = clone(profilePageData);
+  const memberSummary = getMemberPlanSummary();
+
+  pageData.memberCard.title = memberSummary.title;
+  pageData.memberCard.desc = memberSummary.profileDesc;
 
   pageData.memberCard.entry = buildPageEntry(toMemberRights());
   pageData.merchantEntry.entry = buildPageEntry(toMerchantDashboard());

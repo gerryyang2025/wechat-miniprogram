@@ -1,5 +1,7 @@
 const { clone } = require("./shared");
 const { getLearningCourseMeta } = require("./course-data");
+const { getBootcampSummary } = require("./bootcamp-data");
+const { getLiveSummary } = require("./live-data");
 const {
   buildPageEntry,
   toBootcampDetail,
@@ -131,6 +133,8 @@ function buildLearningRecentLesson(text = "") {
 }
 
 function getLearningPageData() {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+  const liveSummary = getLiveSummary("live-private-domain-qa", "replay");
   const learningList = learningCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
     const recentLesson = buildLearningRecentLesson(courseMeta.last);
@@ -153,6 +157,30 @@ function getLearningPageData() {
 
   const staticLearningList = clone(learningPageData.learningList).map((item) => ({
     ...item,
+    title:
+      item.id === "learn-2"
+        ? bootcampSummary.title.replace("私域", "")
+        : item.id === "learn-3"
+          ? "直播答疑回放"
+          : item.title,
+    progress:
+      item.id === "learn-2"
+        ? bootcampSummary.progressCompact
+        : item.id === "learn-3"
+          ? liveSummary.learningProgress
+          : item.progress,
+    lastLabel:
+      item.id === "learn-2"
+        ? bootcampSummary.learningLastLabel
+        : item.id === "learn-3"
+          ? liveSummary.learningLastLabel
+          : item.lastLabel,
+    lastText:
+      item.id === "learn-2"
+        ? bootcampSummary.learningLastText
+        : item.id === "learn-3"
+          ? liveSummary.learningLastText
+          : item.lastText,
     detailEntry:
       item.id === "learn-2"
         ? buildPageEntry(toBootcampDetail(getBootcampIdByLearningId(item.id)))

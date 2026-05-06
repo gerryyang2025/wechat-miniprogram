@@ -266,6 +266,45 @@ const liveRoomCatalog = {
   }
 };
 
+function normalizeLiveDurationLabel(duration = "") {
+  const matched = String(duration || "").match(/(\d+)\s*分钟/);
+  return matched ? `${matched[1]} 分钟` : String(duration || "").trim();
+}
+
+function compactReplayProgress(progress = "") {
+  const matched = String(progress || "").match(/(\d+:\d{2})\s*\/\s*(\d+:\d{2})/);
+  return matched ? `${matched[1]}/${matched[2]}` : String(progress || "").replace(/^已观看至\s*/, "").trim();
+}
+
+function buildLiveHomeDesc(live = {}) {
+  const durationLabel = normalizeLiveDurationLabel(live.duration);
+  return `${durationLabel}直播答疑，聚焦${live.coverHint || "内容变现与运营问题"}。`;
+}
+
+function getLiveSummary(liveId = "live-private-domain-qa", mode = "upcoming") {
+  const live = getLiveDetail(liveId);
+  const room = getLiveRoom(liveId);
+  const primaryReplayMoment = live.replayMoments && live.replayMoments[0] ? live.replayMoments[0] : null;
+
+  return {
+    id: live.id,
+    title: live.title,
+    durationLabel: normalizeLiveDurationLabel(live.duration),
+    statusLabel:
+      mode === "live"
+        ? live.liveStatus
+        : mode === "replay"
+          ? live.replayStatus
+          : live.upcomingStatus,
+    homeDesc: buildLiveHomeDesc(live),
+    learningProgress: room && room.replayProgress ? compactReplayProgress(room.replayProgress) : "",
+    learningLastLabel: "重点片段",
+    learningLastText: primaryReplayMoment ? primaryReplayMoment.title : "直播重点片段",
+    replayAudience: live.viewers,
+    productSummary: `${normalizeLiveDurationLabel(live.duration)} · ${live.viewers}`
+  };
+}
+
 function getLiveDetail(liveId = "live-private-domain-qa") {
   return clone(liveCatalog[liveId] || liveCatalog["live-private-domain-qa"]);
 }
@@ -295,18 +334,40 @@ function getLiveStatusLabel(status = "") {
 }
 
 function getLiveListPageData(activeTab = "all") {
+  const navSubtitle = "查看即将开始、直播中与回放内容";
+
   return {
+    navSubtitle,
     filterTabs: getLiveListTabs(),
     activeTab,
     emptyHint:
       activeTab === "all"
         ? "当前先展示即将开始、直播中和回放三类直播示例。"
         : "当前状态下先展示最小直播示例，后续会继续补更多直播场次。",
-    liveList: getLiveList(activeTab).map((item) => ({
-      ...item,
-      statusLabel: getLiveStatusLabel(item.status),
-      entry: buildPageEntry(toLiveDetail(item.id, item.status))
-    }))
+    liveList: getLiveList(activeTab).map((item) => {
+      const summary = getLiveSummary(item.id, item.status);
+
+      return {
+        ...item,
+        title: summary.title,
+        schedule:
+          item.status === "upcoming"
+            ? `${item.schedule} · ${summary.durationLabel}`
+            : item.status === "replay"
+              ? `${summary.statusLabel} · ${summary.durationLabel}`
+              : item.schedule,
+        summary:
+          item.status === "replay"
+            ? `建议优先回看${summary.learningLastText}，适合继续复盘。`
+            : item.summary,
+        note:
+          item.status === "replay"
+            ? `重点片段 · ${summary.learningLastText}`
+            : item.note,
+        statusLabel: getLiveStatusLabel(item.status),
+        entry: buildPageEntry(toLiveDetail(item.id, item.status))
+      };
+    })
   };
 }
 
@@ -377,7 +438,9 @@ function getLiveRoomPageData(liveId = "live-private-domain-qa", mode = "live", t
 }
 
 module.exports = {
+  compactReplayProgress,
   getLiveDetail,
+  getLiveSummary,
   getLiveListTabs,
   getLiveList,
   getLiveListPageData,

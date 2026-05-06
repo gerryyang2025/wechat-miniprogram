@@ -1,4 +1,6 @@
 const { clone } = require("./shared");
+const { getBootcampSummary } = require("./bootcamp-data");
+const { getLiveSummary } = require("./live-data");
 const {
   buildPageEntry,
   toConsultation,
@@ -41,6 +43,20 @@ const memberRightsBaseData = {
   ]
 };
 
+function getMemberPlanSummary(source = "") {
+  const sourceOverrides = clone(memberRightsSourceOverrides[source] || {});
+  const title = sourceOverrides.heroTitle || "年度会员计划";
+
+  return {
+    title,
+    shortDesc: "解锁精选课程、直播回放和训练营精选内容。",
+    profileDesc: "查看课程权益、训练营精选内容和直播回放说明。",
+    productSubtitle: "年度权益 · 精选课程 + 直播回放",
+    merchantHint: "课程权益 / 直播回放 / 训练营精选",
+    includedCount: (memberRightsBaseData.includedContent || []).length
+  };
+}
+
 const memberRightsSourceOverrides = {
   home: {
     navSubtitle: "从首页进入会员内容说明与权益承接页",
@@ -49,7 +65,10 @@ const memberRightsSourceOverrides = {
   }
 };
 
-const notificationsPageData = {
+const notificationsPageBaseData = {
+  navSubtitle: "查看课程更新、训练营提醒与直播动态",
+  heroBadge: "消息中心",
+  heroTitle: "最近消息",
   notifications: [
     {
       id: "notice-1",
@@ -72,14 +91,13 @@ const notificationsPageData = {
       summary: "本日任务聚焦咨询承接动作，可配合复盘直播一起完成。",
       time: "昨天 08:10"
     }
-  ],
-  tips: [
-    "当前阶段为原型页展示，不接入真实推送通道。",
-    "后续接入服务消息后，可在此页查看未读状态与消息分类筛选。"
   ]
 };
 
-const settingsPageData = {
+const settingsPageBaseData = {
+  navSubtitle: "查看当前原型环境下的基础设置与账户说明",
+  heroBadge: "原型设置",
+  heroTitle: "基础体验偏好",
   switches: {
     autoplayBanner: true,
     liveReminder: true,
@@ -139,11 +157,63 @@ function getMemberRightsPageData(source = "") {
 }
 
 function getNotificationsPageData() {
-  return clone(notificationsPageData);
+  const replaySummary = getLiveSummary("live-private-domain-qa", "replay");
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+
+  return {
+    ...clone(notificationsPageBaseData),
+    heroDesc: `当前按课程更新、${bootcampSummary.title}任务进度和直播回放开放状态展示消息结构。`,
+    notifications: clone(notificationsPageBaseData.notifications).map((item) => {
+      if (item.id === "notice-2") {
+        return {
+          ...item,
+          title: `${replaySummary.title}已开放`,
+          summary: `建议优先回看${replaySummary.learningLastText}等重点片段。`
+        };
+      }
+
+      if (item.id === "notice-3") {
+        return {
+          ...item,
+          title: `${bootcampSummary.title}今日任务更新`,
+          summary: `本日聚焦${bootcampSummary.learningLastText}，可配合直播回放一起复盘。`
+        };
+      }
+
+      return item;
+    }),
+    tips: [
+      "当前阶段为原型页展示，不接入真实推送通道。",
+      `后续接入服务消息后，可围绕 ${replaySummary.title} 和 ${bootcampSummary.title} 展示未读状态与消息分类筛选。`
+    ]
+  };
 }
 
 function getSettingsPageData() {
-  return clone(settingsPageData);
+  const liveUpcomingSummary = getLiveSummary("live-private-domain-qa", "upcoming");
+  const liveReplaySummary = getLiveSummary("live-private-domain-qa", "replay");
+
+  return {
+    ...clone(settingsPageBaseData),
+    heroDesc: "当前以内容浏览与学习原型为主，后续会把直播提醒、回放提醒和账号配置逐步接成真实能力。",
+    switchItems: [
+      {
+        key: "autoplayBanner",
+        title: "首页 Banner 自动轮播",
+        desc: "控制首页 Banner 是否自动切换。"
+      },
+      {
+        key: "liveReminder",
+        title: "直播开始提醒",
+        desc: `用于后续 ${liveUpcomingSummary.title} 开播前提醒展示。`
+      },
+      {
+        key: "replayReminder",
+        title: "直播回放更新提醒",
+        desc: `用于后续 ${liveReplaySummary.title} 回放开放后的提醒展示。`
+      }
+    ]
+  };
 }
 
 function getConsultationPageData(scene = "profile", title = "") {
@@ -199,6 +269,7 @@ function getConsultationSubmitFeedback(scene = "profile", title = "") {
 module.exports = {
   appendConsultationDraft,
   getConsultationSubmitFeedback,
+  getMemberPlanSummary,
   getMemberRightsPageData,
   getNotificationsPageData,
   getSettingsPageData,

@@ -1,5 +1,7 @@
 const { clone } = require("./shared");
 const { getDetailCourse } = require("./course-data");
+const { getBootcampSummary } = require("./bootcamp-data");
+const { getMemberPlanSummary } = require("./service-data");
 const {
   buildPageEntry,
   toBootcampDetail,
@@ -100,6 +102,7 @@ const productList = [
 ];
 
 function getProductCategories() {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
   const minimumCourseLessonCount = productList
     .filter((item) => item.type === "course")
     .map((item) => {
@@ -116,6 +119,11 @@ function getProductCategories() {
           ...item,
           badge: `${minimumCourseLessonCount} 节起`
         }
+      : item.key === "camp" && bootcampSummary.totalDays
+        ? {
+            ...item,
+            badge: `${bootcampSummary.totalDays} 天起`
+          }
       : item
   );
 }
@@ -125,8 +133,29 @@ function getProductFilterTabs() {
 }
 
 function getProductList() {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+  const memberSummary = getMemberPlanSummary();
+
   return clone(productList).map((item) => {
     if (item.type !== "course") {
+      if (item.type === "camp") {
+        return {
+          ...item,
+          title: bootcampSummary.title,
+          subtitle: bootcampSummary.listSubtitle,
+          summary: bootcampSummary.homeDesc
+        };
+      }
+
+      if (item.type === "member") {
+        return {
+          ...item,
+          title: memberSummary.title,
+          subtitle: memberSummary.productSubtitle,
+          summary: memberSummary.shortDesc
+        };
+      }
+
       return item;
     }
 

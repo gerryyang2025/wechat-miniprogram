@@ -56,12 +56,55 @@ const bootcampCatalog = {
   }
 };
 
+function buildBootcampDayProgress(completedDays = 0, totalDays = 0, compact = false) {
+  if (!totalDays) {
+    return compact ? "Day0/0" : "Day 0 / 0";
+  }
+
+  return compact ? `Day${completedDays}/${totalDays}` : `Day ${completedDays} / ${totalDays}`;
+}
+
+function buildBootcampListSubtitle(bootcamp = {}) {
+  const totalDays = bootcamp.progress && bootcamp.progress.totalDays ? bootcamp.progress.totalDays : 0;
+  return totalDays ? `${totalDays} 天训练 · 每天 1 个任务` : bootcamp.subtitle || "";
+}
+
+function buildBootcampShortTask(bootcamp = {}) {
+  const title = String((bootcamp.todayFocus && bootcamp.todayFocus.title) || "").trim();
+  return title ? title.replace(/与发布$/, "").trim() : "今日任务";
+}
+
+function getBootcampSummary(campId = "camp-7day-growth") {
+  const bootcamp = getBootcamp(campId);
+  const completedDays = bootcamp.progress && bootcamp.progress.completedDays ? bootcamp.progress.completedDays : 0;
+  const totalDays = bootcamp.progress && bootcamp.progress.totalDays ? bootcamp.progress.totalDays : 0;
+  const progressCompact = buildBootcampDayProgress(completedDays, totalDays, true);
+  const progressFull = buildBootcampDayProgress(completedDays, totalDays, false);
+  const shortTask = buildBootcampShortTask(bootcamp);
+
+  return {
+    id: bootcamp.id,
+    title: bootcamp.title,
+    totalDays,
+    progressCompact,
+    progressFull,
+    statusText: `进行中 · ${progressFull}`,
+    listSubtitle: buildBootcampListSubtitle(bootcamp),
+    shortTask,
+    homeDesc: `每天一个内容动作，当前 ${progressFull} 聚焦${shortTask}。`,
+    learningLastLabel: "今日任务",
+    learningLastText: shortTask,
+    merchantProgress: `${bootcamp.title} · ${progressFull}`
+  };
+}
+
 function getBootcamp(campId = "camp-7day-growth") {
   return clone(bootcampCatalog[campId] || bootcampCatalog["camp-7day-growth"]);
 }
 
 function getBootcampDetailPageData(campId = "camp-7day-growth") {
   const bootcamp = getBootcamp(campId);
+  const summary = getBootcampSummary(campId);
 
   return {
     navSubtitle: "任务节奏与打卡进度",
@@ -72,6 +115,8 @@ function getBootcampDetailPageData(campId = "camp-7day-growth") {
     noticeFeedback: "公告详情后续接入",
     bootcamp: {
       ...bootcamp,
+      subtitle: summary.listSubtitle,
+      status: summary.statusText,
       schedule: (bootcamp.schedule || []).map((item) => ({
         ...item,
         statusTone: item.status === "已完成" ? "done" : item.status === "进行中" ? "active" : "pending"
@@ -89,7 +134,9 @@ function getBootcampActionMessage(actionKey = "") {
 }
 
 module.exports = {
+  buildBootcampDayProgress,
   getBootcamp,
+  getBootcampSummary,
   getBootcampDetailPageData,
   getBootcampActionMessage
 };

@@ -1,5 +1,8 @@
 const { clone } = require("./shared");
 const { getDetailCourse, getLearningCourseMeta } = require("./course-data");
+const { getBootcampSummary } = require("./bootcamp-data");
+const { getLiveSummary } = require("./live-data");
+const { getMemberPlanSummary } = require("./service-data");
 const {
   buildPageEntry,
   toBootcampDetail,
@@ -160,6 +163,9 @@ function buildOwnedRecentLesson(text = "") {
 }
 
 function getHomePageData() {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+  const liveSummary = getLiveSummary(homePrimaryLiveEntry.liveId, homePrimaryLiveEntry.mode);
+  const memberSummary = getMemberPlanSummary("home");
   const purchasedCourses = purchasedCourseConfig.map((item) => {
     const courseMeta = getLearningCourseMeta(item.detailCourseId);
     const recentLesson = buildOwnedRecentLesson(courseMeta.last);
@@ -202,6 +208,22 @@ function getHomePageData() {
     }),
     featureCards: clone(homePageData.featureCards).map((item) => ({
       ...item,
+      title:
+        item.type === "camp"
+          ? bootcampSummary.title
+          : item.type === "live"
+            ? liveSummary.title
+            : item.type === "member"
+              ? memberSummary.title
+              : item.title,
+      desc:
+        item.type === "camp"
+          ? bootcampSummary.homeDesc
+          : item.type === "live"
+            ? liveSummary.homeDesc
+            : item.type === "member"
+              ? memberSummary.shortDesc
+              : item.desc,
       entry:
         item.type === "camp"
           ? buildPageEntry(toBootcampDetail("camp-7day-growth"))

@@ -4,7 +4,7 @@
       <view class="live-list-back" bindtap="onBackTap">‹</view>
       <view class="live-list-nav-copy">
         <text class="live-list-nav-title">直播中心</text>
-        <text class="live-list-nav-subtitle">查看即将开始、直播中与回放内容</text>
+        <text class="live-list-nav-subtitle">{{navSubtitle}}</text>
       </view>
     </view>
 

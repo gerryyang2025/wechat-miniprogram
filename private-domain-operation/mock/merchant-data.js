@@ -1,5 +1,8 @@
 const { clone } = require("./shared");
 const { getLearningCourseMeta } = require("./course-data");
+const { getBootcampSummary } = require("./bootcamp-data");
+const { getLiveSummary } = require("./live-data");
+const { getMemberPlanSummary } = require("./service-data");
 const {
   buildPageEntry,
   toContentOps,
@@ -258,6 +261,10 @@ const merchantFeedback = {
 };
 
 function getMerchantDashboardPageData() {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+  const liveSummary = getLiveSummary("live-private-domain-qa", "upcoming");
+  const memberSummary = getMemberPlanSummary();
+
   return {
     ...clone(merchantDashboardData),
     shortcuts: clone(merchantDashboardData.shortcuts).map((item) => ({
@@ -274,14 +281,30 @@ function getMerchantDashboardPageData() {
                 : null,
       feedback: `${item.label}下一步接入`
     })),
-    todos: clone(merchantDashboardData.todos).map((item) => ({
-      ...item,
-      feedback: item.title
-    }))
+    todos: clone(merchantDashboardData.todos).map((item) => {
+      const title =
+        item.id === "todo-live"
+          ? `配置下一场直播的观看范围与回放说明 · ${liveSummary.durationLabel}`
+          : item.title;
+      const note =
+        item.id === "todo-feedback"
+          ? `可优先处理 ${bootcampSummary.title} 和 ${memberSummary.title} 相关问题`
+          : item.note;
+
+      return {
+        ...item,
+        title,
+        note,
+        feedback: title
+      };
+    })
   };
 }
 
 function getProductManagementPageData(activeTab = "all") {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+  const memberSummary = getMemberPlanSummary();
+
   return {
     pageHint: "当前先展示课程、训练营和会员商品的最小管理示例。",
     filterTabs: clone(productManagementFilterTabs),
@@ -293,14 +316,33 @@ function getProductManagementPageData(activeTab = "all") {
         : productManagementList.filter((item) => item.type === activeTab)
     ).map((item) => ({
       ...item,
+      title:
+        item.type === "bootcamp"
+          ? bootcampSummary.title
+          : item.type === "member"
+            ? memberSummary.title
+            : item.title,
+      coverHint:
+        item.type === "member"
+          ? memberSummary.merchantHint
+          : item.coverHint,
       statusTone:
         item.status === "草稿" ? "draft" : item.status === "进行中" ? "active" : "published",
-      editFeedback: `编辑 ${item.title}`
+      editFeedback: `编辑 ${
+        item.type === "bootcamp"
+          ? bootcampSummary.title
+          : item.type === "member"
+            ? memberSummary.title
+            : item.title
+      }`
     }))
   };
 }
 
 function getLiveManagementPageData(activeTab = "all") {
+  const qaSummary = getLiveSummary("live-private-domain-qa", "upcoming");
+  const replaySummary = getLiveSummary("live-bootcamp-review", "replay");
+
   return {
     pageHint: "当前先展示未开始、直播中和已结束三类直播管理示例。",
     filterTabs: clone(liveManagementFilterTabs),
@@ -310,15 +352,35 @@ function getLiveManagementPageData(activeTab = "all") {
       activeTab === "all"
         ? liveManagementList
         : liveManagementList.filter((item) => item.status === activeTab)
-    ).map((item) => ({
-      ...item,
-      statusLabel: item.status === "upcoming" ? "未开始" : item.status === "live" ? "直播中" : "已结束",
-      actionFeedback: `${item.actionText} · ${item.title}`
-    }))
+    ).map((item) => {
+      const title =
+        item.id === "merchant-live-qa"
+          ? qaSummary.title
+          : item.id === "merchant-live-review"
+            ? replaySummary.title
+            : item.title;
+      const schedule =
+        item.id === "merchant-live-qa"
+          ? `${item.schedule.split(" · ")[0]} · ${qaSummary.durationLabel}`
+          : item.id === "merchant-live-review"
+            ? `已结束 · ${replaySummary.durationLabel}`
+            : item.schedule;
+
+      return {
+        ...item,
+        title,
+        schedule,
+        statusLabel: item.status === "upcoming" ? "未开始" : item.status === "live" ? "直播中" : "已结束",
+        actionFeedback: `${item.actionText} · ${title}`
+      };
+    })
   };
 }
 
 function getUserManagementPageData(activeTab = "all") {
+  const bootcampSummary = getBootcampSummary("camp-7day-growth");
+  const liveSummary = getLiveSummary("live-content-clinic", "replay");
+
   return {
     pageHint: "当前先展示学员分层、活跃状态和学习摘要的最小原型。",
     filterTabs: clone(userManagementFilterTabs),
@@ -333,7 +395,14 @@ function getUserManagementPageData(activeTab = "all") {
 
       return {
         ...item,
-        progress: courseMeta ? `${courseMeta.title} · ${courseMeta.progress}` : item.progress,
+        progress:
+          courseMeta
+            ? `${courseMeta.title} · ${courseMeta.progress}`
+            : item.id === "user-2"
+              ? bootcampSummary.merchantProgress
+              : item.id === "user-3"
+                ? `${liveSummary.title} · 已观看至 ${liveSummary.learningProgress}`
+                : item.progress,
         avatarText: item.name.slice(0, 1),
         tapFeedback: `查看 ${item.name}`
       };

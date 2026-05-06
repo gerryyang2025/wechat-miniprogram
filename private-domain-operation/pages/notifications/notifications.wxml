@@ -4,14 +4,14 @@
       <view class="notifications-back" bindtap="onBackTap">‹</view>
       <view class="notifications-nav-copy">
         <text class="notifications-nav-title">消息通知</text>
-        <text class="notifications-nav-subtitle">查看课程更新、训练营提醒与直播动态</text>
+        <text class="notifications-nav-subtitle">{{navSubtitle}}</text>
       </view>
     </view>
 
     <view class="notifications-hero card-surface">
-      <text class="notifications-badge">消息中心</text>
-      <text class="notifications-title">最近消息</text>
-      <text class="notifications-desc">当前阶段以静态示例展示消息结构，后续会接入真实未读状态、分类筛选和服务通知能力。</text>
+      <text class="notifications-badge">{{heroBadge}}</text>
+      <text class="notifications-title">{{heroTitle}}</text>
+      <text class="notifications-desc">{{heroDesc}}</text>
     </view>
 
     <view class="notifications-list">
