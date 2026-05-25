@@ -1,7 +1,15 @@
-const { getLiveManagementPageData } = require("../../mock/merchant-data");
+const { fetchLiveManagementPageData } = require("../../services/api/page-data");
 
 Page({
-  data: getLiveManagementPageData("all"),
+  data: {
+    filterTabs: [],
+    activeTab: "all",
+    liveList: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchLiveManagementPageData("all"));
+  },
 
   onBackTap() {
     wx.navigateBack({
@@ -9,9 +17,9 @@ Page({
     });
   },
 
-  onFilterTap(event) {
+  async onFilterTap(event) {
     const { tabKey } = event.currentTarget.dataset;
-    this.setData(getLiveManagementPageData(tabKey));
+    this.setData(await fetchLiveManagementPageData(tabKey));
   },
 
   onActionTap(event) {

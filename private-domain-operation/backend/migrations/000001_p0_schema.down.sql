@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS operation_slots;
+DROP TABLE IF EXISTS live_access_rules;
+DROP TABLE IF EXISTS live_events;
+DROP TABLE IF EXISTS bootcamp_tasks;
+DROP TABLE IF EXISTS bootcamps;
+DROP TABLE IF EXISTS learning_progress;
+DROP TABLE IF EXISTS media_assets;
+DROP TABLE IF EXISTS course_lessons;
+DROP TABLE IF EXISTS course_chapters;
+DROP TABLE IF EXISTS courses;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS merchant_users;
+DROP TABLE IF EXISTS merchants;
+DROP TABLE IF EXISTS users;

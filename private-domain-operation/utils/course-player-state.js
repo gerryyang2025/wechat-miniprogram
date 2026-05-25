@@ -8,6 +8,7 @@ const DEFAULT_PLAYER_PAGE_DATA = {
   pageSubtitle: "继续学习当前内容",
   pageTag: "课程学习",
   playerVideoUrl: "",
+  playerPosterUrl: "",
   videoUrl: "",
   coverUrl: "",
   isFallbackCover: false,
@@ -266,6 +267,7 @@ function buildRetryPendingState(pageData = {}) {
 function buildCoursePlayerPageState(payload = {}, preferredLessonId = "", hasVideoError = false) {
   const normalizedVideoUrl = (payload.videoUrl || "").trim();
   const normalizedCoverUrl = (payload.coverUrl || "").trim() || DEFAULT_COVER_URL;
+  const normalizedPosterUrl = VIDEO_URL_PATTERN.test(normalizedCoverUrl) ? normalizedCoverUrl : "";
   const status = buildPlayerStatus(payload, hasVideoError);
   const lessons = flattenLessons(payload.chapters || []);
   const selectedLesson = getSelectableLesson(lessons, preferredLessonId);
@@ -289,6 +291,7 @@ function buildCoursePlayerPageState(payload = {}, preferredLessonId = "", hasVid
       pageSubtitle: buildPageSubtitle(payload, status.statusType),
       pageTag: buildPageTag(payload, status.statusType),
       playerVideoUrl: status.statusType === "ready" ? normalizedVideoUrl : "",
+      playerPosterUrl: normalizedPosterUrl,
       videoUrl: normalizedVideoUrl,
       coverUrl: normalizedCoverUrl,
       isFallbackCover: !payload.coverUrl,

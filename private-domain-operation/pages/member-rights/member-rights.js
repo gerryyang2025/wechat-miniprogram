@@ -1,15 +1,15 @@
-const { getMemberRightsPageData } = require("../../mock/service-data");
+const { fetchMemberRightsPageData } = require("../../services/api/page-data");
 const {
   openPageEntry,
   parseMemberRightsOptions,
 } = require("../../utils/navigation");
 
 Page({
-  data: getMemberRightsPageData(),
+  data: {},
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { source } = parseMemberRightsOptions(options);
-    this.setData(getMemberRightsPageData(source));
+    this.setData(await fetchMemberRightsPageData(source));
   },
 
   onBackTap() {

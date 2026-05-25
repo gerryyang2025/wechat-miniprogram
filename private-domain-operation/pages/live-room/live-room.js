@@ -1,14 +1,20 @@
-const { getLiveRoomPageData } = require("../../mock/live-data");
+const { fetchLiveRoomPageData } = require("../../services/api/page-data");
 const { parseLiveRoomOptions } = require("../../utils/navigation");
 
 Page({
-  data: getLiveRoomPageData("live-private-domain-qa", "live", "直播间"),
+  data: {
+    liveId: "",
+    title: "直播间",
+    mode: "live",
+    messages: [],
+    replayHighlights: []
+  },
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { liveId, mode, title } = parseLiveRoomOptions(options);
 
     this.setData({
-      ...getLiveRoomPageData(liveId, mode, title)
+      ...(await fetchLiveRoomPageData(liveId, mode, title))
     });
   },
 

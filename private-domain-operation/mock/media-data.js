@@ -12,7 +12,7 @@ const courseMediaCatalog = {
     coverUrl: "/assets/home/banner1.jpg",
     duration: "03:22",
     sourceLabel: "录播课程",
-    videoUrl: "http://106.55.160.81:8080/brad_pitt_vs_tom_cruise_1773333936.mp4",
+    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
     resourceState: "ready"
   },
   "player-wechat-game": {

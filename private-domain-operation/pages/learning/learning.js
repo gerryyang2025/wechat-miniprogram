@@ -1,35 +1,37 @@
 const {
-  getLearningItemEntry,
-  getLearningPageMeta,
-  getLearningPageData,
-} = require("../../mock/learning-data");
+  fetchLearningPageData
+} = require("../../services/api/page-data");
 const {
   openPageEntry
 } = require("../../utils/navigation");
 
 Page({
-  data: getLearningPageData(),
+  data: {
+    metrics: [],
+    learningList: []
+  },
 
-  onShow() {
-    this.setData(getLearningPageData());
+  async onShow() {
+    this.setData(await fetchLearningPageData());
   },
 
   onSearchTap() {
-    const { searchEntry, searchFeedback } = getLearningPageMeta();
-    openPageEntry(searchEntry, searchFeedback);
+    openPageEntry(this.data.searchEntry, this.data.searchFeedback);
   },
 
   onOpenLiveCenter() {
-    openPageEntry(getLearningPageMeta().liveCenterEntry);
+    openPageEntry(this.data.liveCenterEntry);
   },
 
   onItemTap(event) {
     const { itemId } = event.currentTarget.dataset;
-    openPageEntry(getLearningItemEntry(itemId, "detail"), "查看详情");
+    const targetItem = this.data.learningList.find((item) => item.id === itemId);
+    openPageEntry(targetItem ? targetItem.detailEntry : null, "查看详情");
   },
 
   onContinueTap(event) {
     const { itemId } = event.currentTarget.dataset;
-    openPageEntry(getLearningItemEntry(itemId, "continue"), "视频播放下一步接入");
+    const targetItem = this.data.learningList.find((item) => item.id === itemId);
+    openPageEntry(targetItem ? targetItem.continueEntry : null, "视频播放下一步接入");
   }
 });

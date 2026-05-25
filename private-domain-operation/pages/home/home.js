@@ -1,19 +1,21 @@
-const {
-  getHomePageData,
-  getHomeFeatureEntry,
-  getHomeOwnedEntry,
-  getHomePageMeta,
-  getHomeRecommendedEntry
-} = require("../../mock/home-data");
+const { fetchHomePageData } = require("../../services/api/page-data");
 const {
   openPageEntry
 } = require("../../utils/navigation");
 
 Page({
-  data: getHomePageData(),
+  data: {
+    currentBannerIndex: 0,
+    bannerAutoplay: false,
+    bannerList: [],
+    purchasedCourses: [],
+    recommendedCourses: [],
+    featureCards: [],
+    bannerResumeDelay: 160
+  },
 
-  onShow() {
-    const latestData = getHomePageData();
+  async onShow() {
+    const latestData = await fetchHomePageData();
 
     this.setData(latestData);
     this.resumeBannerAutoplay();
@@ -28,34 +30,37 @@ Page({
   },
 
   onSearchTap() {
-    openPageEntry(getHomePageMeta().searchEntry);
+    openPageEntry(this.data.searchEntry);
   },
 
   onOpenCategories() {
-    openPageEntry(getHomePageMeta().categoriesEntry);
+    openPageEntry(this.data.categoriesEntry);
   },
 
   onViewAllOwned() {
-    openPageEntry(getHomePageMeta().ownedAllEntry);
+    openPageEntry(this.data.ownedAllEntry);
   },
 
   onOwnedCourseTap(event) {
     const { ownedId } = event.currentTarget.dataset;
-    openPageEntry(getHomeOwnedEntry(ownedId), "查看全部");
+    const targetItem = this.data.purchasedCourses.find((item) => item.id === ownedId);
+    openPageEntry(targetItem ? targetItem.entry : null, "查看全部");
   },
 
   onCardTap(event) {
     const { courseId } = event.currentTarget.dataset;
-    openPageEntry(getHomeRecommendedEntry(courseId), "查看详情");
+    const targetItem = this.data.recommendedCourses.find((item) => item.id === courseId);
+    openPageEntry(targetItem ? targetItem.entry : null, "查看详情");
   },
 
   onFeatureTap(event) {
     const { featureType } = event.currentTarget.dataset;
-    openPageEntry(getHomeFeatureEntry(featureType), "功能下一步接入");
+    const targetItem = this.data.featureCards.find((item) => item.type === featureType);
+    openPageEntry(targetItem ? targetItem.entry : null, "功能下一步接入");
   },
 
   onOpenLiveCenter() {
-    openPageEntry(getHomePageMeta().liveCenterEntry);
+    openPageEntry(this.data.liveCenterEntry);
   },
 
   onBannerChange(event) {
@@ -76,7 +81,7 @@ Page({
   },
 
   resumeBannerAutoplay() {
-    const { bannerResumeDelay } = getHomePageMeta();
+    const { bannerResumeDelay } = this.data;
 
     if (this.bannerAutoplayTimer) {
       clearTimeout(this.bannerAutoplayTimer);

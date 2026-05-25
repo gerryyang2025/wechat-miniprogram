@@ -1,10 +1,19 @@
-const { getMerchantDashboardPageData } = require("../../mock/merchant-data");
+const { fetchMerchantDashboardPageData } = require("../../services/api/page-data");
 const {
   openPageEntry
 } = require("../../utils/navigation");
 
 Page({
-  data: getMerchantDashboardPageData(),
+  data: {
+    metrics: [],
+    todos: [],
+    shortcuts: [],
+    activities: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchMerchantDashboardPageData());
+  },
 
   onBackTap() {
     wx.navigateBack({

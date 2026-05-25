@@ -1,8 +1,18 @@
-const { getLiveListPageData } = require("../../mock/live-data");
+const { fetchLiveListPageData } = require("../../services/api/page-data");
 const { openPageEntry } = require("../../utils/navigation");
 
 Page({
-  data: getLiveListPageData("all"),
+  data: {
+    navSubtitle: "",
+    filterTabs: [],
+    activeTab: "all",
+    emptyHint: "",
+    liveList: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchLiveListPageData("all"));
+  },
 
   onBackTap() {
     wx.navigateBack({
@@ -10,9 +20,9 @@ Page({
     });
   },
 
-  onFilterTap(event) {
+  async onFilterTap(event) {
     const { tabKey } = event.currentTarget.dataset;
-    this.setData(getLiveListPageData(tabKey));
+    this.setData(await fetchLiveListPageData(tabKey));
   },
 
   onLiveTap(event) {

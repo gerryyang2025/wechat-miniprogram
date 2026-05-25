@@ -25,7 +25,7 @@
 - 后端：`Golang + Gin（Go Web Framework）`
 - 主业务数据库：`MySQL 8.0`
 - 轻量元数据与协调存储：`etcd（分布式键值存储）`
-- 大文件资源存储：`COS（Cloud Object Storage）`
+- 课程视频资源：优先使用 `Linux SFTP + Nginx HTTPS`，`COS / VOD` 作为后续可选增强
 
 ## 主要功能
 
@@ -120,6 +120,8 @@
   - 前端技术方案文档，记录微信小程序前端技术栈与实现约束
 - [BACKEND_TECH.md](./docs/BACKEND_TECH.md)
   - 后端技术方案文档，记录后端架构、数据库、存储与事务设计
+- [MEDIA_DELIVERY_SFTP_NGINX.md](./docs/MEDIA_DELIVERY_SFTP_NGINX.md)
+  - 课程视频媒资方案文档，记录 `Linux SFTP + Nginx HTTPS` 上传、播放、权限和运维设计
 - [REFERENCE.md](./docs/REFERENCE.md)
   - GitHub 开源项目参考文档，记录相似项目排名、借鉴方向与实现参考价值
 - [GLOSSARY.md](./docs/GLOSSARY.md)

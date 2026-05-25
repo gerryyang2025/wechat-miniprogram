@@ -1,7 +1,13 @@
-const { getNotificationsPageData } = require("../../mock/service-data");
+const { fetchNotificationsPageData } = require("../../services/api/page-data");
 
 Page({
-  data: getNotificationsPageData(),
+  data: {
+    notificationList: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchNotificationsPageData());
+  },
 
   onBackTap() {
     wx.navigateBack({

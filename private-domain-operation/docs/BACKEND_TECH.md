@@ -1,6 +1,6 @@
 # 后端技术方案文档
 
-文档版本：`v0.6`
+文档版本：`v0.7`
 
 创建日期：`2026-05-04`
 
@@ -9,6 +9,7 @@
 - [DESIGN.md](./DESIGN.md)
 - [CORE_REQUIREMENTS.md](./CORE_REQUIREMENTS.md)
 - [MVP_FEATURES.md](./MVP_FEATURES.md)
+- [MEDIA_DELIVERY_SFTP_NGINX.md](./MEDIA_DELIVERY_SFTP_NGINX.md)
 - [GLOSSARY.md](./GLOSSARY.md)
 
 ## 1. 文档职责
@@ -16,7 +17,7 @@
 为减少跨文档重复，本文档只承担以下职责：
 
 - 记录后端技术栈与架构建议
-- 记录关系型数据库、etcd、COS（Cloud Object Storage）的职责分工
+- 记录关系型数据库、etcd、Linux SFTP、Nginx HTTPS 与可选云媒资服务的职责分工
 - 记录后端接口、事务、模块划分和存储约束
 
 以下内容不在本文档详细展开：
@@ -48,13 +49,14 @@
 - Go 版本：建议使用当前稳定版，并在团队内固定主版本
 - 业务主数据库：`MySQL 8.0`
 - 轻量元数据与协调存储：`etcd`
-- 文件资源存储：`COS（Cloud Object Storage）对象存储`
+- 课程视频资源：优先使用 `Linux SFTP + Nginx HTTPS`
 - 直播能力：一期优先接入 `微信原生直播能力`
 
 备选方案：
 
-- 如果后续业务明显转向更重的复杂分析和更灵活的数据扩展，可评估 `PostgreSQL + etcd + COS（Cloud Object Storage）`
-- 当前一期默认推荐为 `MySQL 8.0 + etcd + COS（Cloud Object Storage）`
+- 如果后续业务明显转向更重的复杂分析和更灵活的数据扩展，可评估 `PostgreSQL + etcd + Linux SFTP + Nginx HTTPS`
+- 如果后续视频量、转码、防盗链和多清晰度需求明显上升，可评估 `COS / CDN / VOD`
+- 当前一期默认推荐为 `MySQL 8.0 + etcd + Linux SFTP + Nginx HTTPS`
 
 ## 4. 为什么需要关系型数据库
 
@@ -66,7 +68,7 @@
 - 提现申请、审核与状态变更
 - 用户购买记录、学习记录、后台筛选与报表统计
 
-如果只使用 `etcd + COS（Cloud Object Storage）`，会在以下方面承担较高复杂度：
+如果只使用 `etcd + 文件存储`，会在以下方面承担较高复杂度：
 
 - 多条件列表筛选
 - 跨实体关联查询
@@ -110,7 +112,7 @@
 - 分销结算
 - 长期学习档案
 
-### 5.3 COS（Cloud Object Storage）
+### 5.3 Linux SFTP + Nginx HTTPS
 
 主要承载：
 
@@ -120,9 +122,32 @@
 - 课件附件
 - 直播回放资源
 
-### 5.4 可选增强：VOD（Video on Demand）
+一期优先使用这条链路：
 
-如果后续视频量、转码需求、回放分发需求明显上升，可在 `COS` 之上进一步评估接入 `VOD（云点播）`，承接以下能力：
+```text
+商家 / 运维上传视频
+        |
+      SFTP
+        |
+Linux 服务器 /data/pdo-media
+        |
+      Nginx
+        |
+https://media.example.com/courses/lesson-001.mp4
+        |
+微信小程序 video 组件
+```
+
+约束：
+
+- 对外播放地址必须是 `HTTPS`
+- 小程序后台需要把媒体域名配置到合法域名
+- `Nginx` 需要支持静态文件访问、`Range` 请求、缓存头和基础防盗链
+- 后端只向前端返回 `play_url / videoUrl`，前端不感知底层上传方式
+
+### 5.4 可选增强：COS / CDN / VOD
+
+如果后续视频量、转码需求、回放分发需求明显上升，可进一步评估接入 `COS / CDN / VOD（云点播）`，承接以下能力：
 
 - 上传管理
 - 转码
@@ -139,14 +164,16 @@
   - 历史课程视频迁移
   - 直播录制回放转课程回放
 - `后续增强方案`
+  - 接入 `COS / CDN` 承接更稳定的对象存储与分发
   - 接入 `VOD（云点播）` 做上传、转码、回放和媒资管理
 
 一期最推荐的实际链路：
 
 1. 讲师录制少量课程示例视频，优先准备 `3 ~ 5` 条可播放内容
-2. 将视频上传到 `COS（Cloud Object Storage）`
-3. 在本地 Mock 数据或后端媒资表中写入视频播放地址、封面、时长、标题等字段
-4. 前端课程播放页通过小程序 `video` 组件直接消费 HTTPS 资源地址
+2. 通过 `SFTP` 上传到 Linux 服务器的媒体目录，例如 `/data/pdo-media/courses/`
+3. 通过 `Nginx HTTPS` 域名对外提供播放地址，例如 `https://media.example.com/courses/aigc/lesson-001.mp4`
+4. 在本地 Mock 数据或后端媒资表中写入视频播放地址、封面、时长、标题等字段
+5. 前端课程播放页通过小程序 `video` 组件直接消费 HTTPS 资源地址
 
 当前阶段不建议：
 
@@ -159,7 +186,7 @@
 - `优先级 2`：已有本地 MP4 课程资源迁移
 - `优先级 3`：直播结束后的录制回放复用
 
-何时建议从 `COS` 升级到 `VOD`：
+何时建议从 `Linux SFTP + Nginx HTTPS` 升级到 `COS / CDN / VOD`：
 
 - 需要自动转码与多清晰度播放
 - 需要批量上传、媒资管理、截图和封面处理
@@ -168,9 +195,10 @@
 
 ## 6. 媒资数据组织建议
 
-- `COS（Cloud Object Storage）`：保存视频本体、封面、附件、回放文件
+- `Linux SFTP`：作为一期视频、封面、附件和回放文件的上传与维护通道
+- `Nginx HTTPS`：作为一期视频、封面、附件和回放文件的对外播放与下载入口
 - `MySQL 8.0`：保存媒资与课程、讲师、订单权益、直播回放之间的主业务关联
-- `etcd`：保存 `COS（Cloud Object Storage）` 对象键、访问地址、封面图、转码结果、时长、大小、权限状态和轻量索引信息
+- `etcd`：保存媒体域名、静态目录、访问地址、封面图、转码结果、时长、大小、权限状态和轻量索引信息
 
 ### 6.1 一期课程播放资源最小数据结构建议
 
@@ -223,7 +251,7 @@
 
 说明：
 
-- `storage_provider`：便于区分 `COS` 与后续可能接入的 `VOD`
+- `storage_provider`：一期优先为 `sftp`，后续可扩展为 `cos`、`vod`、`external`
 - `object_key`：便于后续做迁移、签名、失效和重建地址
 - `status`：便于区分 `uploading`、`ready`、`disabled`
 - `source_type`：便于区分录播课、训练营视频、直播回放
@@ -247,8 +275,8 @@
 - `handler`：HTTP（HyperText Transfer Protocol）路由、参数解析、响应格式化
 - `service`：业务编排、事务边界、幂等控制
 - `domain`：核心领域对象与领域规则
-- `repository`：数据库、etcd、COS（Cloud Object Storage）访问封装
-- `integration`：微信支付、消息通知、云存储、直播服务等外部集成
+- `repository`：数据库、etcd、媒资元数据与播放地址访问封装
+- `integration`：微信支付、消息通知、SFTP 上传、Nginx 媒体服务、直播服务等外部集成
 - `jobs`：异步任务、补偿任务、统计聚合任务
 
 可参考的目录结构：
@@ -473,7 +501,9 @@ backend/
 ### 13.3 安全要求
 
 - 支付回调必须做签名校验
-- 上传与访问 COS（Cloud Object Storage）资源时应控制权限、时效和防盗链策略
+- 上传与访问媒体资源时应控制权限、时效、目录隔离和防盗链策略
+- `SFTP` 账号应限制到媒体目录，禁止使用 root 账号进行日常上传
+- `Nginx HTTPS` 播放域名应配置小程序合法域名，并保留后续接入签名 URL 或防盗链的空间
 - 直播准入、课程权限、推广员身份和提现资格都应服务端校验
 - 对后台管理接口、资金接口和数据导出接口做更严格的权限控制
 
@@ -531,14 +561,17 @@ backend/
 - 存储与请求限制：
   https://etcd.io/docs/v3.6/dev-guide/limit/
 
-### 16.4 COS
+### 16.4 SFTP / Nginx
+
+- OpenSSH SFTP 服务：
+  https://www.openssh.com/
+- Nginx 静态内容服务：
+  https://nginx.org/en/docs/http/ngx_http_core_module.html
+
+### 16.5 COS / VOD
 
 - 对象存储产品概览：
   https://cloud.tencent.com/document/product/436
-- 对象概述：
-  https://cloud.tencent.com/document/product/436/13324
-
-### 16.5 VOD
 
 - 云点播产品概述：
   https://cloud.tencent.com/document/product/266/2833

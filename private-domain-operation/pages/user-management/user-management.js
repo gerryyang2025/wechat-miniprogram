@@ -1,7 +1,15 @@
-const { getUserManagementPageData } = require("../../mock/merchant-data");
+const { fetchUserManagementPageData } = require("../../services/api/page-data");
 
 Page({
-  data: getUserManagementPageData("all"),
+  data: {
+    filterTabs: [],
+    activeTab: "all",
+    userList: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchUserManagementPageData("all"));
+  },
 
   onBackTap() {
     wx.navigateBack({
@@ -16,9 +24,9 @@ Page({
     });
   },
 
-  onFilterTap(event) {
+  async onFilterTap(event) {
     const { tabKey } = event.currentTarget.dataset;
-    this.setData(getUserManagementPageData(tabKey));
+    this.setData(await fetchUserManagementPageData(tabKey));
   },
 
   onUserTap(event) {

@@ -1,17 +1,22 @@
 const {
-  getProductListPageData
-} = require("../../mock/product-browser-data");
+  fetchProductListPageData
+} = require("../../services/api/page-data");
 const {
   openPageEntry,
   parseProductListOptions,
 } = require("../../utils/navigation");
 
 Page({
-  data: getProductListPageData("all"),
+  data: {
+    filterTabs: [],
+    activeTab: "all",
+    emptyHint: "",
+    productList: []
+  },
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { category } = parseProductListOptions(options);
-    this.setData(getProductListPageData(category));
+    this.setData(await fetchProductListPageData(category));
   },
 
   onBackTap() {
@@ -20,9 +25,9 @@ Page({
     });
   },
 
-  onFilterTap(event) {
+  async onFilterTap(event) {
     const { tabKey } = event.currentTarget.dataset;
-    this.setData(getProductListPageData(tabKey));
+    this.setData(await fetchProductListPageData(tabKey));
   },
 
   onProductTap(event) {

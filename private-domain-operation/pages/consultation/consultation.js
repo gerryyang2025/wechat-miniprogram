@@ -1,18 +1,18 @@
 const {
   appendConsultationDraft,
-  getConsultationPageData,
   getConsultationSubmitFeedback,
   normalizeConsultationDraft
 } = require("../../mock/service-data");
+const { fetchConsultationPageData } = require("../../services/api/page-data");
 const { parseConsultationOptions } = require("../../utils/navigation");
 
 Page({
-  data: getConsultationPageData(),
+  data: {},
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { scene, title: targetTitle } = parseConsultationOptions(options);
 
-    this.setData(getConsultationPageData(scene, targetTitle));
+    this.setData(await fetchConsultationPageData(scene, targetTitle));
   },
 
   onBackTap() {

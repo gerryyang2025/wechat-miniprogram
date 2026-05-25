@@ -117,6 +117,8 @@
 
 - 课程视频不要打进小程序代码包
 - 播放资源优先使用 `HTTPS` 可访问地址
+- 当前一期优先由 `Linux SFTP + Nginx HTTPS` 提供课程视频播放地址
+- 前端只消费后端或 `mock/` 返回的 `video_url / videoUrl`，不感知底层是 `SFTP`、`COS` 还是 `VOD`
 - 一期先准备 `3 ~ 5` 条课程示例视频即可
 - 每条视频至少配套：
   - `course_id`

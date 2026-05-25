@@ -1,12 +1,18 @@
-const { getProfilePageData } = require("../../mock/profile-data");
+const { fetchProfilePageData } = require("../../services/api/page-data");
 const { openPageEntry } = require("../../utils/navigation");
 
 Page({
-  data: getProfilePageData(),
+  data: {
+    serviceItems: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchProfilePageData());
+  },
 
   onFeatureTap(event) {
     const { label } = event.currentTarget.dataset;
-    const { memberCard, merchantEntry, serviceItems, fallbackFeedback } = this.data;
+    const { memberCard = {}, merchantEntry = {}, serviceItems = [], fallbackFeedback = "" } = this.data;
 
     if (label === memberCard.actionTarget) {
       openPageEntry(memberCard.entry, "查看权益");

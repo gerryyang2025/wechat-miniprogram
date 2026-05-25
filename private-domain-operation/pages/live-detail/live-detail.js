@@ -1,4 +1,4 @@
-const { getLiveDetailPageData } = require("../../mock/live-data");
+const { fetchLiveDetailPageData } = require("../../services/api/page-data");
 const { savePosterWithFeedback } = require("../../utils/poster");
 const {
   openPageEntry,
@@ -7,14 +7,16 @@ const {
 
 Page({
   data: {
-    ...getLiveDetailPageData("live-private-domain-qa", "upcoming"),
+    live: {},
+    mode: "upcoming",
+    isReplay: false,
     posterSaving: false
   },
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { liveId, mode } = parseLiveDetailOptions(options);
     this.setData({
-      ...getLiveDetailPageData(liveId, mode)
+      ...(await fetchLiveDetailPageData(liveId, mode))
     });
   },
 

@@ -1,7 +1,14 @@
-const { getSettingsPageData } = require("../../mock/service-data");
+const { fetchSettingsPageData } = require("../../services/api/page-data");
 
 Page({
-  data: getSettingsPageData(),
+  data: {
+    switches: {},
+    switchItems: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchSettingsPageData());
+  },
 
   onBackTap() {
     wx.navigateBack({

@@ -14,10 +14,20 @@
       <text class="player-description">{{description}}</text>
 
       <video
-        wx:if="{{isVideoReady}}"
+        wx:if="{{isVideoReady && playerPosterUrl}}"
         class="player-video"
         src="{{playerVideoUrl}}"
-        poster="{{coverUrl}}"
+        poster="{{playerPosterUrl}}"
+        controls
+        autoplay
+        object-fit="contain"
+        binderror="onVideoError"
+      ></video>
+
+      <video
+        wx:elif="{{isVideoReady}}"
+        class="player-video"
+        src="{{playerVideoUrl}}"
         controls
         autoplay
         object-fit="contain"

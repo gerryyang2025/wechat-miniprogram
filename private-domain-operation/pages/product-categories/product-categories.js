@@ -1,9 +1,15 @@
-const { getProductCategories } = require("../../mock/product-browser-data");
+const { fetchProductCategories } = require("../../services/api/page-data");
 const { toProductList } = require("../../utils/navigation");
 
 Page({
   data: {
-    categoryList: getProductCategories()
+    categoryList: []
+  },
+
+  async onLoad() {
+    this.setData({
+      categoryList: await fetchProductCategories()
+    });
   },
 
   onBackTap() {

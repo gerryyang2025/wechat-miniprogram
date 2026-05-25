@@ -1,4 +1,4 @@
-const { getDetailCourse } = require("../../mock/course-data");
+const { fetchProductDetail } = require("../../services/api/page-data");
 const { savePosterWithFeedback } = require("../../utils/poster");
 const {
   openPageEntry,
@@ -7,27 +7,27 @@ const {
 
 Page({
   data: {
-    product: getDetailCourse("course-1"),
+    product: {},
     posterSaving: false
   },
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { courseId } = parseProductDetailOptions(options);
     this.currentCourseId = courseId;
-    const product = getDetailCourse(courseId);
+    const product = await fetchProductDetail(courseId);
 
     this.setData({
       product
     });
   },
 
-  onShow() {
+  async onShow() {
     if (!this.currentCourseId) {
       return;
     }
 
     this.setData({
-      product: getDetailCourse(this.currentCourseId)
+      product: await fetchProductDetail(this.currentCourseId)
     });
   },
 

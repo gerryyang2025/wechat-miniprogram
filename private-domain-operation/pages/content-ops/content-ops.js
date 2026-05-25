@@ -1,10 +1,18 @@
 const {
   getContentOpsActionFeedback,
-  getContentOpsPageData
 } = require("../../mock/merchant-data");
+const { fetchContentOpsPageData } = require("../../services/api/page-data");
 
 Page({
-  data: getContentOpsPageData(),
+  data: {
+    banners: [],
+    recommendationSlots: [],
+    notices: []
+  },
+
+  async onLoad() {
+    this.setData(await fetchContentOpsPageData());
+  },
 
   onBackTap() {
     wx.navigateBack({

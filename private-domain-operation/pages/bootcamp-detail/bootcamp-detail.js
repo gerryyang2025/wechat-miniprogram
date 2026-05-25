@@ -1,14 +1,22 @@
-const { getBootcampDetailPageData } = require("../../mock/bootcamp-data");
+const { fetchBootcampDetailPageData } = require("../../services/api/page-data");
 const { parseBootcampDetailOptions } = require("../../utils/navigation");
 
 Page({
-  data: getBootcampDetailPageData("camp-7day-growth"),
+  data: {
+    bootcamp: {},
+    navSubtitle: "",
+    footerTip: "",
+    checkInActionLabel: "",
+    checkInFeedback: "",
+    noticeActionLabel: "",
+    noticeFeedback: ""
+  },
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const { campId } = parseBootcampDetailOptions(options);
 
     this.setData({
-      ...getBootcampDetailPageData(campId)
+      ...(await fetchBootcampDetailPageData(campId))
     });
   },
 

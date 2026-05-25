@@ -1,0 +1,369 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+APP_NAME="${APP_NAME:-pdo-backend}"
+APP_ENV="${APP_ENV:-development}"
+GIN_MODE="${GIN_MODE:-debug}"
+HTTP_HOST="${HTTP_HOST:-127.0.0.1}"
+HTTP_PORT="${HTTP_PORT:-8088}"
+
+BIN_DIR="${BIN_DIR:-$BACKEND_DIR/bin}"
+RUN_DIR="${RUN_DIR:-$BACKEND_DIR/run}"
+LOG_DIR="${LOG_DIR:-$BACKEND_DIR/logs}"
+GOCACHE="${GOCACHE:-$BACKEND_DIR/.cache/go-build}"
+
+BINARY_PATH="${BINARY_PATH:-$BIN_DIR/$APP_NAME}"
+PID_FILE="${PID_FILE:-$RUN_DIR/$APP_NAME.pid}"
+LOG_FILE="${LOG_FILE:-$LOG_DIR/$APP_NAME.log}"
+DAEMON_MODE="${DAEMON_MODE:-auto}"
+LAUNCH_LABEL="${LAUNCH_LABEL:-com.private-domain-operation.backend}"
+LAUNCH_DOMAIN="${LAUNCH_DOMAIN:-gui/$(id -u)}"
+PLIST_FILE="${PLIST_FILE:-$RUN_DIR/$LAUNCH_LABEL.plist}"
+
+command_name="${1:-help}"
+shift || true
+
+ensure_dirs() {
+  mkdir -p "$BIN_DIR" "$RUN_DIR" "$LOG_DIR" "$GOCACHE"
+}
+
+ensure_go() {
+  if ! command -v go >/dev/null 2>&1; then
+    echo "go command not found. Install Go and make sure it is available in PATH." >&2
+    exit 1
+  fi
+}
+
+read_pid() {
+  if [ ! -f "$PID_FILE" ]; then
+    return 1
+  fi
+
+  tr -d '[:space:]' < "$PID_FILE"
+}
+
+is_process_alive() {
+  local pid="${1:-}"
+
+  if [ -z "$pid" ]; then
+    return 1
+  fi
+
+  kill -0 "$pid" >/dev/null 2>&1
+}
+
+is_running() {
+  local pid
+
+  pid="$(read_pid 2>/dev/null || true)"
+  is_process_alive "$pid"
+}
+
+remove_stale_pid_file() {
+  if [ -f "$PID_FILE" ] && ! is_running; then
+    rm -f "$PID_FILE"
+  fi
+}
+
+service_url() {
+  echo "http://$HTTP_HOST:$HTTP_PORT"
+}
+
+use_launchd() {
+  if [ "$DAEMON_MODE" = "nohup" ]; then
+    return 1
+  fi
+
+  [ "$(uname -s)" = "Darwin" ] && command -v launchctl >/dev/null 2>&1
+}
+
+launchd_service_target() {
+  echo "$LAUNCH_DOMAIN/$LAUNCH_LABEL"
+}
+
+launchd_is_loaded() {
+  launchctl print "$(launchd_service_target)" >/dev/null 2>&1
+}
+
+launchd_pid() {
+  launchctl print "$(launchd_service_target)" 2>/dev/null | awk '/pid =/ { print $3; exit }'
+}
+
+write_launchd_plist() {
+  cat > "$PLIST_FILE" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$LAUNCH_LABEL</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$BINARY_PATH</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>$BACKEND_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <false/>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>APP_ENV</key>
+    <string>$APP_ENV</string>
+    <key>GIN_MODE</key>
+    <string>$GIN_MODE</string>
+    <key>HTTP_HOST</key>
+    <string>$HTTP_HOST</string>
+    <key>HTTP_PORT</key>
+    <string>$HTTP_PORT</string>
+    <key>GOCACHE</key>
+    <string>$GOCACHE</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>$LOG_FILE</string>
+  <key>StandardErrorPath</key>
+  <string>$LOG_FILE</string>
+</dict>
+</plist>
+EOF
+}
+
+build_service() {
+  ensure_dirs
+  ensure_go
+
+  echo "Building $APP_NAME..."
+  (
+    cd "$BACKEND_DIR"
+    GOCACHE="$GOCACHE" go build -o "$BINARY_PATH" ./cmd/api
+  )
+  echo "$APP_NAME built: $BINARY_PATH"
+}
+
+start_service() {
+  ensure_dirs
+  ensure_go
+  remove_stale_pid_file
+
+  if is_running; then
+    pid="$(read_pid)"
+    echo "$APP_NAME is already running. pid=$pid url=$(service_url)"
+    return 0
+  fi
+
+  build_service
+
+  if use_launchd; then
+    if launchd_is_loaded; then
+      pid="$(launchd_pid || true)"
+      if is_process_alive "$pid"; then
+        echo "$APP_NAME is already running via launchd. pid=$pid url=$(service_url)"
+        echo "$pid" > "$PID_FILE"
+        return 0
+      fi
+
+      launchctl bootout "$(launchd_service_target)" >/dev/null 2>&1 || true
+    fi
+
+    write_launchd_plist
+    echo "Starting $APP_NAME as launchd daemon..."
+    launchctl bootstrap "$LAUNCH_DOMAIN" "$PLIST_FILE"
+    launchctl kickstart -k "$(launchd_service_target)" >/dev/null 2>&1 || true
+
+    sleep 1
+
+    pid="$(launchd_pid || true)"
+    if is_process_alive "$pid"; then
+      echo "$pid" > "$PID_FILE"
+      echo "$APP_NAME started via launchd. pid=$pid url=$(service_url) log=$LOG_FILE"
+      return 0
+    fi
+
+    echo "$APP_NAME failed to start via launchd. Check log: $LOG_FILE" >&2
+    launchctl print "$(launchd_service_target)" >&2 || true
+    return 1
+  fi
+
+  echo "Starting $APP_NAME as daemon..."
+  (
+    cd "$BACKEND_DIR"
+    nohup env \
+      APP_ENV="$APP_ENV" \
+      GIN_MODE="$GIN_MODE" \
+      HTTP_HOST="$HTTP_HOST" \
+      HTTP_PORT="$HTTP_PORT" \
+      GOCACHE="$GOCACHE" \
+      "$BINARY_PATH" >> "$LOG_FILE" 2>&1 &
+    pid=$!
+    echo "$pid" > "$PID_FILE"
+    disown "$pid" >/dev/null 2>&1 || true
+  )
+
+  sleep 1
+
+  if is_running; then
+    pid="$(read_pid)"
+    echo "$APP_NAME started. pid=$pid url=$(service_url) log=$LOG_FILE"
+    return 0
+  fi
+
+  echo "$APP_NAME failed to start. Check log: $LOG_FILE" >&2
+  return 1
+}
+
+stop_service() {
+  if use_launchd && launchd_is_loaded; then
+    pid="$(launchd_pid || true)"
+    echo "Stopping $APP_NAME via launchd. pid=${pid:-unknown}"
+    launchctl bootout "$(launchd_service_target)" >/dev/null 2>&1 || launchctl bootout "$LAUNCH_DOMAIN" "$PLIST_FILE"
+    rm -f "$PID_FILE"
+    echo "$APP_NAME stopped."
+    return 0
+  fi
+
+  if [ ! -f "$PID_FILE" ]; then
+    echo "$APP_NAME is not running. pid file not found: $PID_FILE"
+    return 0
+  fi
+
+  pid="$(read_pid || true)"
+
+  if ! is_process_alive "$pid"; then
+    rm -f "$PID_FILE"
+    echo "$APP_NAME was not running. Removed stale pid file."
+    return 0
+  fi
+
+  echo "Stopping $APP_NAME. pid=$pid"
+  kill "$pid"
+
+  for _ in {1..30}; do
+    if ! is_process_alive "$pid"; then
+      rm -f "$PID_FILE"
+      echo "$APP_NAME stopped."
+      return 0
+    fi
+    sleep 1
+  done
+
+  if [ "${FORCE:-0}" = "1" ]; then
+    echo "$APP_NAME did not stop after timeout. Sending SIGKILL."
+    kill -9 "$pid"
+    rm -f "$PID_FILE"
+    echo "$APP_NAME stopped with SIGKILL."
+    return 0
+  fi
+
+  echo "$APP_NAME is still running after timeout. Use FORCE=1 ./scripts/optools stop if needed." >&2
+  return 1
+}
+
+status_service() {
+  if use_launchd && launchd_is_loaded; then
+    pid="$(launchd_pid || true)"
+    if is_process_alive "$pid"; then
+      echo "$pid" > "$PID_FILE"
+      echo "$APP_NAME is running via launchd. pid=$pid url=$(service_url) log=$LOG_FILE"
+      return 0
+    fi
+
+    echo "$APP_NAME is loaded in launchd but not running. log=$LOG_FILE"
+    return 1
+  fi
+
+  if is_running; then
+    pid="$(read_pid)"
+    echo "$APP_NAME is running. pid=$pid url=$(service_url) log=$LOG_FILE"
+    return 0
+  fi
+
+  remove_stale_pid_file
+  echo "$APP_NAME is stopped."
+  return 3
+}
+
+test_service() {
+  ensure_go
+
+  (
+    cd "$BACKEND_DIR"
+    GOCACHE="$GOCACHE" go test ./...
+  )
+}
+
+show_logs() {
+  ensure_dirs
+  local lines="${1:-80}"
+
+  if [ "${FOLLOW:-0}" = "1" ]; then
+    tail -n "$lines" -f "$LOG_FILE"
+    return
+  fi
+
+  tail -n "$lines" "$LOG_FILE"
+}
+
+show_help() {
+  cat <<EOF
+Usage:
+  ./scripts/optools <command> [args]
+
+Commands:
+  start      Build and start backend as daemon
+  stop       Stop backend daemon
+  restart    Stop and start backend daemon
+  status     Show backend daemon status
+  build      Build backend binary
+  test       Run go test ./...
+  logs [n]   Show last n log lines, default 80. Use FOLLOW=1 to tail -f
+  help       Show this help
+
+Environment:
+  APP_ENV=$APP_ENV
+  GIN_MODE=$GIN_MODE
+  HTTP_HOST=$HTTP_HOST
+  HTTP_PORT=$HTTP_PORT
+  DAEMON_MODE=$DAEMON_MODE
+  PID_FILE=$PID_FILE
+  LOG_FILE=$LOG_FILE
+EOF
+}
+
+case "$command_name" in
+  start)
+    start_service "$@"
+    ;;
+  stop)
+    stop_service "$@"
+    ;;
+  restart)
+    stop_service "$@"
+    start_service "$@"
+    ;;
+  status)
+    status_service "$@"
+    ;;
+  build)
+    build_service "$@"
+    ;;
+  test)
+    test_service "$@"
+    ;;
+  logs)
+    show_logs "$@"
+    ;;
+  help|-h|--help)
+    show_help
+    ;;
+  *)
+    echo "Unknown command: $command_name" >&2
+    show_help >&2
+    exit 2
+    ;;
+esac
+

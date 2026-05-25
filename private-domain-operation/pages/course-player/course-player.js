@@ -1,4 +1,7 @@
-const { getPlayerCourse, updatePlayerCourseProgress } = require("../../mock/course-data");
+const {
+  fetchPlayerCourse,
+  updateCourseProgress
+} = require("../../services/api/page-data");
 const {
   DEFAULT_PLAYER_PAGE_DATA,
   PLAYER_RETRY_DELAY,
@@ -15,20 +18,20 @@ const {
 Page({
   data: DEFAULT_PLAYER_PAGE_DATA,
 
-  onLoad(options = {}) {
+  async onLoad(options = {}) {
     const parsedOptions = parseCoursePlayerOptions(options);
     const courseId = parsedOptions.courseId;
     this.selectedLessonId = parsedOptions.lessonId;
-    const targetCourse = getPlayerCourse(courseId);
+    const targetCourse = await fetchPlayerCourse(courseId);
 
     if (targetCourse) {
       if (this.selectedLessonId) {
-        updatePlayerCourseProgress(courseId, this.selectedLessonId);
+        await updateCourseProgress(courseId, this.selectedLessonId);
       }
 
       this.playerCourseId = courseId;
       this.playerPayload = targetCourse;
-      this.applyPlayerPayload(getPlayerCourse(courseId) || targetCourse);
+      this.applyPlayerPayload((await fetchPlayerCourse(courseId)) || targetCourse);
       return;
     }
 
@@ -81,14 +84,14 @@ Page({
 
     this.setData(buildRetryPendingState(this.data));
 
-    setTimeout(() => {
-      const latestPayload = this.playerCourseId ? getPlayerCourse(this.playerCourseId) || this.playerPayload : this.playerPayload;
+    setTimeout(async () => {
+      const latestPayload = this.playerCourseId ? (await fetchPlayerCourse(this.playerCourseId)) || this.playerPayload : this.playerPayload;
       this.playerPayload = latestPayload;
       this.applyPlayerPayload(latestPayload, false);
     }, PLAYER_RETRY_DELAY);
   },
 
-  onLessonTap(event) {
+  async onLessonTap(event) {
     const { lessonId, lessonStatus } = event.currentTarget.dataset;
 
     if (!lessonId) {
@@ -106,8 +109,8 @@ Page({
 
     this.selectedLessonId = lessonId;
     if (this.playerCourseId) {
-      updatePlayerCourseProgress(this.playerCourseId, lessonId);
-      const latestPayload = getPlayerCourse(this.playerCourseId) || this.playerPayload;
+      await updateCourseProgress(this.playerCourseId, lessonId);
+      const latestPayload = (await fetchPlayerCourse(this.playerCourseId)) || this.playerPayload;
       this.playerPayload = latestPayload;
       this.applyPlayerPayload(latestPayload, false);
       return;
