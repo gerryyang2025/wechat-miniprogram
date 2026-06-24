@@ -67,20 +67,20 @@ func (r *ProgressRepository) completedLessons(ctx context.Context, userID int64,
 		return 0, err
 	}
 
+	currentCompleted, err := r.currentCompletedLessons(ctx, userID, courseID)
+	if err != nil {
+		return 0, err
+	}
+	if !completed {
+		return currentCompleted, nil
+	}
+
 	before, err := r.lessonsBefore(ctx, courseID, order)
 	if err != nil {
 		return 0, err
 	}
 
-	nextCompleted := before
-	if completed {
-		nextCompleted++
-	}
-
-	currentCompleted, err := r.currentCompletedLessons(ctx, userID, courseID)
-	if err != nil {
-		return 0, err
-	}
+	nextCompleted := before + 1
 	if currentCompleted > nextCompleted {
 		return currentCompleted, nil
 	}
@@ -99,7 +99,7 @@ func (r *ProgressRepository) lessonOrder(ctx context.Context, courseID int64, le
 	err := r.db.QueryRowContext(ctx, `
 		SELECT cc.sort_order, cc.id, cl.sort_order, cl.id
 		FROM course_lessons cl
-		JOIN course_chapters cc ON cc.id = cl.chapter_id
+		JOIN course_chapters cc ON cc.id = cl.chapter_id AND cc.course_id = cl.course_id
 		WHERE cl.course_id = ? AND cl.id = ?
 	`, courseID, lessonID).Scan(&order.chapterSort, &order.chapterID, &order.lessonSort, &order.lessonID)
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *ProgressRepository) lessonsBefore(ctx context.Context, courseID int64, 
 	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM course_lessons cl
-		JOIN course_chapters cc ON cc.id = cl.chapter_id
+		JOIN course_chapters cc ON cc.id = cl.chapter_id AND cc.course_id = cl.course_id
 		WHERE cl.course_id = ?
 			AND (
 				cc.sort_order < ?

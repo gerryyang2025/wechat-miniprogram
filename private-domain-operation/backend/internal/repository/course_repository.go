@@ -45,11 +45,14 @@ func (r *CourseRepository) GetPlayerCourse(ctx context.Context, courseID int64, 
 		return domain.PlayerCourse{}, err
 	}
 
-	if len(chapters) > 0 && len(chapters[0].Lessons) > 0 {
-		first := chapters[0].Lessons[0]
-		course.VideoURL = first.VideoURL
-		course.ResourceState = first.ResourceState
-		course.Duration = first.Duration
+	lesson, ok := lessonByID(chapters, course.ProgressSummary.CurrentLessonID)
+	if !ok {
+		lesson, ok = firstLesson(chapters)
+	}
+	if ok {
+		course.VideoURL = lesson.VideoURL
+		course.ResourceState = lesson.ResourceState
+		course.Duration = lesson.Duration
 	}
 
 	return course, nil
@@ -74,7 +77,7 @@ func (r *CourseRepository) loadChapters(ctx context.Context, courseID int64) ([]
 			return nil, err
 		}
 
-		lessons, err := r.loadLessons(ctx, chapter.ID)
+		lessons, err := r.loadLessons(ctx, courseID, chapter.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +91,7 @@ func (r *CourseRepository) loadChapters(ctx context.Context, courseID int64) ([]
 	return chapters, nil
 }
 
-func (r *CourseRepository) loadLessons(ctx context.Context, chapterID int64) ([]domain.Lesson, error) {
+func (r *CourseRepository) loadLessons(ctx context.Context, courseID int64, chapterID int64) ([]domain.Lesson, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT
 			l.id,
@@ -107,9 +110,9 @@ func (r *CourseRepository) loadLessons(ctx context.Context, chapterID int64) ([]
 			ORDER BY id
 			LIMIT 1
 		)
-		WHERE l.chapter_id = ?
+		WHERE l.chapter_id = ? AND l.course_id = ?
 		ORDER BY l.sort_order, l.id
-	`, chapterID)
+	`, chapterID, courseID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,6 +184,7 @@ func (r *CourseRepository) loadProgressSummary(ctx context.Context, courseID int
 	if progress.CurrentLessonID == 0 {
 		progress.CurrentLessonID = firstLessonID(chapters)
 	}
+	progress.CompletedLessons = clampInt(progress.CompletedLessons, 0, progress.TotalLessons)
 	progress.Percent = progressPercent(progress.CompletedLessons, progress.TotalLessons)
 
 	return progress, nil
@@ -194,13 +198,48 @@ func lessonCount(chapters []domain.Chapter) int {
 	return total
 }
 
+func clampInt(value int, minValue int, maxValue int) int {
+	if maxValue < minValue {
+		maxValue = minValue
+	}
+	if value < minValue {
+		return minValue
+	}
+	if value > maxValue {
+		return maxValue
+	}
+	return value
+}
+
 func firstLessonID(chapters []domain.Chapter) int64 {
+	lesson, ok := firstLesson(chapters)
+	if !ok {
+		return 0
+	}
+	return lesson.ID
+}
+
+func firstLesson(chapters []domain.Chapter) (domain.Lesson, bool) {
 	for _, chapter := range chapters {
 		if len(chapter.Lessons) > 0 {
-			return chapter.Lessons[0].ID
+			return chapter.Lessons[0], true
 		}
 	}
-	return 0
+	return domain.Lesson{}, false
+}
+
+func lessonByID(chapters []domain.Chapter, lessonID int64) (domain.Lesson, bool) {
+	if lessonID == 0 {
+		return domain.Lesson{}, false
+	}
+	for _, chapter := range chapters {
+		for _, lesson := range chapter.Lessons {
+			if lesson.ID == lessonID {
+				return lesson, true
+			}
+		}
+	}
+	return domain.Lesson{}, false
 }
 
 func formatDuration(seconds int) string {
