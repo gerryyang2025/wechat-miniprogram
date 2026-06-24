@@ -26,19 +26,11 @@ type loginRequest struct {
 }
 
 const userContextKey = "current_user"
-const dependencyContextKey = "dependencies"
-
-func dependencyMiddleware(deps Dependencies) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set(dependencyContextKey, deps)
-		c.Next()
-	}
-}
 
 func handleWechatLogin(deps Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if deps.Auth == nil {
-			errorJSON(c, http.StatusInternalServerError, 50001, "auth service unavailable")
+			writeLoginError(c, service.ErrAuthConfig)
 			return
 		}
 
@@ -50,10 +42,25 @@ func handleWechatLogin(deps Dependencies) gin.HandlerFunc {
 
 		result, err := deps.Auth.LoginWithCode(c.Request.Context(), req.Code)
 		if err != nil {
-			errorJSON(c, http.StatusUnauthorized, 40102, err.Error())
+			writeLoginError(c, err)
 			return
 		}
 		ok(c, result)
+	}
+}
+
+func writeLoginError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, service.ErrMissingLoginCode):
+		errorJSON(c, http.StatusBadRequest, 40001, "login code is required")
+	case errors.Is(err, service.ErrWeChatUpstream):
+		errorJSON(c, http.StatusBadGateway, 50201, "wechat login failed")
+	case errors.Is(err, service.ErrAuthConfig), errors.Is(err, service.ErrUserStore):
+		errorJSON(c, http.StatusInternalServerError, 50001, "login service unavailable")
+	case errors.Is(err, service.ErrInvalidToken), errors.Is(err, service.ErrTokenExpired):
+		errorJSON(c, http.StatusUnauthorized, 40102, "invalid login session")
+	default:
+		errorJSON(c, http.StatusUnauthorized, 40102, "login failed")
 	}
 }
 

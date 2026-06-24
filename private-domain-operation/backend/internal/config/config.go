@@ -18,6 +18,8 @@ type Config struct {
 	MerchantOpenIDs []string
 }
 
+const DevelopmentTokenSecret = "pdo-development-secret"
+
 func Load() Config {
 	return Config{
 		Env:             getenv("APP_ENV", "development"),
@@ -27,9 +29,31 @@ func Load() Config {
 		MigrationsDir:   getenv("MIGRATIONS_DIR", "migrations"),
 		WeChatAppID:     getenv("WECHAT_APP_ID", ""),
 		WeChatAppSecret: getenv("WECHAT_APP_SECRET", ""),
-		TokenSecret:     getenv("TOKEN_SECRET", "pdo-development-secret"),
+		TokenSecret:     os.Getenv("TOKEN_SECRET"),
 		MerchantOpenIDs: splitCSV(getenv("MERCHANT_OPENIDS", "")),
+	}.Normalized()
+}
+
+func (c Config) Normalized() Config {
+	if c.Env == "" {
+		c.Env = "development"
 	}
+	if c.Host == "" {
+		c.Host = "127.0.0.1"
+	}
+	if c.Port == "" {
+		c.Port = "8088"
+	}
+	if c.DatabasePath == "" {
+		c.DatabasePath = "data/pdo.db"
+	}
+	if c.MigrationsDir == "" {
+		c.MigrationsDir = "migrations"
+	}
+	if c.TokenSecret == "" && c.Env != "production" {
+		c.TokenSecret = DevelopmentTokenSecret
+	}
+	return c
 }
 
 func (c Config) Addr() string {

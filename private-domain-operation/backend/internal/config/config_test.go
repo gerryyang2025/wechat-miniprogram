@@ -73,3 +73,14 @@ func TestLoadUsesIntegrationDefaults(t *testing.T) {
 		t.Fatalf("MerchantOpenIDs = %#v", cfg.MerchantOpenIDs)
 	}
 }
+
+func TestLoadDoesNotDefaultProductionTokenSecret(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("TOKEN_SECRET", "")
+
+	cfg := Load()
+
+	if cfg.TokenSecret != "" {
+		t.Fatalf("TokenSecret = %q, want empty production secret when unset", cfg.TokenSecret)
+	}
+}

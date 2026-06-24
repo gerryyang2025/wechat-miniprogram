@@ -10,7 +10,7 @@ import (
 )
 
 func NewRouter(cfg config.Config) *gin.Engine {
-	return newRouter(cfg, defaultDependencies(cfg))
+	return newRouter(cfg, Dependencies{})
 }
 
 func NewRouterWithDependencies(deps Dependencies) *gin.Engine {
@@ -18,6 +18,7 @@ func NewRouterWithDependencies(deps Dependencies) *gin.Engine {
 }
 
 func newRouter(cfg config.Config, deps Dependencies) *gin.Engine {
+	cfg = cfg.Normalized()
 	deps = ensureDependencies(cfg, deps)
 
 	if cfg.Env == "production" {
@@ -25,7 +26,7 @@ func newRouter(cfg config.Config, deps Dependencies) *gin.Engine {
 	}
 
 	router := gin.New()
-	router.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware(), dependencyMiddleware(deps))
+	router.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware())
 
 	router.GET("/healthz", func(c *gin.Context) {
 		ok(c, gin.H{"status": "ok"})
@@ -74,13 +75,15 @@ func newRouter(cfg config.Config, deps Dependencies) *gin.Engine {
 }
 
 func defaultDependencies(cfg config.Config) Dependencies {
+	cfg = cfg.Normalized()
 	return Dependencies{
 		Auth: service.NewAuthService(service.AuthConfig{
-			AppID:           cfg.WeChatAppID,
-			AppSecret:       cfg.WeChatAppSecret,
-			TokenSecret:     cfg.TokenSecret,
-			MerchantOpenIDs: cfg.MerchantOpenIDs,
-			Users:           newTransientUserStore(),
+			AppID:                    cfg.WeChatAppID,
+			AppSecret:                cfg.WeChatAppSecret,
+			TokenSecret:              cfg.TokenSecret,
+			AllowInsecureTokenSecret: cfg.Env != "production",
+			MerchantOpenIDs:          cfg.MerchantOpenIDs,
+			Users:                    newTransientUserStore(),
 		}),
 	}
 }
@@ -88,9 +91,6 @@ func defaultDependencies(cfg config.Config) Dependencies {
 func ensureDependencies(cfg config.Config, deps Dependencies) Dependencies {
 	if deps.Auth != nil {
 		return deps
-	}
-	if cfg.TokenSecret == "" {
-		cfg.TokenSecret = "pdo-development-secret"
 	}
 	return defaultDependencies(cfg)
 }
