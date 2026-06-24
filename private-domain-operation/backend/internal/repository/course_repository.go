@@ -40,6 +40,10 @@ func (r *CourseRepository) GetPlayerCourse(ctx context.Context, courseID int64, 
 		return domain.PlayerCourse{}, err
 	}
 	course.Chapters = chapters
+	course.ProgressSummary, err = r.loadProgressSummary(ctx, course.ID, userID, chapters)
+	if err != nil {
+		return domain.PlayerCourse{}, err
+	}
 
 	if len(chapters) > 0 && len(chapters[0].Lessons) > 0 {
 		first := chapters[0].Lessons[0]
@@ -144,6 +148,59 @@ func (r *CourseRepository) loadLessons(ctx context.Context, chapterID int64) ([]
 	}
 
 	return lessons, nil
+}
+
+func (r *CourseRepository) loadProgressSummary(ctx context.Context, courseID int64, userID int64, chapters []domain.Chapter) (domain.ProgressView, error) {
+	loadedTotal := lessonCount(chapters)
+	progress := domain.ProgressView{
+		TotalLessons:    loadedTotal,
+		CurrentLessonID: firstLessonID(chapters),
+	}
+
+	err := r.db.QueryRowContext(ctx, `
+		SELECT completed_lessons, total_lessons, progress_percent, last_position, COALESCE(lesson_id, 0)
+		FROM learning_progress
+		WHERE user_id = ? AND course_id = ?
+	`, userID, courseID).Scan(
+		&progress.CompletedLessons,
+		&progress.TotalLessons,
+		&progress.Percent,
+		&progress.LastPosition,
+		&progress.CurrentLessonID,
+	)
+	if err == sql.ErrNoRows {
+		return progress, nil
+	}
+	if err != nil {
+		return domain.ProgressView{}, err
+	}
+
+	if loadedTotal > 0 && progress.TotalLessons != loadedTotal {
+		progress.TotalLessons = loadedTotal
+	}
+	if progress.CurrentLessonID == 0 {
+		progress.CurrentLessonID = firstLessonID(chapters)
+	}
+	progress.Percent = progressPercent(progress.CompletedLessons, progress.TotalLessons)
+
+	return progress, nil
+}
+
+func lessonCount(chapters []domain.Chapter) int {
+	total := 0
+	for _, chapter := range chapters {
+		total += len(chapter.Lessons)
+	}
+	return total
+}
+
+func firstLessonID(chapters []domain.Chapter) int64 {
+	for _, chapter := range chapters {
+		if len(chapter.Lessons) > 0 {
+			return chapter.Lessons[0].ID
+		}
+	}
+	return 0
 }
 
 func formatDuration(seconds int) string {

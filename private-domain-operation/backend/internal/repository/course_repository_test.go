@@ -39,4 +39,44 @@ func TestCourseRepositoryLoadsSeedCourse(t *testing.T) {
 	if len(course.Chapters[0].Lessons) != 3 {
 		t.Fatalf("lessons = %d", len(course.Chapters[0].Lessons))
 	}
+	if course.ProgressSummary.CompletedLessons != 0 {
+		t.Fatalf("completed lessons = %d", course.ProgressSummary.CompletedLessons)
+	}
+	if course.ProgressSummary.TotalLessons != 3 {
+		t.Fatalf("total lessons = %d", course.ProgressSummary.TotalLessons)
+	}
+	if course.ProgressSummary.Percent != 0 {
+		t.Fatalf("progress percent = %d", course.ProgressSummary.Percent)
+	}
+	if course.ProgressSummary.LastPosition != "暂未开始" {
+		t.Fatalf("last position = %q", course.ProgressSummary.LastPosition)
+	}
+	if course.ProgressSummary.CurrentLessonID != 1 {
+		t.Fatalf("current lesson id = %d", course.ProgressSummary.CurrentLessonID)
+	}
+
+	progressRepo := NewProgressRepository(conn)
+	if err := progressRepo.UpsertProgress(ctx, 2, 1, 2, true, 202); err != nil {
+		t.Fatalf("UpsertProgress returned error: %v", err)
+	}
+
+	updated, err := repo.GetPlayerCourse(ctx, 1, 2)
+	if err != nil {
+		t.Fatalf("GetPlayerCourse after progress update returned error: %v", err)
+	}
+	if updated.ProgressSummary.CompletedLessons != 2 {
+		t.Fatalf("updated completed lessons = %d", updated.ProgressSummary.CompletedLessons)
+	}
+	if updated.ProgressSummary.TotalLessons != 3 {
+		t.Fatalf("updated total lessons = %d", updated.ProgressSummary.TotalLessons)
+	}
+	if updated.ProgressSummary.Percent != 67 {
+		t.Fatalf("updated progress percent = %d", updated.ProgressSummary.Percent)
+	}
+	if updated.ProgressSummary.LastPosition != "上次看到 03:22" {
+		t.Fatalf("updated last position = %q", updated.ProgressSummary.LastPosition)
+	}
+	if updated.ProgressSummary.CurrentLessonID != 2 {
+		t.Fatalf("updated current lesson id = %d", updated.ProgressSummary.CurrentLessonID)
+	}
 }
