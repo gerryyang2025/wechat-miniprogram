@@ -4,6 +4,8 @@ Thumbs.db
 .idea/
 .vscode/
 
+.worktrees/
+
 project.private.config.json
 project.local.config.json
 
