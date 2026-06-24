@@ -75,7 +75,6 @@ func (s *fakeHandlerUserStore) UpsertByOpenID(ctx context.Context, openID string
 func postLogin(t *testing.T, cfg service.AuthConfig, body string) *httptest.ResponseRecorder {
 	t.Helper()
 
-	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	router.POST("/login", handleWechatLogin(Dependencies{
 		Auth: service.NewAuthService(cfg),

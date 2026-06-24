@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -17,6 +18,11 @@ import (
 	"private-domain-operation/backend/internal/repository"
 	"private-domain-operation/backend/internal/service"
 )
+
+func TestMain(m *testing.M) {
+	gin.SetMode(gin.TestMode)
+	os.Exit(m.Run())
+}
 
 func TestHomeUsesSeedCourse(t *testing.T) {
 	t.Parallel()
@@ -79,6 +85,61 @@ func TestSeedProgressReturnsPersistedSeconds(t *testing.T) {
 	}
 	if body.Data.ProgressSeconds != 42 {
 		t.Fatalf("progress_seconds = %d, want 42; body = %s", body.Data.ProgressSeconds, getResp.Body.String())
+	}
+}
+
+func TestSeedProgressRejectsNonnumericDBUserToken(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testTokenFor(t, domain.UserSession{
+		ID:       "transient-user-1",
+		OpenID:   "openid-transient-user",
+		Nickname: "Transient User",
+		Roles:    []string{"student"},
+	})
+
+	post := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/learning/courses/player-aigc-video/progress",
+		strings.NewReader(`{"lesson_id":"player-aigc-l2","progress_seconds":42,"completed":false}`),
+	)
+	post.Header.Set("Authorization", "Bearer "+token)
+	post.Header.Set("Content-Type", "application/json")
+	postResp := httptest.NewRecorder()
+
+	router.ServeHTTP(postResp, post)
+
+	assertErrorCode(t, postResp, http.StatusUnauthorized, 40102)
+
+	get := httptest.NewRequest(http.MethodGet, "/api/v1/learning/courses/player-aigc-video/progress", nil)
+	get.Header.Set("Authorization", "Bearer "+token)
+	getResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getResp, get)
+
+	assertErrorCode(t, getResp, http.StatusUnauthorized, 40102)
+
+	var lessonID int64
+	var completedLessons int
+	var progressSeconds int
+	if err := conn.QueryRowContext(context.Background(), `
+		SELECT lesson_id, completed_lessons, progress_seconds
+		FROM learning_progress
+		WHERE user_id = 2 AND course_id = 1
+	`).Scan(&lessonID, &completedLessons, &progressSeconds); err != nil {
+		t.Fatalf("seed progress query returned error: %v", err)
+	}
+	if lessonID != 1 {
+		t.Fatalf("seed user lesson id = %d, want unchanged 1", lessonID)
+	}
+	if completedLessons != 0 {
+		t.Fatalf("seed user completed lessons = %d, want unchanged 0", completedLessons)
+	}
+	if progressSeconds != 0 {
+		t.Fatalf("seed user progress seconds = %d, want unchanged 0", progressSeconds)
 	}
 }
 
@@ -265,6 +326,96 @@ func TestMerchantCourseEditUpdateAndAnalytics(t *testing.T) {
 	}
 }
 
+func TestMerchantCoursePartialLessonUpdatePreservesMedia(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testMerchantToken(t)
+
+	getEdit := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/1/edit", nil)
+	getEdit.Header.Set("Authorization", "Bearer "+token)
+	getEditResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getEditResp, getEdit)
+
+	if getEditResp.Code != http.StatusOK {
+		t.Fatalf("GET edit status = %d body = %s", getEditResp.Code, getEditResp.Body.String())
+	}
+
+	var originalBody struct {
+		Data struct {
+			Lessons []courseEditLessonResponse `json:"lessons"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(getEditResp.Body.Bytes(), &originalBody); err != nil {
+		t.Fatalf("GET edit JSON decode failed: %v body = %s", err, getEditResp.Body.String())
+	}
+	originalLesson, ok := findLesson(originalBody.Data.Lessons, 2)
+	if !ok {
+		t.Fatalf("original lesson 2 missing: %#v", originalBody.Data.Lessons)
+	}
+
+	updateBody := `{
+		"title":"AIGC 视频制作",
+		"description":"从脚本构思、口播表达，到成片剪辑与发布节奏。",
+		"status":"published",
+		"coverUrl":"https://media.example.com/covers/aigc/lesson-001.jpg",
+		"lessons":[
+			{
+				"id":2,
+				"title":"第 2 节 AIGC 视频脚本拆解 - 标题更新"
+			}
+		]
+	}`
+	put := httptest.NewRequest(http.MethodPut, "/api/v1/merchant/courses/1", strings.NewReader(updateBody))
+	put.Header.Set("Authorization", "Bearer "+token)
+	put.Header.Set("Content-Type", "application/json")
+	putResp := httptest.NewRecorder()
+
+	router.ServeHTTP(putResp, put)
+
+	if putResp.Code != http.StatusOK {
+		t.Fatalf("PUT status = %d body = %s", putResp.Code, putResp.Body.String())
+	}
+
+	getUpdated := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/1/edit", nil)
+	getUpdated.Header.Set("Authorization", "Bearer "+token)
+	getUpdatedResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getUpdatedResp, getUpdated)
+
+	if getUpdatedResp.Code != http.StatusOK {
+		t.Fatalf("GET updated status = %d body = %s", getUpdatedResp.Code, getUpdatedResp.Body.String())
+	}
+
+	var updatedBody struct {
+		Data struct {
+			Lessons []courseEditLessonResponse `json:"lessons"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(getUpdatedResp.Body.Bytes(), &updatedBody); err != nil {
+		t.Fatalf("GET updated JSON decode failed: %v body = %s", err, getUpdatedResp.Body.String())
+	}
+	updatedLesson, ok := findLesson(updatedBody.Data.Lessons, 2)
+	if !ok {
+		t.Fatalf("updated lesson 2 missing: %#v", updatedBody.Data.Lessons)
+	}
+	if updatedLesson.Title != "第 2 节 AIGC 视频脚本拆解 - 标题更新" {
+		t.Fatalf("updated lesson title = %q", updatedLesson.Title)
+	}
+	if updatedLesson.VideoURL != originalLesson.VideoURL {
+		t.Fatalf("updated lesson video URL = %q, want %q", updatedLesson.VideoURL, originalLesson.VideoURL)
+	}
+	if updatedLesson.CoverURL != originalLesson.CoverURL {
+		t.Fatalf("updated lesson cover URL = %q, want %q", updatedLesson.CoverURL, originalLesson.CoverURL)
+	}
+	if updatedLesson.DurationSeconds != originalLesson.DurationSeconds {
+		t.Fatalf("updated lesson duration = %d, want %d", updatedLesson.DurationSeconds, originalLesson.DurationSeconds)
+	}
+}
+
 func TestMerchantCourseUpdateValidationErrorUsesBusinessCode(t *testing.T) {
 	t.Parallel()
 
@@ -352,6 +503,7 @@ type courseEditLessonResponse struct {
 	ID              int64  `json:"id"`
 	Title           string `json:"title"`
 	VideoURL        string `json:"videoUrl"`
+	CoverURL        string `json:"coverUrl"`
 	DurationSeconds int    `json:"durationSeconds"`
 }
 
@@ -382,8 +534,6 @@ func assertErrorCode(t *testing.T, resp *httptest.ResponseRecorder, status int, 
 
 func testRouter(t *testing.T) (*gin.Engine, *sql.DB) {
 	t.Helper()
-
-	gin.SetMode(gin.TestMode)
 
 	ctx := context.Background()
 	conn, err := appdb.Open(filepath.Join(t.TempDir(), "pdo.db"))

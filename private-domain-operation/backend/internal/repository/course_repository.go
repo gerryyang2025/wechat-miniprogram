@@ -13,6 +13,10 @@ type CourseRepository struct {
 	db *sql.DB
 }
 
+type courseLessonQuerier interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
 func NewCourseRepository(db *sql.DB) *CourseRepository {
 	return &CourseRepository{db: db}
 }
@@ -70,7 +74,7 @@ func (r *CourseRepository) GetCourseEdit(ctx context.Context, courseID int64) (d
 		return domain.CourseEditPayload{}, err
 	}
 
-	lessons, err := r.loadCourseEditLessons(ctx, courseID)
+	lessons, err := loadCourseEditLessons(ctx, r.db, courseID)
 	if err != nil {
 		return domain.CourseEditPayload{}, err
 	}
@@ -96,6 +100,15 @@ func (r *CourseRepository) SaveCourseEdit(ctx context.Context, courseID int64, p
 		return domain.CourseEditPayload{}, err
 	}
 
+	currentLessons, err := loadCourseEditLessons(ctx, tx, courseID)
+	if err != nil {
+		return domain.CourseEditPayload{}, err
+	}
+	currentLessonsByID := make(map[int64]domain.CourseEditLesson, len(currentLessons))
+	for _, lesson := range currentLessons {
+		currentLessonsByID[lesson.ID] = lesson
+	}
+
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE products
 		SET title = ?, cover_url = ?, status = ?, updated_at = CURRENT_TIMESTAMP
@@ -113,6 +126,7 @@ func (r *CourseRepository) SaveCourseEdit(ctx context.Context, courseID int64, p
 	}
 
 	for _, lesson := range payload.Lessons {
+		lesson = mergeCourseEditLesson(currentLessonsByID[lesson.ID], lesson)
 		result, err := tx.ExecContext(ctx, `
 			UPDATE course_lessons
 			SET title = ?, duration_seconds = ?, updated_at = CURRENT_TIMESTAMP
@@ -141,7 +155,11 @@ func (r *CourseRepository) SaveCourseEdit(ctx context.Context, courseID int64, p
 }
 
 func (r *CourseRepository) loadCourseEditLessons(ctx context.Context, courseID int64) ([]domain.CourseEditLesson, error) {
-	rows, err := r.db.QueryContext(ctx, `
+	return loadCourseEditLessons(ctx, r.db, courseID)
+}
+
+func loadCourseEditLessons(ctx context.Context, q courseLessonQuerier, courseID int64) ([]domain.CourseEditLesson, error) {
+	rows, err := q.QueryContext(ctx, `
 		SELECT
 			l.id,
 			l.title,
@@ -153,6 +171,8 @@ func (r *CourseRepository) loadCourseEditLessons(ctx context.Context, courseID i
 			SELECT id
 			FROM media_assets
 			WHERE course_id = l.course_id AND lesson_id = l.id
+				AND media_type = 'video'
+				AND source_type = 'recorded_course'
 			ORDER BY id
 			LIMIT 1
 		)
@@ -178,12 +198,31 @@ func (r *CourseRepository) loadCourseEditLessons(ctx context.Context, courseID i
 	return lessons, nil
 }
 
+func mergeCourseEditLesson(current domain.CourseEditLesson, incoming domain.CourseEditLesson) domain.CourseEditLesson {
+	if current.ID == 0 {
+		return incoming
+	}
+	merged := incoming
+	if merged.VideoURL == "" {
+		merged.VideoURL = current.VideoURL
+	}
+	if merged.CoverURL == "" {
+		merged.CoverURL = current.CoverURL
+	}
+	if merged.DurationSeconds == 0 {
+		merged.DurationSeconds = current.DurationSeconds
+	}
+	return merged
+}
+
 func upsertLessonMedia(ctx context.Context, tx *sql.Tx, merchantID int64, courseID int64, lesson domain.CourseEditLesson) error {
 	var mediaID int64
 	err := tx.QueryRowContext(ctx, `
 		SELECT id
 		FROM media_assets
 		WHERE course_id = ? AND lesson_id = ?
+			AND media_type = 'video'
+			AND source_type = 'recorded_course'
 		ORDER BY id
 		LIMIT 1
 	`, courseID, lesson.ID).Scan(&mediaID)
@@ -271,6 +310,8 @@ func (r *CourseRepository) loadLessons(ctx context.Context, courseID int64, chap
 			SELECT id
 			FROM media_assets
 			WHERE course_id = l.course_id AND lesson_id = l.id
+				AND media_type = 'video'
+				AND source_type = 'recorded_course'
 			ORDER BY id
 			LIMIT 1
 		)

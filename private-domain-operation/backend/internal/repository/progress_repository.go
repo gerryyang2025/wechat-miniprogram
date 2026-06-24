@@ -39,9 +39,12 @@ func (r *ProgressRepository) UpsertProgress(ctx context.Context, userID int64, c
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'learning', CURRENT_TIMESTAMP)
 		ON CONFLICT(user_id, course_id) DO UPDATE SET
 			lesson_id = excluded.lesson_id,
-			completed_lessons = excluded.completed_lessons,
+			completed_lessons = MAX(learning_progress.completed_lessons, excluded.completed_lessons),
 			total_lessons = excluded.total_lessons,
-			progress_percent = excluded.progress_percent,
+			progress_percent = CASE
+				WHEN excluded.total_lessons <= 0 THEN 0
+				ELSE CAST(ROUND(CAST(MAX(learning_progress.completed_lessons, excluded.completed_lessons) AS REAL) / excluded.total_lessons * 100) AS INTEGER)
+			END,
 			progress_seconds = excluded.progress_seconds,
 			last_position = excluded.last_position,
 			last_learned_at = CURRENT_TIMESTAMP,

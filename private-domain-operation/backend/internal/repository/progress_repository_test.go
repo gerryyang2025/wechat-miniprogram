@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	appdb "private-domain-operation/backend/internal/db"
 )
@@ -102,6 +103,82 @@ func TestProgressRepositoryIncompleteUpdateDoesNotReduceCompletedLessons(t *test
 	}
 	if lastPosition != "上次看到 00:11" {
 		t.Fatalf("last position = %q", lastPosition)
+	}
+}
+
+func TestProgressRepositoryStaleCompletedUpdateDoesNotRegress(t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(t.TempDir(), "pdo.db")
+	conn, err := appdb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open returned error: %v", err)
+	}
+	defer conn.Close()
+
+	if err := appdb.Migrate(ctx, conn, filepath.Join("..", "..", "migrations")); err != nil {
+		t.Fatalf("Migrate returned error: %v", err)
+	}
+	if err := appdb.SeedMinimal(ctx, conn, appdb.SeedOptions{}); err != nil {
+		t.Fatalf("SeedMinimal returned error: %v", err)
+	}
+
+	lockConn, err := appdb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open lock connection returned error: %v", err)
+	}
+	defer lockConn.Close()
+	if _, err := lockConn.ExecContext(ctx, `BEGIN IMMEDIATE`); err != nil {
+		t.Fatalf("BEGIN IMMEDIATE returned error: %v", err)
+	}
+
+	repo := NewProgressRepository(conn)
+	done := make(chan error, 1)
+	go func() {
+		done <- repo.UpsertProgress(ctx, 2, 1, 1, true, 11)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	if _, err := lockConn.ExecContext(ctx, `
+		UPDATE learning_progress
+		SET lesson_id = 3,
+			completed_lessons = 3,
+			total_lessons = 3,
+			progress_percent = 100,
+			progress_seconds = 303,
+			last_position = '上次看到 05:03'
+		WHERE user_id = 2 AND course_id = 1
+	`); err != nil {
+		lockConn.ExecContext(ctx, `ROLLBACK`)
+		t.Fatalf("locked progress update returned error: %v", err)
+	}
+	if _, err := lockConn.ExecContext(ctx, `COMMIT`); err != nil {
+		t.Fatalf("COMMIT returned error: %v", err)
+	}
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("UpsertProgress returned error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("UpsertProgress did not finish after lock release")
+	}
+
+	var completedLessons int
+	var progressPercent int
+	if err := conn.QueryRowContext(ctx, `
+		SELECT completed_lessons, progress_percent
+		FROM learning_progress
+		WHERE user_id = 2 AND course_id = 1
+	`).Scan(&completedLessons, &progressPercent); err != nil {
+		t.Fatalf("progress query returned error: %v", err)
+	}
+	if completedLessons != 3 {
+		t.Fatalf("completed lessons = %d, want monotonic 3", completedLessons)
+	}
+	if progressPercent != 100 {
+		t.Fatalf("progress percent = %d, want 100", progressPercent)
 	}
 }
 

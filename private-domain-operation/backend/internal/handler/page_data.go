@@ -195,12 +195,24 @@ func isSeedCourseRouteID(id string) bool {
 	}
 }
 
-func currentUserID(c *gin.Context) int64 {
-	id, err := strconv.ParseInt(currentUser(c).ID, 10, 64)
-	if err != nil || id <= 0 {
-		return seedStudentUserID
+func currentDBUserID(c *gin.Context) (int64, bool) {
+	value, exists := c.Get(userContextKey)
+	if !exists {
+		return seedStudentUserID, true
 	}
-	return id
+
+	session, ok := value.(domain.UserSession)
+	if !ok {
+		errorJSON(c, http.StatusUnauthorized, 40102, "invalid login session")
+		return 0, false
+	}
+
+	id, err := strconv.ParseInt(strings.TrimSpace(session.ID), 10, 64)
+	if err != nil || id <= 0 {
+		errorJSON(c, http.StatusUnauthorized, 40102, "invalid login session")
+		return 0, false
+	}
+	return id, true
 }
 
 func loadSeedCourse(c *gin.Context, deps Dependencies) (domain.PlayerCourse, bool) {
@@ -208,7 +220,12 @@ func loadSeedCourse(c *gin.Context, deps Dependencies) (domain.PlayerCourse, boo
 		return domain.PlayerCourse{}, false
 	}
 
-	course, err := deps.Courses.GetPlayerCourse(c.Request.Context(), seedSQLiteCourseID, currentUserID(c))
+	userID, ok := currentDBUserID(c)
+	if !ok {
+		return domain.PlayerCourse{}, false
+	}
+
+	course, err := deps.Courses.GetPlayerCourse(c.Request.Context(), seedSQLiteCourseID, userID)
 	if err != nil {
 		writeCourseLoadError(c, err)
 		return domain.PlayerCourse{}, false
@@ -731,7 +748,11 @@ func handleUpdateProgress(deps Dependencies) gin.HandlerFunc {
 				errorJSON(c, http.StatusNotFound, 40404, "course or lesson not found")
 				return
 			}
-			if err := deps.Progress.UpdateProgress(c.Request.Context(), currentUserID(c), seedSQLiteCourseID, lessonID, req.Completed, req.ProgressSeconds); err != nil {
+			userID, validUser := currentDBUserID(c)
+			if !validUser {
+				return
+			}
+			if err := deps.Progress.UpdateProgress(c.Request.Context(), userID, seedSQLiteCourseID, lessonID, req.Completed, req.ProgressSeconds); err != nil {
 				writeProgressUpdateError(c, err)
 				return
 			}
