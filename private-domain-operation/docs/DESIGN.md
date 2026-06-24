@@ -432,15 +432,15 @@
   - 性能与运行时适配原则
 - [BACKEND_TECH.md](./BACKEND_TECH.md)
   - `Golang + Gin` 后端架构
-  - `MySQL 8.0 + etcd + Linux SFTP + Nginx HTTPS` 存储与媒资分发分工
+  - `SQLite + Linux SFTP + Nginx HTTPS` 存储与媒资分发分工
   - 接口、事务、模块和数据职责划分
 
 ### 11.3 技术方案摘要
 
 - 前端：一期仅使用微信小程序原生技术栈
 - 后端：一期使用 `Golang + Gin`
-- 业务主数据：推荐使用 `MySQL 8.0`
-- 轻量元数据与协调数据：使用 `etcd`
+- 业务主数据：推荐使用 `SQLite`
+- 轻量配置与短状态：优先使用环境变量、配置文件或 `SQLite` 配置表
 - 课程视频资源：优先使用 `Linux SFTP + Nginx HTTPS`，后续按规模评估 `COS / VOD`
 - 直播室：一期优先使用 `微信原生直播能力`
 - 消息与触达：优先使用微信生态原生能力

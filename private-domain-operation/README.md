@@ -23,8 +23,8 @@
 
 - 前端：微信小程序原生技术栈
 - 后端：`Golang + Gin（Go Web Framework）`
-- 主业务数据库：`MySQL 8.0`
-- 轻量元数据与协调存储：`etcd（分布式键值存储）`
+- 主业务数据库：`SQLite`
+- 轻量配置与短状态：优先使用环境变量、配置文件或 `SQLite` 配置表
 - 课程视频资源：优先使用 `Linux SFTP + Nginx HTTPS`，`COS / VOD` 作为后续可选增强
 
 ## 主要功能

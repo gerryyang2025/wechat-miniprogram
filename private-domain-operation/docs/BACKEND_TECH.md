@@ -1,6 +1,6 @@
 # 后端技术方案文档
 
-文档版本：`v0.7`
+文档版本：`v0.8`
 
 创建日期：`2026-05-04`
 
@@ -17,7 +17,7 @@
 为减少跨文档重复，本文档只承担以下职责：
 
 - 记录后端技术栈与架构建议
-- 记录关系型数据库、etcd、Linux SFTP、Nginx HTTPS 与可选云媒资服务的职责分工
+- 记录 SQLite、Linux SFTP、Nginx HTTPS 与可选云媒资服务的职责分工
 - 记录后端接口、事务、模块划分和存储约束
 
 以下内容不在本文档详细展开：
@@ -47,20 +47,27 @@
 
 - 服务框架：`Golang + Gin（Go Web Framework）`
 - Go 版本：建议使用当前稳定版，并在团队内固定主版本
-- 业务主数据库：`MySQL 8.0`
-- 轻量元数据与协调存储：`etcd`
+- 业务主数据库：`SQLite`
+- 轻量配置与协调存储：一期优先使用配置文件或 SQLite 配置表
 - 课程视频资源：优先使用 `Linux SFTP + Nginx HTTPS`
 - 直播能力：一期优先接入 `微信原生直播能力`
 
 备选方案：
 
-- 如果后续业务明显转向更重的复杂分析和更灵活的数据扩展，可评估 `PostgreSQL + etcd + Linux SFTP + Nginx HTTPS`
 - 如果后续视频量、转码、防盗链和多清晰度需求明显上升，可评估 `COS / CDN / VOD`
-- 当前一期默认推荐为 `MySQL 8.0 + etcd + Linux SFTP + Nginx HTTPS`
+- 当前一期默认推荐为 `SQLite + Linux SFTP + Nginx HTTPS`
 
-## 4. 为什么需要关系型数据库
+## 4. 为什么一期选择 SQLite
 
-当前业务包含以下典型强事务与复杂查询场景：
+当前阶段的主要目标是降低部署和维护成本，先跑通课程、训练营、直播、学习进度和商家后台的最小闭环。`SQLite` 适合当前一期，原因是：
+
+- 无需单独部署数据库服务
+- 数据库就是一个本地文件，备份和迁移简单
+- 支持 SQL、事务、索引和外键，足够承接当前业务模型
+- 与 `Golang + Gin` 单体后端搭配简单
+- 适合单机部署、轻量后台、低并发写入的 MVP 阶段
+
+当前业务后期会包含以下典型强事务与复杂查询场景，一期先保留数据模型，不引入独立数据库服务：
 
 - 订单创建、支付状态流转
 - 课程权限开通与失效
@@ -68,7 +75,7 @@
 - 提现申请、审核与状态变更
 - 用户购买记录、学习记录、后台筛选与报表统计
 
-如果只使用 `etcd + 文件存储`，会在以下方面承担较高复杂度：
+如果只使用 `文件存储 / JSON 文件`，会在以下方面承担较高复杂度：
 
 - 多条件列表筛选
 - 跨实体关联查询
@@ -76,11 +83,11 @@
 - 聚合报表与对账
 - 运营后台分页与统计分析
 
-因此，一期建议明确引入 `MySQL 8.0` 作为主业务数据库。
+因此，一期建议使用 `SQLite` 作为主业务数据库，在不引入独立数据库服务的前提下保留关系型建模能力。
 
 ## 5. 存储分工
 
-### 5.1 MySQL 8.0
+### 5.1 SQLite
 
 主要承载：
 
@@ -92,13 +99,21 @@
 - 提现申请、审核记录
 - 运营记录与基础统计结果
 
-### 5.2 etcd
+部署建议：
 
-主要承载：
+- 一期使用单个 SQLite 数据库文件，例如 `data/pdo.db`
+- 开启 `WAL（Write-Ahead Logging）`，改善读写并发体验
+- 开启外键约束，避免关联数据失真
+- 所有 schema 变更仍通过 `migrations/` 管理
+- 定时备份数据库文件，并在备份前后做一致性校验
+- 不把 SQLite 数据库文件提交到代码仓库
+
+### 5.2 轻量配置
+
+一期优先用环境变量、配置文件或 SQLite 配置表承载：
 
 - 系统配置
 - 轻量业务元数据
-- 分布式锁
 - 会话短状态
 - 直播间短状态
 - 观看权限缓存或准入状态
@@ -197,8 +212,7 @@ https://media.example.com/courses/lesson-001.mp4
 
 - `Linux SFTP`：作为一期视频、封面、附件和回放文件的上传与维护通道
 - `Nginx HTTPS`：作为一期视频、封面、附件和回放文件的对外播放与下载入口
-- `MySQL 8.0`：保存媒资与课程、讲师、订单权益、直播回放之间的主业务关联
-- `etcd`：保存媒体域名、静态目录、访问地址、封面图、转码结果、时长、大小、权限状态和轻量索引信息
+- `SQLite`：保存媒资与课程、讲师、订单权益、直播回放之间的主业务关联，以及媒体域名、静态目录、权限状态和轻量索引信息
 
 ### 6.1 一期课程播放资源最小数据结构建议
 
@@ -275,7 +289,7 @@ https://media.example.com/courses/lesson-001.mp4
 - `handler`：HTTP（HyperText Transfer Protocol）路由、参数解析、响应格式化
 - `service`：业务编排、事务边界、幂等控制
 - `domain`：核心领域对象与领域规则
-- `repository`：数据库、etcd、媒资元数据与播放地址访问封装
+- `repository`：SQLite 数据库、媒资元数据与播放地址访问封装
 - `integration`：微信支付、消息通知、SFTP 上传、Nginx 媒体服务、直播服务等外部集成
 - `jobs`：异步任务、补偿任务、统计聚合任务
 
@@ -427,7 +441,7 @@ backend/
 
 1. 查询直播房间的准入规则
 2. 校验用户是否具备进入资格，例如是否属于指定课程、训练营或角色范围
-3. 生成短期准入状态，可写入 `etcd`
+3. 生成短期准入状态，可写入 SQLite 准入状态表或进程内缓存
 4. 进入直播间时做二次校验
 
 一期建议：
@@ -489,7 +503,7 @@ backend/
 
 - 环境配置、第三方密钥、回调地址和开关项统一管理
 - 敏感配置不写死在代码仓库
-- 通过 `etcd` 或配置中心承接可热更新的轻量配置
+- 通过配置文件、环境变量或 SQLite 配置表承接轻量配置
 
 ### 13.2 观测能力
 
@@ -512,19 +526,19 @@ backend/
 - 接口形态以 `HTTP（HyperText Transfer Protocol） JSON（JavaScript Object Notation） API（Application Programming Interface）` 为主
 - 统一处理鉴权、幂等、审计日志、错误码和分页规范
 - 订单、支付、权益发放、提现等链路必须以事务一致性为核心设计
-- 统计分析与经营报表优先基于 `MySQL 8.0` 业务数据生成，不依赖对 `etcd` 的大范围直接扫描
+- 统计分析与经营报表优先基于 SQLite 业务数据生成，避免直接扫描大文件或日志作为主数据源
 
 ## 15. 特殊场景建议
 
 ### 15.1 直播准入
 
 - 直播观看权限的最终业务规则应基于主业务数据判断
-- `etcd` 可作为直播间准入短状态或缓存层
+- 直播间准入短状态可先使用 SQLite 状态表或进程内缓存承接
 
 ### 15.2 提现
 
 - 个人与公司提现都应有明确的账户信息、申请状态、审核记录和打款结果记录
-- 提现相关主流程数据建议全部落在 `MySQL 8.0`
+- 提现相关主流程数据建议全部落在 SQLite
 
 ### 15.3 分销
 
@@ -539,36 +553,27 @@ backend/
 - 特性介绍：
   https://gin-gonic.com/en/docs/introduction/
 
-### 16.2 MySQL 8.0
+### 16.2 SQLite
 
-- InnoDB 存储引擎与 ACID（Atomicity, Consistency, Isolation, Durability）能力：
-  https://dev.mysql.com/doc/refman/8.0/en/innodb-introduction.html
-- InnoDB 事务模型：
-  https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html
-- 事务隔离级别：
-  https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
-- JSON（JavaScript Object Notation）能力：
-  https://dev.mysql.com/doc/refman/8.0/en/json-functions.html
-- JSON_TABLE 能力：
-  https://dev.mysql.com/doc/mysql/8.0/en/json-table-functions.html
-- 索引创建：
-  https://dev.mysql.com/doc/mysql/8.0/en/create-index.html
+- SQLite 适用场景：
+  https://www.sqlite.org/whentouse.html
+- SQLite 事务：
+  https://www.sqlite.org/lang_transaction.html
+- SQLite WAL：
+  https://www.sqlite.org/wal.html
+- SQLite 外键约束：
+  https://www.sqlite.org/foreignkeys.html
+- SQLite 索引创建：
+  https://www.sqlite.org/lang_createindex.html
 
-### 16.3 etcd
-
-- Key-Value API 与数据单元：
-  https://etcd.io/docs/v3.7/learning/api/
-- 存储与请求限制：
-  https://etcd.io/docs/v3.6/dev-guide/limit/
-
-### 16.4 SFTP / Nginx
+### 16.3 SFTP / Nginx
 
 - OpenSSH SFTP 服务：
   https://www.openssh.com/
 - Nginx 静态内容服务：
   https://nginx.org/en/docs/http/ngx_http_core_module.html
 
-### 16.5 COS / VOD
+### 16.4 COS / VOD
 
 - 对象存储产品概览：
   https://cloud.tencent.com/document/product/436
