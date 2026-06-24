@@ -23,12 +23,18 @@ Page({
   },
 
   onEditTap(event) {
-    const { title } = event.currentTarget.dataset;
-    const targetItem = this.data.productList.find((item) => item.title === title);
+    const { id, title } = event.currentTarget.dataset;
 
-    wx.showToast({
-      title: targetItem ? targetItem.editFeedback : `编辑 ${title}`,
-      icon: "none"
+    if (!id) {
+      wx.showToast({
+        title: title ? `无法编辑 ${title}` : "缺少课程 ID",
+        icon: "none"
+      });
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/course-edit/course-edit?courseId=${encodeURIComponent(id)}`
     });
   },
 

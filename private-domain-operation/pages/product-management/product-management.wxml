@@ -40,7 +40,12 @@
           <text class="product-card-update">最近更新：{{item.updatedAt}}</text>
           <view class="product-card-foot">
             <text class="product-card-meta">{{item.typeLabel}}商品</text>
-            <view class="product-card-action" data-title="{{item.title}}" bindtap="onEditTap">编辑</view>
+            <view
+              class="product-card-action"
+              data-id="{{item.courseId || item.id}}"
+              data-title="{{item.title}}"
+              bindtap="onEditTap"
+            >编辑</view>
           </view>
         </view>
       </view>

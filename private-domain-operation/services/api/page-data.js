@@ -148,6 +148,42 @@ function fetchProductManagementPageData(activeTab = "all") {
   });
 }
 
+function fetchCourseEditPageData(courseId = "") {
+  return apiRequest({
+    path: `/api/v1/merchant/courses/${courseId}/edit`,
+    fallback: () => null
+  });
+}
+
+function saveCourseEdit(courseId = "", payload = {}) {
+  return apiRequest({
+    path: `/api/v1/merchant/courses/${courseId}`,
+    method: "PUT",
+    data: payload,
+    fallback: () => ({
+      title: payload.title,
+      description: payload.description,
+      status: payload.status,
+      coverUrl: payload.coverUrl,
+      lessons: payload.lessons || [],
+      id: courseId,
+      savedWithFallback: true
+    })
+  });
+}
+
+function fetchCourseAnalytics(courseId = "") {
+  return apiRequest({
+    path: `/api/v1/merchant/courses/${courseId}/analytics`,
+    fallback: () => ({
+      learnerCount: 1,
+      completedCount: 0,
+      averageProgress: 0,
+      latestLearnedAt: ""
+    })
+  });
+}
+
 function fetchLiveManagementPageData(activeTab = "all") {
   return apiRequest({
     path: "/api/v1/merchant/live-events",
@@ -175,6 +211,8 @@ module.exports = {
   fetchBootcampDetailPageData,
   fetchConsultationPageData,
   fetchContentOpsPageData,
+  fetchCourseAnalytics,
+  fetchCourseEditPageData,
   fetchHomePageData,
   fetchLearningPageData,
   fetchLiveDetailPageData,
@@ -192,5 +230,6 @@ module.exports = {
   fetchProfilePageData,
   fetchSettingsPageData,
   fetchUserManagementPageData,
+  saveCourseEdit,
   updateCourseProgress
 };
