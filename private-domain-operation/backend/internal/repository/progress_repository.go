@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+
+	"private-domain-operation/backend/internal/domain"
 )
 
 type ProgressRepository struct {
@@ -46,6 +48,27 @@ func (r *ProgressRepository) UpsertProgress(ctx context.Context, userID int64, c
 			updated_at = CURRENT_TIMESTAMP
 	`, userID, courseID, lessonID, completedLessons, totalLessons, percent, seconds, "上次看到 "+formatSeconds(seconds))
 	return err
+}
+
+func (r *ProgressRepository) CourseAnalytics(ctx context.Context, courseID int64) (domain.CourseAnalytics, error) {
+	var result domain.CourseAnalytics
+	err := r.db.QueryRowContext(ctx, `
+		SELECT
+			COUNT(DISTINCT lp.user_id),
+			COALESCE(SUM(CASE WHEN lp.progress_percent >= 100 THEN 1 ELSE 0 END), 0),
+			COALESCE(CAST(ROUND(AVG(lp.progress_percent)) AS INTEGER), 0),
+			COALESCE(MAX(lp.last_learned_at), '')
+		FROM courses c
+		LEFT JOIN learning_progress lp ON lp.course_id = c.id
+		WHERE c.id = ?
+		GROUP BY c.id
+	`, courseID).Scan(
+		&result.LearnerCount,
+		&result.CompletedCount,
+		&result.AverageProgress,
+		&result.LatestLearnedAt,
+	)
+	return result, err
 }
 
 func (r *ProgressRepository) totalLessons(ctx context.Context, courseID int64) (int, error) {

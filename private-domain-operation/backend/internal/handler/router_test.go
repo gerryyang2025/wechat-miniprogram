@@ -82,23 +82,302 @@ func TestSeedProgressReturnsPersistedSeconds(t *testing.T) {
 	}
 }
 
+func TestFallbackProgressIsScopedByAuthenticatedUser(t *testing.T) {
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	userAToken := testTokenFor(t, domain.UserSession{
+		ID:       "101",
+		OpenID:   "openid-user-a",
+		Nickname: "User A",
+		Roles:    []string{"student"},
+	})
+	userBToken := testTokenFor(t, domain.UserSession{
+		ID:       "202",
+		OpenID:   "openid-user-b",
+		Nickname: "User B",
+		Roles:    []string{"student"},
+	})
+
+	post := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/learning/courses/player-ip-course/progress",
+		strings.NewReader(`{"lesson_id":"player-ip-l2","progress_seconds":321,"completed":false}`),
+	)
+	post.Header.Set("Authorization", "Bearer "+userAToken)
+	post.Header.Set("Content-Type", "application/json")
+	postResp := httptest.NewRecorder()
+
+	router.ServeHTTP(postResp, post)
+
+	if postResp.Code != http.StatusOK {
+		t.Fatalf("POST status = %d body = %s", postResp.Code, postResp.Body.String())
+	}
+
+	get := httptest.NewRequest(http.MethodGet, "/api/v1/learning/courses/player-ip-course/progress", nil)
+	get.Header.Set("Authorization", "Bearer "+userBToken)
+	getResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getResp, get)
+
+	if getResp.Code != http.StatusOK {
+		t.Fatalf("GET status = %d body = %s", getResp.Code, getResp.Body.String())
+	}
+
+	var body struct {
+		Data struct {
+			LessonID        string `json:"lesson_id"`
+			ProgressSeconds int    `json:"progress_seconds"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(getResp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("GET response JSON decode failed: %v body = %s", err, getResp.Body.String())
+	}
+	if body.Data.ProgressSeconds == 321 {
+		t.Fatalf("user B saw user A progress seconds; body = %s", getResp.Body.String())
+	}
+	if body.Data.LessonID == "player-ip-l2" {
+		t.Fatalf("user B saw user A lesson; body = %s", getResp.Body.String())
+	}
+}
+
+func TestMerchantCourseEditUpdateAndAnalytics(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testMerchantToken(t)
+
+	getEdit := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/1/edit", nil)
+	getEdit.Header.Set("Authorization", "Bearer "+token)
+	getEditResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getEditResp, getEdit)
+
+	if getEditResp.Code != http.StatusOK {
+		t.Fatalf("GET edit status = %d body = %s", getEditResp.Code, getEditResp.Body.String())
+	}
+
+	var editBody struct {
+		Data struct {
+			Title   string `json:"title"`
+			Lessons []struct {
+				ID       int64  `json:"id"`
+				VideoURL string `json:"videoUrl"`
+			} `json:"lessons"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(getEditResp.Body.Bytes(), &editBody); err != nil {
+		t.Fatalf("GET edit JSON decode failed: %v body = %s", err, getEditResp.Body.String())
+	}
+	if editBody.Data.Title != "AIGC 视频制作" {
+		t.Fatalf("GET edit title = %q", editBody.Data.Title)
+	}
+	if len(editBody.Data.Lessons) != 3 {
+		t.Fatalf("GET edit lessons = %d", len(editBody.Data.Lessons))
+	}
+
+	updateBody := `{
+		"title":"AIGC 视频制作 - 联调版",
+		"description":"更新后的课程简介",
+		"status":"draft",
+		"coverUrl":"https://media.example.com/covers/aigc/new-cover.jpg",
+		"lessons":[
+			{
+				"id":2,
+				"title":"第 2 节 AIGC 视频脚本拆解 - 更新",
+				"videoUrl":"https://media.example.com/courses/aigc/lesson-002-updated.mp4",
+				"coverUrl":"https://media.example.com/covers/aigc/lesson-002.jpg",
+				"durationSeconds":333
+			}
+		]
+	}`
+	put := httptest.NewRequest(http.MethodPut, "/api/v1/merchant/courses/1", strings.NewReader(updateBody))
+	put.Header.Set("Authorization", "Bearer "+token)
+	put.Header.Set("Content-Type", "application/json")
+	putResp := httptest.NewRecorder()
+
+	router.ServeHTTP(putResp, put)
+
+	if putResp.Code != http.StatusOK {
+		t.Fatalf("PUT status = %d body = %s", putResp.Code, putResp.Body.String())
+	}
+
+	getUpdated := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/1/edit", nil)
+	getUpdated.Header.Set("Authorization", "Bearer "+token)
+	getUpdatedResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getUpdatedResp, getUpdated)
+
+	if getUpdatedResp.Code != http.StatusOK {
+		t.Fatalf("GET updated status = %d body = %s", getUpdatedResp.Code, getUpdatedResp.Body.String())
+	}
+
+	var updatedBody struct {
+		Data struct {
+			Title   string                     `json:"title"`
+			Status  string                     `json:"status"`
+			Lessons []courseEditLessonResponse `json:"lessons"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(getUpdatedResp.Body.Bytes(), &updatedBody); err != nil {
+		t.Fatalf("GET updated JSON decode failed: %v body = %s", err, getUpdatedResp.Body.String())
+	}
+	if updatedBody.Data.Title != "AIGC 视频制作 - 联调版" {
+		t.Fatalf("updated title = %q", updatedBody.Data.Title)
+	}
+	if updatedBody.Data.Status != "draft" {
+		t.Fatalf("updated status = %q", updatedBody.Data.Status)
+	}
+	lesson, ok := findLesson(updatedBody.Data.Lessons, 2)
+	if !ok {
+		t.Fatalf("updated lesson 2 missing: %#v", updatedBody.Data.Lessons)
+	}
+	if lesson.Title != "第 2 节 AIGC 视频脚本拆解 - 更新" {
+		t.Fatalf("updated lesson title = %q", lesson.Title)
+	}
+	if lesson.VideoURL != "https://media.example.com/courses/aigc/lesson-002-updated.mp4" {
+		t.Fatalf("updated lesson video URL = %q", lesson.VideoURL)
+	}
+	if lesson.DurationSeconds != 333 {
+		t.Fatalf("updated lesson duration = %d", lesson.DurationSeconds)
+	}
+
+	analytics := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/1/analytics", nil)
+	analytics.Header.Set("Authorization", "Bearer "+token)
+	analyticsResp := httptest.NewRecorder()
+
+	router.ServeHTTP(analyticsResp, analytics)
+
+	if analyticsResp.Code != http.StatusOK {
+		t.Fatalf("GET analytics status = %d body = %s", analyticsResp.Code, analyticsResp.Body.String())
+	}
+
+	var analyticsBody struct {
+		Data domain.CourseAnalytics `json:"data"`
+	}
+	if err := json.Unmarshal(analyticsResp.Body.Bytes(), &analyticsBody); err != nil {
+		t.Fatalf("GET analytics JSON decode failed: %v body = %s", err, analyticsResp.Body.String())
+	}
+	if analyticsBody.Data.LearnerCount != 1 {
+		t.Fatalf("learnerCount = %d", analyticsBody.Data.LearnerCount)
+	}
+}
+
+func TestMerchantCourseUpdateValidationErrorUsesBusinessCode(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testMerchantToken(t)
+	put := httptest.NewRequest(
+		http.MethodPut,
+		"/api/v1/merchant/courses/1",
+		strings.NewReader(`{"title":"AIGC 视频制作","status":"published","coverUrl":"https://media.example.com/cover.jpg","lessons":[{"id":1,"title":"第 1 节","videoUrl":"http://media.example.com/video.mp4","durationSeconds":120}]}`),
+	)
+	put.Header.Set("Authorization", "Bearer "+token)
+	put.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, put)
+
+	assertErrorCode(t, resp, http.StatusBadRequest, 40004)
+}
+
+func TestMerchantCourseInvalidAndMissingIDsUseBusinessCodes(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testMerchantToken(t)
+
+	invalid := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/not-a-number/edit", nil)
+	invalid.Header.Set("Authorization", "Bearer "+token)
+	invalidResp := httptest.NewRecorder()
+
+	router.ServeHTTP(invalidResp, invalid)
+
+	assertErrorCode(t, invalidResp, http.StatusBadRequest, 40003)
+
+	missing := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/courses/999/edit", nil)
+	missing.Header.Set("Authorization", "Bearer "+token)
+	missingResp := httptest.NewRecorder()
+
+	router.ServeHTTP(missingResp, missing)
+
+	assertErrorCode(t, missingResp, http.StatusNotFound, 40404)
+}
+
 func testStudentToken(t *testing.T) string {
 	t.Helper()
 
-	auth := service.NewAuthService(service.AuthConfig{
-		TokenSecret:              "test-secret",
-		AllowInsecureTokenSecret: true,
-	})
-	token, err := auth.SignToken(domain.UserSession{
+	return testTokenFor(t, domain.UserSession{
 		ID:       "2",
 		OpenID:   "mock-openid-user",
 		Nickname: "时昕同学",
 		Roles:    []string{"student"},
 	})
+}
+
+func testMerchantToken(t *testing.T) string {
+	t.Helper()
+
+	return testTokenFor(t, domain.UserSession{
+		ID:       "1",
+		OpenID:   "mock-openid-merchant",
+		Nickname: "Gerry",
+		Roles:    []string{"student", "merchant"},
+	})
+}
+
+func testTokenFor(t *testing.T, user domain.UserSession) string {
+	t.Helper()
+
+	auth := service.NewAuthService(service.AuthConfig{
+		TokenSecret:              "test-secret",
+		AllowInsecureTokenSecret: true,
+		MerchantOpenIDs:          []string{"mock-openid-merchant"},
+	})
+	token, err := auth.SignToken(user)
 	if err != nil {
 		t.Fatalf("SignToken returned error: %v", err)
 	}
 	return token
+}
+
+type courseEditLessonResponse struct {
+	ID              int64  `json:"id"`
+	Title           string `json:"title"`
+	VideoURL        string `json:"videoUrl"`
+	DurationSeconds int    `json:"durationSeconds"`
+}
+
+func findLesson(lessons []courseEditLessonResponse, id int64) (courseEditLessonResponse, bool) {
+	for _, lesson := range lessons {
+		if lesson.ID == id {
+			return lesson, true
+		}
+	}
+	return courseEditLessonResponse{}, false
+}
+
+func assertErrorCode(t *testing.T, resp *httptest.ResponseRecorder, status int, code int) {
+	t.Helper()
+
+	if resp.Code != status {
+		t.Fatalf("status = %d, want %d; body = %s", resp.Code, status, resp.Body.String())
+	}
+
+	var body responseBody
+	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("response JSON decode failed: %v body = %s", err, resp.Body.String())
+	}
+	if body.Code != code {
+		t.Fatalf("code = %d, want %d; body = %s", body.Code, code, resp.Body.String())
+	}
 }
 
 func testRouter(t *testing.T) (*gin.Engine, *sql.DB) {
@@ -122,6 +401,7 @@ func testRouter(t *testing.T) (*gin.Engine, *sql.DB) {
 	auth := service.NewAuthService(service.AuthConfig{
 		TokenSecret:              "test-secret",
 		AllowInsecureTokenSecret: true,
+		MerchantOpenIDs:          []string{"mock-openid-merchant"},
 		Users:                    users,
 		CodeExchanger: func(ctx context.Context, code string) (service.WeChatSession, error) {
 			return service.WeChatSession{OpenID: "mock-openid-user"}, nil

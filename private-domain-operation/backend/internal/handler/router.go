@@ -61,6 +61,9 @@ func newRouter(cfg config.Config, deps Dependencies) *gin.Engine {
 		{
 			merchant.GET("/dashboard", handleMerchantDashboard)
 			merchant.GET("/products", handleMerchantProducts(deps))
+			merchant.GET("/courses/:course_id/edit", handleMerchantCourseEdit(deps))
+			merchant.PUT("/courses/:course_id", handleMerchantCourseUpdate(deps))
+			merchant.GET("/courses/:course_id/analytics", handleMerchantCourseAnalytics(deps))
 			merchant.GET("/live-events", handleMerchantLiveEvents)
 			merchant.GET("/users", handleMerchantUsers)
 			merchant.GET("/content-ops", handleMerchantContentOps)

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"private-domain-operation/backend/internal/domain"
+	"private-domain-operation/backend/internal/service"
 )
 
 type lessonDef struct {
@@ -81,6 +82,7 @@ var (
 			CurrentLessonID:  "player-wxgame-l3",
 		},
 	}
+	progressByUserCourse = map[string]progressState{}
 )
 
 var playerCourses = map[string]playerCourseDef{
@@ -741,7 +743,7 @@ func handleUpdateProgress(deps Dependencies) gin.HandlerFunc {
 			return
 		}
 
-		state, updated := updateProgress(courseID, req.LessonID, req.ProgressSeconds, req.Completed)
+		state, updated := updateProgressForUser(progressUserKey(c), courseID, req.LessonID, req.ProgressSeconds, req.Completed)
 		if !updated {
 			errorJSON(c, http.StatusNotFound, 40404, "course or lesson not found")
 			return
@@ -768,7 +770,7 @@ func handleCourseProgress(deps Dependencies) gin.HandlerFunc {
 			return
 		}
 
-		ok(c, progressResponse(courseID, getProgress(courseID)))
+		ok(c, progressResponse(courseID, getProgressForUser(progressUserKey(c), courseID)))
 	}
 }
 
@@ -784,21 +786,19 @@ func getProgress(courseID string) progressState {
 	progressMu.Lock()
 	defer progressMu.Unlock()
 
-	state, ok := progressByCourse[courseID]
-	if !ok {
-		total := len(flatLessons(playerCourses[courseID]))
-		state = progressState{CompletedLessons: 0, TotalLessons: total}
+	return fillProgressDefaults(courseID, progressByCourse[courseID])
+}
+
+func getProgressForUser(userKey string, courseID string) progressState {
+	progressMu.Lock()
+	defer progressMu.Unlock()
+
+	key := userCourseProgressKey(userKey, courseID)
+	if state, ok := progressByUserCourse[key]; ok {
+		return fillProgressDefaults(courseID, state)
 	}
-	if state.TotalLessons == 0 {
-		state.TotalLessons = len(flatLessons(playerCourses[courseID]))
-	}
-	if state.CurrentLessonID == "" {
-		lessons := flatLessons(playerCourses[courseID])
-		if len(lessons) > 0 {
-			state.CurrentLessonID = lessons[0].ID
-		}
-	}
-	return state
+
+	return fillProgressDefaults(courseID, progressByCourse[courseID])
 }
 
 func updateProgress(courseID, lessonID string, progressSeconds int, completed bool) (progressState, bool) {
@@ -821,19 +821,81 @@ func updateProgress(courseID, lessonID string, progressSeconds int, completed bo
 
 	progressMu.Lock()
 	defer progressMu.Unlock()
-	completedCount := index + 1
-	current := progressByCourse[courseID]
+	state := nextProgressState(fillProgressDefaults(courseID, progressByCourse[courseID]), lessons, index, lessonID, progressSeconds, completed)
+	progressByCourse[courseID] = state
+	return state, true
+}
+
+func updateProgressForUser(userKey string, courseID string, lessonID string, progressSeconds int, completed bool) (progressState, bool) {
+	def, ok := playerCourses[courseID]
+	if !ok {
+		return progressState{}, false
+	}
+
+	lessons := flatLessons(def)
+	index := -1
+	for i, lesson := range lessons {
+		if lesson.ID == lessonID {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return progressState{}, false
+	}
+
+	progressMu.Lock()
+	defer progressMu.Unlock()
+	key := userCourseProgressKey(userKey, courseID)
+	current, ok := progressByUserCourse[key]
+	if !ok {
+		current = progressByCourse[courseID]
+	}
+	state := nextProgressState(fillProgressDefaults(courseID, current), lessons, index, lessonID, progressSeconds, completed)
+	progressByUserCourse[key] = state
+	return state, true
+}
+
+func nextProgressState(current progressState, lessons []lessonDef, lessonIndex int, lessonID string, progressSeconds int, completed bool) progressState {
+	completedCount := lessonIndex + 1
 	if current.CompletedLessons > completedCount {
 		completedCount = current.CompletedLessons
 	}
-	state := progressState{CompletedLessons: completedCount, TotalLessons: len(lessons), LastSeconds: progressSeconds, CurrentLessonID: lessonID, LastPosition: "上次学到：" + lessons[index].Title}
+	state := progressState{CompletedLessons: completedCount, TotalLessons: len(lessons), LastSeconds: progressSeconds, CurrentLessonID: lessonID, LastPosition: "上次学到：" + lessons[lessonIndex].Title}
 	if !completed {
 		state.CompletedLessons = current.CompletedLessons
 		state.LastSeconds = progressSeconds
-		state.LastPosition = "上次看到 " + formatSeconds(progressSeconds) + " · " + lessons[index].Title
+		state.LastPosition = "上次看到 " + formatSeconds(progressSeconds) + " · " + lessons[lessonIndex].Title
 	}
-	progressByCourse[courseID] = state
-	return state, true
+	return state
+}
+
+func fillProgressDefaults(courseID string, state progressState) progressState {
+	if state.TotalLessons == 0 {
+		state.TotalLessons = len(flatLessons(playerCourses[courseID]))
+	}
+	if state.CurrentLessonID == "" {
+		lessons := flatLessons(playerCourses[courseID])
+		if len(lessons) > 0 {
+			state.CurrentLessonID = lessons[0].ID
+		}
+	}
+	return state
+}
+
+func progressUserKey(c *gin.Context) string {
+	user := currentUser(c)
+	if strings.TrimSpace(user.ID) != "" {
+		return strings.TrimSpace(user.ID)
+	}
+	if strings.TrimSpace(user.OpenID) != "" {
+		return strings.TrimSpace(user.OpenID)
+	}
+	return "anonymous"
+}
+
+func userCourseProgressKey(userKey string, courseID string) string {
+	return strings.TrimSpace(userKey) + "::" + courseID
 }
 
 func progressResponse(courseID string, state progressState) gin.H {
@@ -1203,6 +1265,104 @@ func handleMerchantProducts(deps Dependencies) gin.HandlerFunc {
 			"productList":    filtered,
 		})
 	}
+}
+
+func handleMerchantCourseEdit(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		courseID, valid := merchantCourseID(c)
+		if !valid {
+			return
+		}
+		if deps.Courses == nil {
+			errorJSON(c, http.StatusInternalServerError, 50002, "course service unavailable")
+			return
+		}
+
+		payload, err := deps.Courses.GetCourseEdit(c.Request.Context(), courseID)
+		if err != nil {
+			writeMerchantCourseError(c, err)
+			return
+		}
+
+		ok(c, payload)
+	}
+}
+
+func handleMerchantCourseUpdate(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		courseID, valid := merchantCourseID(c)
+		if !valid {
+			return
+		}
+		if deps.Courses == nil {
+			errorJSON(c, http.StatusInternalServerError, 50002, "course service unavailable")
+			return
+		}
+
+		var payload domain.CourseEditPayload
+		if err := c.ShouldBindJSON(&payload); err != nil {
+			errorJSON(c, http.StatusBadRequest, 40002, "invalid course edit request")
+			return
+		}
+		payload.ID = courseID
+
+		updated, err := deps.Courses.SaveCourseEdit(c.Request.Context(), courseID, payload)
+		if err != nil {
+			writeMerchantCourseError(c, err)
+			return
+		}
+
+		ok(c, updated)
+	}
+}
+
+func handleMerchantCourseAnalytics(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		courseID, valid := merchantCourseID(c)
+		if !valid {
+			return
+		}
+		if deps.Progress == nil {
+			errorJSON(c, http.StatusInternalServerError, 50003, "progress service unavailable")
+			return
+		}
+
+		analytics, err := deps.Progress.CourseAnalytics(c.Request.Context(), courseID)
+		if err != nil {
+			writeMerchantAnalyticsError(c, err)
+			return
+		}
+
+		ok(c, analytics)
+	}
+}
+
+func merchantCourseID(c *gin.Context) (int64, bool) {
+	courseID, err := strconv.ParseInt(c.Param("course_id"), 10, 64)
+	if err != nil || courseID <= 0 {
+		errorJSON(c, http.StatusBadRequest, 40003, "invalid course id")
+		return 0, false
+	}
+	return courseID, true
+}
+
+func writeMerchantCourseError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, service.ErrCourseValidation):
+		errorJSON(c, http.StatusBadRequest, 40004, "invalid course edit request")
+	case errors.Is(err, sql.ErrNoRows):
+		errorJSON(c, http.StatusNotFound, 40404, "course not found")
+	default:
+		errorJSON(c, http.StatusInternalServerError, 50002, "course service unavailable")
+	}
+}
+
+func writeMerchantAnalyticsError(c *gin.Context, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		errorJSON(c, http.StatusNotFound, 40404, "course not found")
+		return
+	}
+	errorJSON(c, http.StatusInternalServerError, 50003, "progress service unavailable")
 }
 
 func merchantProductItem(id, itemType, typeLabel, title, coverHint, status, statusTone, updatedAt, theme string) gin.H {

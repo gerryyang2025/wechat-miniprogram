@@ -65,3 +65,27 @@ type ProgressView struct {
 	LastPosition     string `json:"lastPosition"`
 	CurrentLessonID  int64  `json:"currentLessonId"`
 }
+
+type CourseEditPayload struct {
+	ID          int64              `json:"id"`
+	Title       string             `json:"title"`
+	Description string             `json:"description"`
+	Status      string             `json:"status"`
+	CoverURL    string             `json:"coverUrl"`
+	Lessons     []CourseEditLesson `json:"lessons"`
+}
+
+type CourseEditLesson struct {
+	ID              int64  `json:"id"`
+	Title           string `json:"title"`
+	VideoURL        string `json:"videoUrl"`
+	CoverURL        string `json:"coverUrl"`
+	DurationSeconds int    `json:"durationSeconds"`
+}
+
+type CourseAnalytics struct {
+	LearnerCount    int    `json:"learnerCount"`
+	CompletedCount  int    `json:"completedCount"`
+	AverageProgress int    `json:"averageProgress"`
+	LatestLearnedAt string `json:"latestLearnedAt"`
+}
