@@ -10,6 +10,12 @@ APP_ENV="${APP_ENV:-development}"
 GIN_MODE="${GIN_MODE:-debug}"
 HTTP_HOST="${HTTP_HOST:-127.0.0.1}"
 HTTP_PORT="${HTTP_PORT:-8088}"
+DATABASE_PATH="${DATABASE_PATH:-$BACKEND_DIR/data/pdo.db}"
+MIGRATIONS_DIR="${MIGRATIONS_DIR:-$BACKEND_DIR/migrations}"
+WECHAT_APP_ID="${WECHAT_APP_ID:-}"
+WECHAT_APP_SECRET="${WECHAT_APP_SECRET:-}"
+TOKEN_SECRET="${TOKEN_SECRET:-}"
+MERCHANT_OPENIDS="${MERCHANT_OPENIDS:-}"
 
 BIN_DIR="${BIN_DIR:-$BACKEND_DIR/bin}"
 RUN_DIR="${RUN_DIR:-$BACKEND_DIR/run}"
@@ -121,6 +127,18 @@ write_launchd_plist() {
     <string>$HTTP_HOST</string>
     <key>HTTP_PORT</key>
     <string>$HTTP_PORT</string>
+    <key>DATABASE_PATH</key>
+    <string>$DATABASE_PATH</string>
+    <key>MIGRATIONS_DIR</key>
+    <string>$MIGRATIONS_DIR</string>
+    <key>WECHAT_APP_ID</key>
+    <string>$WECHAT_APP_ID</string>
+    <key>WECHAT_APP_SECRET</key>
+    <string>$WECHAT_APP_SECRET</string>
+    <key>TOKEN_SECRET</key>
+    <string>$TOKEN_SECRET</string>
+    <key>MERCHANT_OPENIDS</key>
+    <string>$MERCHANT_OPENIDS</string>
     <key>GOCACHE</key>
     <string>$GOCACHE</string>
   </dict>
@@ -197,6 +215,12 @@ start_service() {
       GIN_MODE="$GIN_MODE" \
       HTTP_HOST="$HTTP_HOST" \
       HTTP_PORT="$HTTP_PORT" \
+      DATABASE_PATH="$DATABASE_PATH" \
+      MIGRATIONS_DIR="$MIGRATIONS_DIR" \
+      WECHAT_APP_ID="$WECHAT_APP_ID" \
+      WECHAT_APP_SECRET="$WECHAT_APP_SECRET" \
+      TOKEN_SECRET="$TOKEN_SECRET" \
+      MERCHANT_OPENIDS="$MERCHANT_OPENIDS" \
       GOCACHE="$GOCACHE" \
       "$BINARY_PATH" >> "$LOG_FILE" 2>&1 &
     pid=$!
@@ -302,9 +326,8 @@ migrate_service() {
 
   (
     cd "$BACKEND_DIR"
-    GOCACHE="$GOCACHE" go run ./cmd/seed >/dev/null
+    DATABASE_PATH="$DATABASE_PATH" MIGRATIONS_DIR="$MIGRATIONS_DIR" GOCACHE="$GOCACHE" go run ./cmd/migrate
   )
-  echo "$APP_NAME database migrated: ${DATABASE_PATH:-data/pdo.db}"
 }
 
 seed_service() {
@@ -313,7 +336,7 @@ seed_service() {
 
   (
     cd "$BACKEND_DIR"
-    GOCACHE="$GOCACHE" go run ./cmd/seed
+    DATABASE_PATH="$DATABASE_PATH" MIGRATIONS_DIR="$MIGRATIONS_DIR" MERCHANT_OPENIDS="$MERCHANT_OPENIDS" GOCACHE="$GOCACHE" go run ./cmd/seed
   )
 }
 
@@ -351,6 +374,12 @@ Environment:
   GIN_MODE=$GIN_MODE
   HTTP_HOST=$HTTP_HOST
   HTTP_PORT=$HTTP_PORT
+  DATABASE_PATH=$DATABASE_PATH
+  MIGRATIONS_DIR=$MIGRATIONS_DIR
+  WECHAT_APP_ID=$WECHAT_APP_ID
+  WECHAT_APP_SECRET=$WECHAT_APP_SECRET
+  TOKEN_SECRET=$TOKEN_SECRET
+  MERCHANT_OPENIDS=$MERCHANT_OPENIDS
   DAEMON_MODE=$DAEMON_MODE
   PID_FILE=$PID_FILE
   LOG_FILE=$LOG_FILE
