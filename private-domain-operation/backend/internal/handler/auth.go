@@ -1,21 +1,22 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
+
+	"private-domain-operation/backend/internal/domain"
+	"private-domain-operation/backend/internal/service"
 )
 
-type userSession struct {
-	ID       string   `json:"id"`
-	OpenID   string   `json:"openid"`
-	Nickname string   `json:"nickname"`
-	Avatar   string   `json:"avatar_url"`
-	Phone    string   `json:"phone"`
-	Roles    []string `json:"roles"`
+type Dependencies struct {
+	Auth *service.AuthService
 }
 
 type loginRequest struct {
@@ -25,61 +26,49 @@ type loginRequest struct {
 }
 
 const userContextKey = "current_user"
+const dependencyContextKey = "dependencies"
 
-var tokenSessions = map[string]userSession{
-	"dev-user-token": {
-		ID:       "user-1",
-		OpenID:   "mock-openid-user",
-		Nickname: "时昕同学",
-		Avatar:   "",
-		Phone:    "",
-		Roles:    []string{"student"},
-	},
-	"dev-merchant-token": {
-		ID:       "merchant-user-1",
-		OpenID:   "mock-openid-merchant",
-		Nickname: "Gerry",
-		Avatar:   "",
-		Phone:    "",
-		Roles:    []string{"student", "merchant"},
-	},
-}
-
-func handleWechatLogin(c *gin.Context) {
-	var req loginRequest
-	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		errorJSON(c, http.StatusBadRequest, 40001, "invalid login request")
-		return
-	}
-
-	token := "dev-user-token"
-	if req.Role == "merchant" || strings.Contains(strings.ToLower(req.Code), "merchant") {
-		token = "dev-merchant-token"
-	}
-
-	session := tokenSessions[token]
-	if req.Phone != "" {
-		session.Phone = req.Phone
-	}
-
-	ok(c, gin.H{
-		"token": token,
-		"user":  session,
-	})
-}
-
-func optionalAuthMiddleware() gin.HandlerFunc {
+func dependencyMiddleware(deps Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if session, ok := sessionFromRequest(c); ok {
+		c.Set(dependencyContextKey, deps)
+		c.Next()
+	}
+}
+
+func handleWechatLogin(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if deps.Auth == nil {
+			errorJSON(c, http.StatusInternalServerError, 50001, "auth service unavailable")
+			return
+		}
+
+		var req loginRequest
+		if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+			errorJSON(c, http.StatusBadRequest, 40001, "invalid login request")
+			return
+		}
+
+		result, err := deps.Auth.LoginWithCode(c.Request.Context(), req.Code)
+		if err != nil {
+			errorJSON(c, http.StatusUnauthorized, 40102, err.Error())
+			return
+		}
+		ok(c, result)
+	}
+}
+
+func optionalAuthMiddleware(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if session, ok := sessionFromRequest(deps, c); ok {
 			c.Set(userContextKey, session)
 		}
 		c.Next()
 	}
 }
 
-func requireAuthMiddleware() gin.HandlerFunc {
+func requireAuthMiddleware(deps Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session, ok := sessionFromRequest(c)
+		session, ok := sessionFromRequest(deps, c)
 		if !ok {
 			errorJSON(c, http.StatusUnauthorized, 40101, "login required")
 			c.Abort()
@@ -91,9 +80,9 @@ func requireAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func requireMerchantMiddleware() gin.HandlerFunc {
+func requireMerchantMiddleware(deps Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session, ok := sessionFromRequest(c)
+		session, ok := sessionFromRequest(deps, c)
 		if !ok {
 			errorJSON(c, http.StatusUnauthorized, 40101, "login required")
 			c.Abort()
@@ -111,34 +100,49 @@ func requireMerchantMiddleware() gin.HandlerFunc {
 	}
 }
 
-func sessionFromRequest(c *gin.Context) (userSession, bool) {
+func sessionFromRequest(deps Dependencies, c *gin.Context) (domain.UserSession, bool) {
+	if deps.Auth == nil {
+		return domain.UserSession{}, false
+	}
+
 	token := strings.TrimSpace(c.GetHeader("Authorization"))
 	token = strings.TrimPrefix(token, "Bearer ")
 	token = strings.TrimSpace(token)
 
 	if token == "" {
-		return userSession{}, false
+		return domain.UserSession{}, false
 	}
 
-	session, ok := tokenSessions[token]
-	return session, ok
+	session, err := deps.Auth.ParseToken(token)
+	if err != nil {
+		return domain.UserSession{}, false
+	}
+	return session, true
 }
 
-func currentUser(c *gin.Context) userSession {
+func currentUser(c *gin.Context) domain.UserSession {
 	value, exists := c.Get(userContextKey)
 	if !exists {
-		return tokenSessions["dev-user-token"]
+		return anonymousUserSession()
 	}
 
-	session, ok := value.(userSession)
+	session, ok := value.(domain.UserSession)
 	if !ok {
-		return tokenSessions["dev-user-token"]
+		return anonymousUserSession()
 	}
 
 	return session
 }
 
-func hasRole(session userSession, role string) bool {
+func anonymousUserSession() domain.UserSession {
+	return domain.UserSession{
+		ID:       "anonymous-user",
+		Nickname: "微信用户",
+		Roles:    []string{"student"},
+	}
+}
+
+func hasRole(session domain.UserSession, role string) bool {
 	for _, item := range session.Roles {
 		if item == role {
 			return true
@@ -146,4 +150,35 @@ func hasRole(session userSession, role string) bool {
 	}
 
 	return false
+}
+
+type transientUserStore struct {
+	mu    sync.Mutex
+	users map[string]domain.UserSession
+}
+
+// transientUserStore keeps NewRouter usable until cmd/api wires the real DB repository.
+func newTransientUserStore() *transientUserStore {
+	return &transientUserStore{users: make(map[string]domain.UserSession)}
+}
+
+func (s *transientUserStore) UpsertByOpenID(ctx context.Context, openID string) (domain.UserSession, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.users == nil {
+		s.users = make(map[string]domain.UserSession)
+	}
+	if user, ok := s.users[openID]; ok {
+		return user, nil
+	}
+
+	user := domain.UserSession{
+		ID:       "transient-user-" + strconv.Itoa(len(s.users)+1),
+		OpenID:   openID,
+		Nickname: "微信用户",
+		Roles:    []string{"student"},
+	}
+	s.users[openID] = user
+	return user, nil
 }
