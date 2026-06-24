@@ -70,7 +70,7 @@ func seedUser(ctx context.Context, tx *sql.Tx, id int, openid string, nickname s
 	if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO users (id, openid, nickname, status) VALUES (?, ?, ?, ?)", id, openid, nickname, status); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE users SET openid = ?, nickname = ?, status = ? WHERE id = ?", openid, nickname, status, id); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET openid = ? WHERE id = ?", openid, id); err != nil {
 		return err
 	}
 

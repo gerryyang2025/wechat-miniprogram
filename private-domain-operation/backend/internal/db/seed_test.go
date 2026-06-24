@@ -103,6 +103,38 @@ func TestSeedMinimalRefreshesSeedUserOpenIDs(t *testing.T) {
 	assertSeedUser(t, conn, 2, "real-student-openid", "时昕同学", "active")
 }
 
+func TestSeedMinimalRefreshesOpenIDsWithoutOverwritingProfileFields(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	conn, err := Open(filepath.Join(t.TempDir(), "pdo.db"))
+	if err != nil {
+		t.Fatalf("Open returned error: %v", err)
+	}
+	defer conn.Close()
+
+	if err := Migrate(ctx, conn, filepath.Join("..", "..", "migrations")); err != nil {
+		t.Fatalf("Migrate returned error: %v", err)
+	}
+
+	if err := SeedMinimal(ctx, conn, SeedOptions{}); err != nil {
+		t.Fatalf("first seed returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, "UPDATE users SET nickname = ?, status = ? WHERE id = 1", "Custom Merchant", "inactive"); err != nil {
+		t.Fatalf("merchant customization failed: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, "UPDATE users SET nickname = ?, status = ? WHERE id = 2", "Custom Student", "inactive"); err != nil {
+		t.Fatalf("student customization failed: %v", err)
+	}
+
+	if err := SeedMinimal(ctx, conn, SeedOptions{MerchantOpenID: "real-merchant-openid", StudentOpenID: "real-student-openid"}); err != nil {
+		t.Fatalf("second seed returned error: %v", err)
+	}
+
+	assertSeedUser(t, conn, 1, "real-merchant-openid", "Custom Merchant", "inactive")
+	assertSeedUser(t, conn, 2, "real-student-openid", "Custom Student", "inactive")
+}
+
 func TestSeedMinimalRejectsOpenIDOwnedByDifferentUser(t *testing.T) {
 	t.Parallel()
 
