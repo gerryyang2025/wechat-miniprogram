@@ -52,8 +52,9 @@ func (r *ProgressRepository) totalLessons(ctx context.Context, courseID int64) (
 	var total int
 	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
-		FROM course_lessons
-		WHERE course_id = ?
+		FROM course_lessons cl
+		JOIN course_chapters cc ON cc.id = cl.chapter_id AND cc.course_id = cl.course_id
+		WHERE cl.course_id = ?
 	`, courseID).Scan(&total)
 	if err != nil {
 		return 0, err
