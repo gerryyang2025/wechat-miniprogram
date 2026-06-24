@@ -39,15 +39,15 @@ func newRouter(cfg config.Config, deps Dependencies) *gin.Engine {
 		})
 
 		api.POST("/auth/wechat-login", handleWechatLogin(deps))
-		api.GET("/home", handleHome)
+		api.GET("/home", handleHome(deps))
 		api.GET("/profile", handleProfile)
 		api.GET("/product-categories", handleProductCategories)
-		api.GET("/products", handleProducts)
-		api.GET("/products/:product_id", handleProductDetail)
-		api.GET("/courses/:course_id/player", handlePlayerCourse)
-		api.GET("/learning", handleLearning)
-		api.GET("/learning/courses/:course_id/progress", requireAuthMiddleware(deps), handleCourseProgress)
-		api.POST("/learning/courses/:course_id/progress", requireAuthMiddleware(deps), handleUpdateProgress)
+		api.GET("/products", handleProducts(deps))
+		api.GET("/products/:product_id", handleProductDetail(deps))
+		api.GET("/courses/:course_id/player", handlePlayerCourse(deps))
+		api.GET("/learning", handleLearning(deps))
+		api.GET("/learning/courses/:course_id/progress", requireAuthMiddleware(deps), handleCourseProgress(deps))
+		api.POST("/learning/courses/:course_id/progress", requireAuthMiddleware(deps), handleUpdateProgress(deps))
 		api.GET("/bootcamps/:camp_id", handleBootcampDetail)
 		api.GET("/live-events", handleLiveList)
 		api.GET("/live-events/:live_id", handleLiveDetail)
@@ -60,7 +60,7 @@ func newRouter(cfg config.Config, deps Dependencies) *gin.Engine {
 		merchant := api.Group("/merchant", requireMerchantMiddleware(deps))
 		{
 			merchant.GET("/dashboard", handleMerchantDashboard)
-			merchant.GET("/products", handleMerchantProducts)
+			merchant.GET("/products", handleMerchantProducts(deps))
 			merchant.GET("/live-events", handleMerchantLiveEvents)
 			merchant.GET("/users", handleMerchantUsers)
 			merchant.GET("/content-ops", handleMerchantContentOps)
@@ -89,8 +89,9 @@ func defaultDependencies(cfg config.Config) Dependencies {
 }
 
 func ensureDependencies(cfg config.Config, deps Dependencies) Dependencies {
-	if deps.Auth != nil {
-		return deps
+	if deps.Auth == nil {
+		defaults := defaultDependencies(cfg)
+		deps.Auth = defaults.Auth
 	}
-	return defaultDependencies(cfg)
+	return deps
 }

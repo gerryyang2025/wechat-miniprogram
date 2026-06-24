@@ -16,7 +16,9 @@ import (
 )
 
 type Dependencies struct {
-	Auth *service.AuthService
+	Auth     *service.AuthService
+	Courses  *service.CourseService
+	Progress *service.ProgressService
 }
 
 type loginRequest struct {

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"database/sql"
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
@@ -8,6 +10,8 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+
+	"private-domain-operation/backend/internal/domain"
 )
 
 type lessonDef struct {
@@ -45,6 +49,14 @@ type progressState struct {
 	LastSeconds      int
 	CurrentLessonID  string
 }
+
+const (
+	seedSQLiteCourseID       int64 = 1
+	seedStudentUserID        int64 = 2
+	seedProductPublicID            = "course-aigc-video"
+	seedPlayerCoursePublicID       = "player-aigc-video"
+	seedLessonPublicPrefix         = "player-aigc-l"
+)
 
 var (
 	progressMu       sync.Mutex
@@ -172,34 +184,101 @@ func toCoursePlayer(courseID string, lessonID ...string) gin.H {
 	return pageEntry(url)
 }
 
-func handleHome(c *gin.Context) {
-	ok(c, gin.H{
-		"currentBannerIndex": 0,
-		"bannerAutoplay":     true,
-		"bannerResumeDelay":  160,
-		"bannerList": []gin.H{
-			{"id": "banner-1", "src": "/assets/home/banner1.jpg"},
-			{"id": "banner-2", "src": "/assets/home/banner2.jpg"},
-		},
-		"searchEntry":     pageEntry("/pages/product-list/product-list?category=all"),
-		"categoriesEntry": pageEntry("/pages/product-categories/product-categories"),
-		"ownedAllEntry":   pageEntry("/pages/learning/learning", "reLaunch"),
-		"liveCenterEntry": pageEntry("/pages/live-list/live-list"),
-		"purchasedCourses": []gin.H{
-			ownedCourse("owned-course-aigc", "AI", "cyan", "录播课", "AIGC 视频制作", "player-aigc-video"),
+func isSeedCourseRouteID(id string) bool {
+	switch strings.TrimSpace(id) {
+	case seedProductPublicID, seedPlayerCoursePublicID, strconv.FormatInt(seedSQLiteCourseID, 10):
+		return true
+	default:
+		return false
+	}
+}
+
+func currentUserID(c *gin.Context) int64 {
+	id, err := strconv.ParseInt(currentUser(c).ID, 10, 64)
+	if err != nil || id <= 0 {
+		return seedStudentUserID
+	}
+	return id
+}
+
+func loadSeedCourse(c *gin.Context, deps Dependencies) (domain.PlayerCourse, bool) {
+	if deps.Courses == nil {
+		return domain.PlayerCourse{}, false
+	}
+
+	course, err := deps.Courses.GetPlayerCourse(c.Request.Context(), seedSQLiteCourseID, currentUserID(c))
+	if err != nil {
+		writeCourseLoadError(c, err)
+		return domain.PlayerCourse{}, false
+	}
+	return course, true
+}
+
+func writeCourseLoadError(c *gin.Context, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		errorJSON(c, http.StatusNotFound, 40404, "course not found")
+		return
+	}
+	errorJSON(c, http.StatusInternalServerError, 50002, "course service unavailable")
+}
+
+func seedLessonID(id string) (int64, bool) {
+	id = strings.TrimSpace(id)
+	if strings.HasPrefix(id, seedLessonPublicPrefix) {
+		id = strings.TrimPrefix(id, seedLessonPublicPrefix)
+	}
+
+	value, err := strconv.ParseInt(id, 10, 64)
+	if err != nil || value <= 0 {
+		return 0, false
+	}
+	return value, true
+}
+
+func seedLessonPublicID(id int64) string {
+	if id <= 0 {
+		return ""
+	}
+	return seedLessonPublicPrefix + strconv.FormatInt(id, 10)
+}
+
+func handleHome(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		purchasedCourses := []gin.H{
+			ownedCourse("owned-course-aigc", "AI", "cyan", "录播课", "AIGC 视频制作", seedPlayerCoursePublicID),
 			ownedCourse("owned-course-wechat-game", "WX", "indigo", "录播课", "微信小游戏开发", "player-wechat-game"),
 			ownedCourse("owned-course-1", "IP", "purple", "系列课", "个人 IP 内容变现实战课", "player-ip-course"),
-		},
-		"recommendedCourses": []gin.H{
-			{"id": "course-2", "coverTheme": "cover-blue", "tag": "视频课", "title": "短视频表达与节奏训练", "author": "Gerry", "meta": "4 节课程 · 口播拍摄训练", "price": "会员可学", "hint": "口播结构 / 镜头状态 / 节奏感", "entry": toProductDetail("course-2")},
-			{"id": "course-3", "coverTheme": "cover-indigo", "tag": "图文课", "title": "朋友圈内容转化模型", "author": "Gerry", "meta": "4 节课程 · 图文成交训练", "price": "¥129", "hint": "内容铺垫 / 信任积累 / 转化动作", "entry": toProductDetail("course-3")},
-		},
-		"featureCards": []gin.H{
-			{"id": "feature-1", "type": "camp", "eyebrow": "训练营推荐", "title": "7 天私域增长训练营", "desc": "每天一个内容动作，当前 Day 2 / 7 聚焦朋友圈内容拆解。", "action": "查看详情", "entry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")},
-			{"id": "feature-2", "type": "live", "eyebrow": "直播推荐", "title": "今晚 20:00 私域运营直播答疑", "desc": "90 分钟直播答疑，聚焦内容变现 / 学员转化 / 日常运营问题。", "action": "预约提醒", "entry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=upcoming")},
-			{"id": "feature-3", "type": "member", "eyebrow": "会员推荐", "title": "年度会员计划", "desc": "解锁录播课、训练营精选内容和直播回放权益。", "action": "了解权益", "entry": pageEntry("/pages/member-rights/member-rights?source=home")},
-		},
-	})
+		}
+		if course, ok := loadSeedCourse(c, deps); ok {
+			purchasedCourses[0] = ownedCourseFromDomain(course)
+		} else if c.Writer.Written() {
+			return
+		}
+
+		ok(c, gin.H{
+			"currentBannerIndex": 0,
+			"bannerAutoplay":     true,
+			"bannerResumeDelay":  160,
+			"bannerList": []gin.H{
+				{"id": "banner-1", "src": "/assets/home/banner1.jpg"},
+				{"id": "banner-2", "src": "/assets/home/banner2.jpg"},
+			},
+			"searchEntry":      pageEntry("/pages/product-list/product-list?category=all"),
+			"categoriesEntry":  pageEntry("/pages/product-categories/product-categories"),
+			"ownedAllEntry":    pageEntry("/pages/learning/learning", "reLaunch"),
+			"liveCenterEntry":  pageEntry("/pages/live-list/live-list"),
+			"purchasedCourses": purchasedCourses,
+			"recommendedCourses": []gin.H{
+				{"id": "course-2", "coverTheme": "cover-blue", "tag": "视频课", "title": "短视频表达与节奏训练", "author": "Gerry", "meta": "4 节课程 · 口播拍摄训练", "price": "会员可学", "hint": "口播结构 / 镜头状态 / 节奏感", "entry": toProductDetail("course-2")},
+				{"id": "course-3", "coverTheme": "cover-indigo", "tag": "图文课", "title": "朋友圈内容转化模型", "author": "Gerry", "meta": "4 节课程 · 图文成交训练", "price": "¥129", "hint": "内容铺垫 / 信任积累 / 转化动作", "entry": toProductDetail("course-3")},
+			},
+			"featureCards": []gin.H{
+				{"id": "feature-1", "type": "camp", "eyebrow": "训练营推荐", "title": "7 天私域增长训练营", "desc": "每天一个内容动作，当前 Day 2 / 7 聚焦朋友圈内容拆解。", "action": "查看详情", "entry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")},
+				{"id": "feature-2", "type": "live", "eyebrow": "直播推荐", "title": "今晚 20:00 私域运营直播答疑", "desc": "90 分钟直播答疑，聚焦内容变现 / 学员转化 / 日常运营问题。", "action": "预约提醒", "entry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=upcoming")},
+				{"id": "feature-3", "type": "member", "eyebrow": "会员推荐", "title": "年度会员计划", "desc": "解锁录播课、训练营精选内容和直播回放权益。", "action": "了解权益", "entry": pageEntry("/pages/member-rights/member-rights?source=home")},
+			},
+		})
+	}
 }
 
 func ownedCourse(id string, monogram string, theme string, badge string, title string, playerID string) gin.H {
@@ -219,6 +298,222 @@ func ownedCourse(id string, monogram string, theme string, badge string, title s
 	}
 }
 
+func ownedCourseFromDomain(course domain.PlayerCourse) gin.H {
+	currentTitle := domainLessonTitle(course, course.ProgressSummary.CurrentLessonID)
+	return gin.H{
+		"id":                "owned-course-aigc",
+		"badge":             "录播课",
+		"title":             course.Title,
+		"meta":              domainProgressText(course.ProgressSummary),
+		"summary":           strings.TrimPrefix(currentTitle, "第 "),
+		"recentLessonIndex": "最近学习",
+		"action":            "学习",
+		"theme":             "cyan",
+		"monogram":          "AI",
+		"entry":             toCoursePlayer(seedPlayerCoursePublicID),
+	}
+}
+
+func productListItemFromDomain(course domain.PlayerCourse) gin.H {
+	return productListItem(
+		seedProductPublicID,
+		"course",
+		"录播课",
+		course.Title,
+		seedCourseMeta(course),
+		"已购内容",
+		"脚本 / 口播 / 剪辑流程",
+		toProductDetail(seedProductPublicID),
+	)
+}
+
+func courseDetailFromDomain(course domain.PlayerCourse) gin.H {
+	return gin.H{
+		"id": seedProductPublicID, "playerCourseId": seedPlayerCoursePublicID, "accessType": "purchased", "tag": "录播课", "title": course.Title,
+		"author": "Gerry", "coverTheme": "cover-blue", "coverHint": "脚本 / 口播 / 剪辑发布",
+		"meta": seedCourseMeta(course), "price": "已购内容", "access": "支持随时回看 · 适合快速上手",
+		"description":         course.Description,
+		"gains":               []string{"理解内容交付的核心流程", "掌握可复用的实战方法", "建立适合个人 IP 的学习路径"},
+		"suitable":            []string{"内容创作者", "教培讲师", "个人 IP 起步者"},
+		"progressSummary":     domainProgressSummary(course, "最近学习："),
+		"chapters":            renderedDomainChapters(course),
+		"note":                "当前 P0 后端接口已返回课程目录、学习进度和播放入口。",
+		"primaryEntry":        toCoursePlayer(seedPlayerCoursePublicID),
+		"primaryActionText":   "继续学习",
+		"secondaryEntry":      pageEntry("/pages/consultation/consultation?scene=course&title=" + course.Title),
+		"secondaryActionText": "咨询课程",
+		"posterActionText":    "保存海报",
+		"posterSavingText":    "保存中",
+		"posterMessages":      gin.H{"generatingTitle": "海报生成中", "savingTitle": "正在保存", "successTitle": "海报已保存", "failureTitle": "海报保存失败"},
+	}
+}
+
+func playerCourseFromDomain(course domain.PlayerCourse) gin.H {
+	return gin.H{
+		"id": seedPlayerCoursePublicID, "accessType": "purchased", "unlockStrategy": "sequential", "lockedAction": "progress",
+		"title": course.Title, "coverUrl": course.CoverURL, "duration": course.Duration, "sourceLabel": course.SourceLabel,
+		"videoUrl": course.VideoURL, "resourceState": course.ResourceState,
+		"description": course.Description, "outlineText": course.OutlineText,
+		"progressSummary":    domainProgressSummary(course, "本节："),
+		"chapters":           renderedDomainChapters(course),
+		"lockedLessonAction": gin.H{"entry": nil, "feedback": "完成上一节后解锁"},
+	}
+}
+
+func learningCourseFromDomain(course domain.PlayerCourse) gin.H {
+	return gin.H{
+		"id":            "learn-aigc",
+		"type":          "课程",
+		"title":         course.Title,
+		"progress":      domainProgressText(course.ProgressSummary),
+		"lastLabel":     "最近学习",
+		"lastText":      domainLessonTitle(course, course.ProgressSummary.CurrentLessonID),
+		"theme":         "cyan",
+		"actionLabel":   "继续学习",
+		"detailEntry":   toProductDetail(seedProductPublicID),
+		"continueEntry": toCoursePlayer(seedPlayerCoursePublicID),
+	}
+}
+
+func merchantProductItemFromDomain(course domain.PlayerCourse) gin.H {
+	return merchantProductItem("product-course-aigc", "course", "课程", course.Title, "脚本 / 口播 / 剪辑流程", "已上架", "published", "今天 09:40", "cyan")
+}
+
+func renderedDomainChapters(course domain.PlayerCourse) []gin.H {
+	lessons := flatDomainLessons(course)
+	currentIndex := 0
+	for i, lesson := range lessons {
+		if lesson.ID == course.ProgressSummary.CurrentLessonID {
+			currentIndex = i
+			break
+		}
+	}
+
+	globalIndex := -1
+	chapters := make([]gin.H, 0, len(course.Chapters))
+	for _, chapter := range course.Chapters {
+		items := make([]gin.H, 0, len(chapter.Lessons))
+		for _, lesson := range chapter.Lessons {
+			globalIndex++
+			status := "locked"
+			if lesson.ID == course.ProgressSummary.CurrentLessonID {
+				status = "current"
+			} else if globalIndex < course.ProgressSummary.CompletedLessons {
+				status = "completed"
+			} else if globalIndex == course.ProgressSummary.CompletedLessons || globalIndex == currentIndex+1 {
+				status = "upcoming"
+			}
+			publicLessonID := seedLessonPublicID(lesson.ID)
+			items = append(items, gin.H{
+				"id":            publicLessonID,
+				"title":         lesson.Title,
+				"duration":      lesson.Duration,
+				"status":        status,
+				"stateLabel":    lessonStateLabel(status),
+				"resourceState": lesson.ResourceState,
+				"videoUrl":      lesson.VideoURL,
+				"entry":         toCoursePlayer(seedPlayerCoursePublicID, publicLessonID),
+			})
+		}
+		chapters = append(chapters, gin.H{"id": strconv.FormatInt(chapter.ID, 10), "title": chapter.Title, "summary": chapter.Summary, "lessons": items})
+	}
+	return chapters
+}
+
+func progressResponseFromDomain(courseID string, course domain.PlayerCourse, progressSeconds ...int) gin.H {
+	lessonID := seedLessonPublicID(course.ProgressSummary.CurrentLessonID)
+	seconds := 0
+	if len(progressSeconds) > 0 {
+		seconds = progressSeconds[0]
+	}
+	if seconds < 0 {
+		seconds = 0
+	}
+	return gin.H{
+		"course_id":          courseID,
+		"lesson_id":          lessonID,
+		"completed_lessons":  course.ProgressSummary.CompletedLessons,
+		"total_lessons":      domainTotalLessons(course),
+		"progress_percent":   course.ProgressSummary.Percent,
+		"progress_seconds":   seconds,
+		"last_position":      domainLastPosition(course.ProgressSummary),
+		"current_lesson_id":  lessonID,
+		"current_lesson":     domainLessonTitle(course, course.ProgressSummary.CurrentLessonID),
+		"completed_duration": domainCompletedDuration(course.ProgressSummary),
+	}
+}
+
+func domainProgressSummary(course domain.PlayerCourse, prefix string) gin.H {
+	currentTitle := domainLessonTitle(course, course.ProgressSummary.CurrentLessonID)
+	return gin.H{
+		"status":             "已购课程",
+		"completedLessons":   course.ProgressSummary.CompletedLessons,
+		"totalLessons":       domainTotalLessons(course),
+		"percent":            course.ProgressSummary.Percent,
+		"completedDuration":  domainCompletedDuration(course.ProgressSummary),
+		"lastPosition":       domainLastPosition(course.ProgressSummary),
+		"currentLessonTitle": prefix + currentTitle,
+		"nextLessonTitle":    nextDomainLessonTitle(course),
+	}
+}
+
+func domainProgressText(summary domain.ProgressView) string {
+	total := summary.TotalLessons
+	if total < 0 {
+		total = 0
+	}
+	return "已学 " + intText(summary.CompletedLessons) + "/" + intText(total) + "节"
+}
+
+func seedCourseMeta(course domain.PlayerCourse) string {
+	return intText(domainTotalLessons(course)) + " 节课程 · AI 视频入门实践"
+}
+
+func domainTotalLessons(course domain.PlayerCourse) int {
+	if course.ProgressSummary.TotalLessons > 0 {
+		return course.ProgressSummary.TotalLessons
+	}
+	return len(flatDomainLessons(course))
+}
+
+func domainCompletedDuration(summary domain.ProgressView) string {
+	return "累计学习 " + intText(summary.CompletedLessons*9) + " 分钟"
+}
+
+func domainLastPosition(summary domain.ProgressView) string {
+	if strings.TrimSpace(summary.LastPosition) == "" {
+		return "暂未开始"
+	}
+	return summary.LastPosition
+}
+
+func domainLessonTitle(course domain.PlayerCourse, lessonID int64) string {
+	for _, lesson := range flatDomainLessons(course) {
+		if lesson.ID == lessonID {
+			return lesson.Title
+		}
+	}
+	return "暂未开始"
+}
+
+func nextDomainLessonTitle(course domain.PlayerCourse) string {
+	lessons := flatDomainLessons(course)
+	for i, lesson := range lessons {
+		if lesson.ID == course.ProgressSummary.CurrentLessonID && i+1 < len(lessons) {
+			return "下一节：" + lessons[i+1].Title
+		}
+	}
+	return "下一节：继续查看后续课程内容"
+}
+
+func flatDomainLessons(course domain.PlayerCourse) []domain.Lesson {
+	var lessons []domain.Lesson
+	for _, chapter := range course.Chapters {
+		lessons = append(lessons, chapter.Lessons...)
+	}
+	return lessons
+}
+
 func handleProductCategories(c *gin.Context) {
 	ok(c, []gin.H{
 		{"key": "course", "title": "课程", "desc": "录播课 / 图文课 / 系列课", "entry": pageEntry("/pages/product-list/product-list?category=course")},
@@ -227,34 +522,41 @@ func handleProductCategories(c *gin.Context) {
 	})
 }
 
-func handleProducts(c *gin.Context) {
-	category := c.DefaultQuery("category", "all")
-	products := []gin.H{
-		productListItem("course-aigc-video", "course", "录播课", "AIGC 视频制作", "5 节课程 · AI 视频入门实践", "已购内容", "脚本 / 口播 / 剪辑流程", toProductDetail("course-aigc-video")),
-		productListItem("course-wechat-game", "course", "项目实战", "微信小游戏开发", "4 节课程 · 飞机大战项目实战", "已购内容", "目录组织 / 交互循环 / 真机调试", toProductDetail("course-wechat-game")),
-		productListItem("course-1", "course", "系列课", "个人 IP 内容变现实战课", "9 节课程 · 适合 0 到 1 搭建", "¥299", "定位 / 内容结构 / 转化节奏", toProductDetail("course-1")),
-		productListItem("camp-7day-growth", "camp", "训练营", "7 天私域增长训练营", "7 天训练 · 每天 1 个任务", "报名中", "打卡 / 公告 / 作业复盘", pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")),
-		productListItem("member-year", "member", "会员", "年度会员计划", "课程权益 / 直播回放 / 内容精选", "会员可学", "课程权益 / 直播回放 / 内容精选", pageEntry("/pages/member-rights/member-rights")),
-	}
-
-	filtered := make([]gin.H, 0, len(products))
-	for _, item := range products {
-		if category == "all" || item["type"] == category {
-			filtered = append(filtered, item)
+func handleProducts(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		category := c.DefaultQuery("category", "all")
+		products := []gin.H{
+			productListItem(seedProductPublicID, "course", "录播课", "AIGC 视频制作", "5 节课程 · AI 视频入门实践", "已购内容", "脚本 / 口播 / 剪辑流程", toProductDetail(seedProductPublicID)),
+			productListItem("course-wechat-game", "course", "项目实战", "微信小游戏开发", "4 节课程 · 飞机大战项目实战", "已购内容", "目录组织 / 交互循环 / 真机调试", toProductDetail("course-wechat-game")),
+			productListItem("course-1", "course", "系列课", "个人 IP 内容变现实战课", "9 节课程 · 适合 0 到 1 搭建", "¥299", "定位 / 内容结构 / 转化节奏", toProductDetail("course-1")),
+			productListItem("camp-7day-growth", "camp", "训练营", "7 天私域增长训练营", "7 天训练 · 每天 1 个任务", "报名中", "打卡 / 公告 / 作业复盘", pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")),
+			productListItem("member-year", "member", "会员", "年度会员计划", "课程权益 / 直播回放 / 内容精选", "会员可学", "课程权益 / 直播回放 / 内容精选", pageEntry("/pages/member-rights/member-rights")),
 		}
-	}
+		if course, ok := loadSeedCourse(c, deps); ok {
+			products[0] = productListItemFromDomain(course)
+		} else if c.Writer.Written() {
+			return
+		}
 
-	ok(c, gin.H{
-		"filterTabs": []gin.H{
-			{"key": "all", "label": "全部"},
-			{"key": "course", "label": "课程"},
-			{"key": "camp", "label": "训练营"},
-			{"key": "member", "label": "会员"},
-		},
-		"activeTab":   category,
-		"emptyHint":   "当前先展示课程、训练营和会员的最小商品示例。",
-		"productList": filtered,
-	})
+		filtered := make([]gin.H, 0, len(products))
+		for _, item := range products {
+			if category == "all" || item["type"] == category {
+				filtered = append(filtered, item)
+			}
+		}
+
+		ok(c, gin.H{
+			"filterTabs": []gin.H{
+				{"key": "all", "label": "全部"},
+				{"key": "course", "label": "课程"},
+				{"key": "camp", "label": "训练营"},
+				{"key": "member", "label": "会员"},
+			},
+			"activeTab":   category,
+			"emptyHint":   "当前先展示课程、训练营和会员的最小商品示例。",
+			"productList": filtered,
+		})
+	}
 }
 
 func productListItem(id, itemType, tag, title, subtitle, price, summary string, entry gin.H) gin.H {
@@ -264,9 +566,21 @@ func productListItem(id, itemType, tag, title, subtitle, price, summary string, 
 	}
 }
 
-func handleProductDetail(c *gin.Context) {
-	id := c.Param("product_id")
-	ok(c, buildProductDetail(id))
+func handleProductDetail(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("product_id")
+		if isSeedCourseRouteID(id) {
+			if course, loaded := loadSeedCourse(c, deps); loaded {
+				ok(c, courseDetailFromDomain(course))
+				return
+			} else if c.Writer.Written() {
+				return
+			}
+			ok(c, buildProductDetail(seedProductPublicID))
+			return
+		}
+		ok(c, buildProductDetail(id))
+	}
 }
 
 func buildProductDetail(id string) gin.H {
@@ -332,15 +646,26 @@ func previewCourseDetail(id, title, price, action string) gin.H {
 	}
 }
 
-func handlePlayerCourse(c *gin.Context) {
-	id := c.Param("course_id")
-	def, exists := playerCourses[id]
-	if !exists {
-		errorJSON(c, http.StatusNotFound, 40404, "course not found")
-		return
-	}
+func handlePlayerCourse(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("course_id")
+		if isSeedCourseRouteID(id) {
+			if course, loaded := loadSeedCourse(c, deps); loaded {
+				ok(c, playerCourseFromDomain(course))
+				return
+			} else if c.Writer.Written() {
+				return
+			}
+		}
 
-	ok(c, buildPlayerCourse(def))
+		def, exists := playerCourses[id]
+		if !exists {
+			errorJSON(c, http.StatusNotFound, 40404, "course not found")
+			return
+		}
+
+		ok(c, buildPlayerCourse(def))
+	}
 }
 
 func buildPlayerCourse(def playerCourseDef) gin.H {
@@ -356,19 +681,28 @@ func buildPlayerCourse(def playerCourseDef) gin.H {
 	}
 }
 
-func handleLearning(c *gin.Context) {
-	ok(c, gin.H{
-		"metrics":     []gin.H{{"label": "今日学习", "value": "46 分钟"}, {"label": "累计时长", "value": "18.5 小时"}, {"label": "累计天数", "value": "12 天"}},
-		"searchEntry": pageEntry("/pages/product-list/product-list?category=all"), "searchFeedback": "通过商品列表查找课程",
-		"liveCenterEntry": pageEntry("/pages/live-list/live-list"),
-		"learningList": []gin.H{
-			learningCourse("learn-aigc", "AIGC 视频制作", "cyan", "player-aigc-video", "course-aigc-video"),
+func handleLearning(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		learningList := []gin.H{
+			learningCourse("learn-aigc", "AIGC 视频制作", "cyan", seedPlayerCoursePublicID, seedProductPublicID),
 			learningCourse("learn-wechat-game", "微信小游戏开发", "indigo", "player-wechat-game", "course-wechat-game"),
 			learningCourse("learn-1", "个人 IP 内容变现实战课", "purple", "player-ip-course", "course-1"),
 			{"id": "learn-2", "type": "训练营", "title": "7天增长营", "progress": "Day2/7", "lastLabel": "今日任务", "lastText": "朋友圈拆解", "theme": "blue", "actionLabel": "打卡", "detailEntry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth"), "continueEntry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")},
 			{"id": "learn-3", "type": "直播回放", "title": "直播答疑回放", "progress": "23:18/90:00", "lastLabel": "重点片段", "lastText": "社群转化节奏", "theme": "indigo", "actionLabel": "回看", "detailEntry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=replay"), "continueEntry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=replay")},
-		},
-	})
+		}
+		if course, loaded := loadSeedCourse(c, deps); loaded {
+			learningList[0] = learningCourseFromDomain(course)
+		} else if c.Writer.Written() {
+			return
+		}
+
+		ok(c, gin.H{
+			"metrics":     []gin.H{{"label": "今日学习", "value": "46 分钟"}, {"label": "累计时长", "value": "18.5 小时"}, {"label": "累计天数", "value": "12 天"}},
+			"searchEntry": pageEntry("/pages/product-list/product-list?category=all"), "searchFeedback": "通过商品列表查找课程",
+			"liveCenterEntry": pageEntry("/pages/live-list/live-list"),
+			"learningList":    learningList,
+		})
+	}
 }
 
 func learningCourse(id, title, theme, playerID, detailID string) gin.H {
@@ -376,35 +710,74 @@ func learningCourse(id, title, theme, playerID, detailID string) gin.H {
 	return gin.H{"id": id, "type": "课程", "title": title, "progress": progressText(state), "lastLabel": "最近学习", "lastText": lessonTitle(playerID, state.CurrentLessonID), "theme": theme, "actionLabel": "继续学习", "detailEntry": toProductDetail(detailID), "continueEntry": toCoursePlayer(playerID)}
 }
 
-func handleUpdateProgress(c *gin.Context) {
-	courseID := c.Param("course_id")
-	var req struct {
-		LessonID        string `json:"lesson_id"`
-		ProgressSeconds int    `json:"progress_seconds"`
-		Completed       bool   `json:"completed"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		errorJSON(c, http.StatusBadRequest, 40002, "invalid progress request")
-		return
-	}
+func handleUpdateProgress(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		courseID := c.Param("course_id")
+		var req struct {
+			LessonID        string `json:"lesson_id"`
+			ProgressSeconds int    `json:"progress_seconds"`
+			Completed       bool   `json:"completed"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			errorJSON(c, http.StatusBadRequest, 40002, "invalid progress request")
+			return
+		}
 
-	state, updated := updateProgress(courseID, req.LessonID, req.ProgressSeconds, req.Completed)
-	if !updated {
+		if isSeedCourseRouteID(courseID) && deps.Progress != nil && deps.Courses != nil {
+			lessonID, valid := seedLessonID(req.LessonID)
+			if !valid {
+				errorJSON(c, http.StatusNotFound, 40404, "course or lesson not found")
+				return
+			}
+			if err := deps.Progress.UpdateProgress(c.Request.Context(), currentUserID(c), seedSQLiteCourseID, lessonID, req.Completed, req.ProgressSeconds); err != nil {
+				writeProgressUpdateError(c, err)
+				return
+			}
+			course, loaded := loadSeedCourse(c, deps)
+			if !loaded {
+				return
+			}
+			ok(c, progressResponseFromDomain(courseID, course, req.ProgressSeconds))
+			return
+		}
+
+		state, updated := updateProgress(courseID, req.LessonID, req.ProgressSeconds, req.Completed)
+		if !updated {
+			errorJSON(c, http.StatusNotFound, 40404, "course or lesson not found")
+			return
+		}
+
+		ok(c, progressResponse(courseID, state))
+	}
+}
+
+func handleCourseProgress(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		courseID := c.Param("course_id")
+		if isSeedCourseRouteID(courseID) {
+			if course, loaded := loadSeedCourse(c, deps); loaded {
+				ok(c, progressResponseFromDomain(courseID, course))
+				return
+			} else if c.Writer.Written() {
+				return
+			}
+		}
+
+		if _, exists := playerCourses[courseID]; !exists {
+			errorJSON(c, http.StatusNotFound, 40404, "course not found")
+			return
+		}
+
+		ok(c, progressResponse(courseID, getProgress(courseID)))
+	}
+}
+
+func writeProgressUpdateError(c *gin.Context, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
 		errorJSON(c, http.StatusNotFound, 40404, "course or lesson not found")
 		return
 	}
-
-	ok(c, progressResponse(courseID, state))
-}
-
-func handleCourseProgress(c *gin.Context) {
-	courseID := c.Param("course_id")
-	if _, exists := playerCourses[courseID]; !exists {
-		errorJSON(c, http.StatusNotFound, 40404, "course not found")
-		return
-	}
-
-	ok(c, progressResponse(courseID, getProgress(courseID)))
+	errorJSON(c, http.StatusInternalServerError, 50003, "progress service unavailable")
 }
 
 func getProgress(courseID string) progressState {
@@ -800,29 +1173,36 @@ func handleMerchantDashboard(c *gin.Context) {
 	})
 }
 
-func handleMerchantProducts(c *gin.Context) {
-	itemType := c.DefaultQuery("type", "all")
-	products := []gin.H{
-		merchantProductItem("product-course-ip", "course", "课程", "个人 IP 内容变现实战课", "定位 / 内容结构 / 转化节奏", "已上架", "published", "今天 09:40", "purple"),
-		merchantProductItem("product-course-aigc", "course", "课程", "AIGC 视频制作", "脚本 / 口播 / 剪辑流程", "已上架", "published", "昨天 21:10", "cyan"),
-		merchantProductItem("product-camp-growth", "bootcamp", "训练营", "7 天私域增长训练营", "打卡 / 公告 / 作业复盘", "进行中", "active", "昨天 18:20", "blue"),
-		merchantProductItem("product-member-year", "member", "会员", "年度会员计划", "课程权益 / 直播回放 / 内容精选", "草稿", "draft", "05-03 16:30", "gold"),
-	}
-
-	filtered := make([]gin.H, 0, len(products))
-	for _, item := range products {
-		if itemType == "all" || item["type"] == itemType {
-			filtered = append(filtered, item)
+func handleMerchantProducts(deps Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		itemType := c.DefaultQuery("type", "all")
+		products := []gin.H{
+			merchantProductItem("product-course-ip", "course", "课程", "个人 IP 内容变现实战课", "定位 / 内容结构 / 转化节奏", "已上架", "published", "今天 09:40", "purple"),
+			merchantProductItem("product-course-aigc", "course", "课程", "AIGC 视频制作", "脚本 / 口播 / 剪辑流程", "已上架", "published", "昨天 21:10", "cyan"),
+			merchantProductItem("product-camp-growth", "bootcamp", "训练营", "7 天私域增长训练营", "打卡 / 公告 / 作业复盘", "进行中", "active", "昨天 18:20", "blue"),
+			merchantProductItem("product-member-year", "member", "会员", "年度会员计划", "课程权益 / 直播回放 / 内容精选", "草稿", "draft", "05-03 16:30", "gold"),
 		}
-	}
+		if course, loaded := loadSeedCourse(c, deps); loaded {
+			products[1] = merchantProductItemFromDomain(course)
+		} else if c.Writer.Written() {
+			return
+		}
 
-	ok(c, gin.H{
-		"pageHint":       "当前先展示课程、训练营和会员商品的最小管理示例。",
-		"filterTabs":     []gin.H{{"key": "all", "label": "全部"}, {"key": "course", "label": "课程"}, {"key": "bootcamp", "label": "训练营"}, {"key": "member", "label": "会员"}},
-		"activeTab":      itemType,
-		"createFeedback": "新建商品流程后续接入",
-		"productList":    filtered,
-	})
+		filtered := make([]gin.H, 0, len(products))
+		for _, item := range products {
+			if itemType == "all" || item["type"] == itemType {
+				filtered = append(filtered, item)
+			}
+		}
+
+		ok(c, gin.H{
+			"pageHint":       "当前先展示课程、训练营和会员商品的最小管理示例。",
+			"filterTabs":     []gin.H{{"key": "all", "label": "全部"}, {"key": "course", "label": "课程"}, {"key": "bootcamp", "label": "训练营"}, {"key": "member", "label": "会员"}},
+			"activeTab":      itemType,
+			"createFeedback": "新建商品流程后续接入",
+			"productList":    filtered,
+		})
+	}
 }
 
 func merchantProductItem(id, itemType, typeLabel, title, coverHint, status, statusTone, updatedAt, theme string) gin.H {
