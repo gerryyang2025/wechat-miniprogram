@@ -17,6 +17,7 @@
     "pages/settings/settings",
     "pages/merchant-dashboard/merchant-dashboard",
     "pages/product-management/product-management",
+    "pages/course-edit/course-edit",
     "pages/live-management/live-management",
     "pages/user-management/user-management",
     "pages/content-ops/content-ops"

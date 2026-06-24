@@ -1,0 +1,174 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="course-edit-scroll content-safe-bottom">
+    <view class="course-edit-nav">
+      <view class="course-edit-back" bindtap="onBackTap">‹</view>
+      <view class="course-edit-nav-copy">
+        <text class="course-edit-nav-title">课程编辑</text>
+        <text class="course-edit-nav-subtitle">{{form.title || '课程商品'}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{loading}}" class="course-edit-loading card-surface">
+      <text class="course-edit-loading-text">加载中</text>
+    </view>
+
+    <block wx:else>
+      <view class="course-edit-section card-surface">
+        <view class="course-edit-section-head">
+          <text class="course-edit-section-title">学情摘要</text>
+          <text class="course-edit-status-label course-edit-status-label--{{form.status}}">
+            {{form.status === 'published' ? '已上架' : '草稿'}}
+          </text>
+        </view>
+        <view class="course-edit-metric-grid">
+          <view class="course-edit-metric">
+            <text class="course-edit-metric-value">{{analytics.learnerCount}}</text>
+            <text class="course-edit-metric-label">学习人数</text>
+          </view>
+          <view class="course-edit-metric">
+            <text class="course-edit-metric-value">{{analytics.completedCount}}</text>
+            <text class="course-edit-metric-label">完成人数</text>
+          </view>
+          <view class="course-edit-metric">
+            <text class="course-edit-metric-value">{{analytics.averageProgress}}%</text>
+            <text class="course-edit-metric-label">平均进度</text>
+          </view>
+          <view class="course-edit-metric">
+            <text class="course-edit-metric-value course-edit-metric-value--time">{{analytics.latestLearnedAt || '暂无'}}</text>
+            <text class="course-edit-metric-label">最近学习</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="course-edit-section card-surface">
+        <view class="course-edit-section-head">
+          <text class="course-edit-section-title">课程信息</text>
+          <text class="course-edit-id">ID {{form.id}}</text>
+        </view>
+
+        <view class="course-edit-field">
+          <text class="course-edit-label">课程标题</text>
+          <input
+            class="course-edit-input"
+            value="{{form.title}}"
+            data-field="title"
+            bindinput="onFieldInput"
+            cursor-spacing="120"
+          />
+        </view>
+
+        <view class="course-edit-field">
+          <text class="course-edit-label">课程简介</text>
+          <textarea
+            class="course-edit-textarea"
+            value="{{form.description}}"
+            data-field="description"
+            bindinput="onFieldInput"
+            cursor-spacing="120"
+          ></textarea>
+        </view>
+
+        <view class="course-edit-field">
+          <text class="course-edit-label">封面 URL</text>
+          <input
+            class="course-edit-input course-edit-input--url"
+            value="{{form.coverUrl}}"
+            data-field="coverUrl"
+            bindinput="onFieldInput"
+            cursor-spacing="120"
+          />
+        </view>
+
+        <view class="course-edit-field">
+          <text class="course-edit-label">上架状态</text>
+          <view class="course-edit-status-row">
+            <view
+              wx:for="{{statusOptions}}"
+              wx:key="key"
+              class="course-edit-status-chip {{item.key === form.status ? 'course-edit-status-chip--active' : ''}}"
+              data-status="{{item.key}}"
+              bindtap="onStatusTap"
+            >{{item.label}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="course-edit-section card-surface">
+        <view class="course-edit-section-head">
+          <text class="course-edit-section-title">课节与视频</text>
+          <text class="course-edit-id">{{form.lessons.length}} 节</text>
+        </view>
+
+        <view wx:if="{{form.lessons.length}}" class="course-edit-lesson-list">
+          <view wx:for="{{form.lessons}}" wx:key="id" class="course-edit-lesson-card">
+            <view class="course-edit-lesson-head">
+              <text class="course-edit-lesson-title">第 {{item.displayIndex}} 节</text>
+              <text class="course-edit-lesson-id">ID {{item.id}}</text>
+            </view>
+
+            <view class="course-edit-field">
+              <text class="course-edit-label">课节标题</text>
+              <input
+                class="course-edit-input"
+                value="{{item.title}}"
+                data-index="{{index}}"
+                data-field="title"
+                bindinput="onLessonInput"
+                cursor-spacing="120"
+              />
+            </view>
+
+            <view class="course-edit-field">
+              <text class="course-edit-label">视频 URL</text>
+              <input
+                class="course-edit-input course-edit-input--url"
+                value="{{item.videoUrl}}"
+                data-index="{{index}}"
+                data-field="videoUrl"
+                bindinput="onLessonInput"
+                cursor-spacing="120"
+              />
+            </view>
+
+            <view class="course-edit-field">
+              <text class="course-edit-label">封面 URL</text>
+              <input
+                class="course-edit-input course-edit-input--url"
+                value="{{item.coverUrl}}"
+                data-index="{{index}}"
+                data-field="coverUrl"
+                bindinput="onLessonInput"
+                cursor-spacing="120"
+              />
+            </view>
+
+            <view class="course-edit-field">
+              <text class="course-edit-label">时长秒数</text>
+              <input
+                class="course-edit-input"
+                type="number"
+                value="{{item.durationSeconds}}"
+                data-index="{{index}}"
+                data-field="durationSeconds"
+                bindinput="onLessonInput"
+                cursor-spacing="120"
+              />
+            </view>
+          </view>
+        </view>
+
+        <view wx:else class="course-edit-empty">
+          <text class="course-edit-empty-text">暂无课节</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="course-edit-bottom-spacer"></view>
+  </scroll-view>
+
+  <view class="course-edit-footer">
+    <view class="course-edit-save {{saving ? 'course-edit-save--disabled' : ''}}" bindtap="onSaveTap">
+      {{saving ? '保存中' : '保存'}}
+    </view>
+  </view>
+</view>
