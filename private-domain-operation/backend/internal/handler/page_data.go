@@ -422,7 +422,7 @@ func renderedDomainChapters(course domain.PlayerCourse) []gin.H {
 
 func progressResponseFromDomain(courseID string, course domain.PlayerCourse, progressSeconds ...int) gin.H {
 	lessonID := seedLessonPublicID(course.ProgressSummary.CurrentLessonID)
-	seconds := 0
+	seconds := course.ProgressSummary.ProgressSeconds
 	if len(progressSeconds) > 0 {
 		seconds = progressSeconds[0]
 	}

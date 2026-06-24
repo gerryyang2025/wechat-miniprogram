@@ -61,6 +61,7 @@ type ProgressView struct {
 	CompletedLessons int    `json:"completedLessons"`
 	TotalLessons     int    `json:"totalLessons"`
 	Percent          int    `json:"percent"`
+	ProgressSeconds  int    `json:"progressSeconds"`
 	LastPosition     string `json:"lastPosition"`
 	CurrentLessonID  int64  `json:"currentLessonId"`
 }

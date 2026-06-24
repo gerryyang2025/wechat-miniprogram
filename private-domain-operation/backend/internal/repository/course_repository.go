@@ -161,13 +161,14 @@ func (r *CourseRepository) loadProgressSummary(ctx context.Context, courseID int
 	}
 
 	err := r.db.QueryRowContext(ctx, `
-		SELECT completed_lessons, total_lessons, progress_percent, last_position, COALESCE(lesson_id, 0)
+		SELECT completed_lessons, total_lessons, progress_percent, progress_seconds, last_position, COALESCE(lesson_id, 0)
 		FROM learning_progress
 		WHERE user_id = ? AND course_id = ?
 	`, userID, courseID).Scan(
 		&progress.CompletedLessons,
 		&progress.TotalLessons,
 		&progress.Percent,
+		&progress.ProgressSeconds,
 		&progress.LastPosition,
 		&progress.CurrentLessonID,
 	)
