@@ -395,7 +395,9 @@ func learningCourseFromDomain(course domain.PlayerCourse) gin.H {
 }
 
 func merchantProductItemFromDomain(course domain.PlayerCourse) gin.H {
-	return merchantProductItem("product-course-aigc", "course", "课程", course.Title, "脚本 / 口播 / 剪辑流程", "已上架", "published", "今天 09:40", "cyan")
+	item := merchantProductItem("product-course-aigc", "course", "课程", course.Title, "脚本 / 口播 / 剪辑流程", "已上架", "published", "今天 09:40", "cyan")
+	item["courseId"] = strconv.FormatInt(course.ID, 10)
+	return item
 }
 
 func renderedDomainChapters(course domain.PlayerCourse) []gin.H {

@@ -416,6 +416,45 @@ func TestMerchantCoursePartialLessonUpdatePreservesMedia(t *testing.T) {
 	}
 }
 
+func TestMerchantProductsIncludesEditableCourseID(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/products?type=course", nil)
+	req.Header.Set("Authorization", "Bearer "+testMerchantToken(t))
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", resp.Code, resp.Body.String())
+	}
+
+	var body struct {
+		Data struct {
+			ProductList []struct {
+				Title    string `json:"title"`
+				CourseID string `json:"courseId"`
+			} `json:"productList"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("response JSON decode failed: %v body = %s", err, resp.Body.String())
+	}
+
+	for _, item := range body.Data.ProductList {
+		if item.Title == "AIGC 视频制作" {
+			if item.CourseID != "1" {
+				t.Fatalf("AIGC courseId = %q, want 1; body = %s", item.CourseID, resp.Body.String())
+			}
+			return
+		}
+	}
+	t.Fatalf("AIGC product missing; body = %s", resp.Body.String())
+}
+
 func TestMerchantCourseUpdateValidationErrorUsesBusinessCode(t *testing.T) {
 	t.Parallel()
 

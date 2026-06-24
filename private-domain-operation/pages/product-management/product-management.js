@@ -33,6 +33,14 @@ Page({
       return;
     }
 
+    if (!/^\d+$/.test(String(id))) {
+      wx.showToast({
+        title: title ? `暂不支持编辑 ${title}` : "课程暂未接入",
+        icon: "none"
+      });
+      return;
+    }
+
     wx.navigateTo({
       url: `/pages/course-edit/course-edit?courseId=${encodeURIComponent(id)}`
     });

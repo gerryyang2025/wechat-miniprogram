@@ -86,6 +86,7 @@ const productManagementList = [
   },
   {
     id: "product-course-aigc",
+    courseId: "1",
     type: "course",
     typeLabel: "课程",
     title: "AIGC 视频制作",
