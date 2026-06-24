@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 type SeedOptions struct {
@@ -19,8 +20,6 @@ func SeedMinimal(ctx context.Context, conn *sql.DB, options SeedOptions) error {
 	}
 
 	statements := []string{
-		`INSERT OR IGNORE INTO users (id, openid, nickname, status) VALUES (1, ?, 'Gerry', 'active')`,
-		`INSERT OR IGNORE INTO users (id, openid, nickname, status) VALUES (2, ?, '时昕同学', 'active')`,
 		`INSERT OR IGNORE INTO merchants (id, name, intro, status) VALUES (1, '时昕有点懒', '个人 IP 与私域运营课程', 'active')`,
 		`INSERT OR IGNORE INTO merchant_users (id, merchant_id, user_id, role_key, status) VALUES (1, 1, 1, 'owner', 'active')`,
 		`INSERT OR IGNORE INTO products (id, merchant_id, product_type, title, subtitle, cover_url, price_cents, status) VALUES (1, 1, 'course', 'AIGC 视频制作', '3 节课程 · AI 视频入门实践', 'https://media.example.com/covers/aigc/lesson-001.jpg', 0, 'published')`,
@@ -36,26 +35,44 @@ func SeedMinimal(ctx context.Context, conn *sql.DB, options SeedOptions) error {
 		`INSERT OR IGNORE INTO operation_slots (id, merchant_id, slot_key, title, content_ref_type, content_ref_id, image_url, sort_order, status) VALUES (1, 1, 'home_recommended_course', '首页主推课程', 'course', 1, 'https://media.example.com/covers/aigc/lesson-001.jpg', 1, 'active')`,
 	}
 
-	args := [][]any{
-		{options.MerchantOpenID},
-		{options.StudentOpenID},
-	}
-
 	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	for index, stmt := range statements {
-		stmtArgs := []any{}
-		if index < len(args) {
-			stmtArgs = args[index]
-		}
-		if _, err := tx.ExecContext(ctx, stmt, stmtArgs...); err != nil {
+	if err := seedUser(ctx, tx, 1, options.MerchantOpenID, "Gerry", "active"); err != nil {
+		return err
+	}
+	if err := seedUser(ctx, tx, 2, options.StudentOpenID, "时昕同学", "active"); err != nil {
+		return err
+	}
+
+	for _, stmt := range statements {
+		if _, err := tx.ExecContext(ctx, stmt); err != nil {
 			return err
 		}
 	}
 
 	return tx.Commit()
+}
+
+func seedUser(ctx context.Context, tx *sql.Tx, id int, openid string, nickname string, status string) error {
+	var existingID int
+	err := tx.QueryRowContext(ctx, "SELECT id FROM users WHERE openid = ? AND id <> ?", openid, id).Scan(&existingID)
+	if err == nil {
+		return fmt.Errorf("seed user %d openid %q already belongs to user %d", id, openid, existingID)
+	}
+	if err != sql.ErrNoRows {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO users (id, openid, nickname, status) VALUES (?, ?, ?, ?)", id, openid, nickname, status); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET openid = ?, nickname = ?, status = ? WHERE id = ?", openid, nickname, status, id); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"private-domain-operation/backend/internal/config"
@@ -31,5 +32,5 @@ func main() {
 		log.Fatalf("seed database: %v", err)
 	}
 
-	log.Printf("seed data ready: %s", cfg.DatabasePath)
+	fmt.Printf("seed data ready: %s\n", cfg.DatabasePath)
 }
