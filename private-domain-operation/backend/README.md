@@ -2,6 +2,10 @@
 
 Go + Gin backend service for the private domain operation mini program.
 
+## Requirements
+
+- Go 1.25+ for backend development. The current local environment uses Go 1.26.3.
+
 ## Scripts
 
 Run scripts from this directory:

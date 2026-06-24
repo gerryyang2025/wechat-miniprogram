@@ -21,17 +21,50 @@ func Migrate(ctx context.Context, conn *sql.DB, migrationsDir string) error {
 		return fmt.Errorf("no migration files found in %s", migrationsDir)
 	}
 
+	if _, err := conn.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			filename TEXT PRIMARY KEY,
+			applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+	`); err != nil {
+		return err
+	}
+
 	for _, file := range files {
+		name := filepath.Base(file)
+		var applied int
+		err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migrations WHERE filename = ?", name).Scan(&applied)
+		if err != nil {
+			return err
+		}
+		if applied > 0 {
+			continue
+		}
+
 		body, err := os.ReadFile(file)
 		if err != nil {
 			return err
 		}
 		sqlText := strings.TrimSpace(string(body))
-		if sqlText == "" {
-			continue
+		tx, err := conn.BeginTx(ctx, nil)
+		if err != nil {
+			return err
 		}
-		if _, err := conn.ExecContext(ctx, sqlText); err != nil {
-			return fmt.Errorf("migration %s failed: %w", filepath.Base(file), err)
+
+		if sqlText != "" {
+			if _, err := tx.ExecContext(ctx, sqlText); err != nil {
+				tx.Rollback()
+				return fmt.Errorf("migration %s failed: %w", name, err)
+			}
+		}
+
+		if _, err := tx.ExecContext(ctx, "INSERT INTO schema_migrations(filename) VALUES (?)", name); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("migration %s record failed: %w", name, err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("migration %s commit failed: %w", name, err)
 		}
 	}
 
