@@ -1,0 +1,19 @@
+<view class="page-shell">
+  <scroll-view scroll-y class="live-edit-scroll content-safe-bottom">
+    <view class="live-edit-nav">
+      <view class="live-edit-back" bindtap="onBackTap">‹</view>
+      <view class="live-edit-nav-copy">
+        <text class="live-edit-nav-title">{{liveId ? '编辑直播' : '新建直播'}}</text>
+        <text class="live-edit-nav-subtitle">{{live.title || '直播编辑页即将接入'}}</text>
+      </view>
+    </view>
+
+    <view class="live-edit-placeholder card-surface">
+      <text class="live-edit-placeholder-title">{{loading ? '加载中' : liveId ? live.title : '新建直播'}}</text>
+      <text class="live-edit-placeholder-desc">
+        {{liveId ? live.summary : '当前先保留可进入的新建入口，完整表单将在后续任务接入。'}}
+      </text>
+      <text class="live-edit-placeholder-id">{{liveId ? 'ID ' + liveId : '新直播'}}</text>
+    </view>
+  </scroll-view>
+</view>

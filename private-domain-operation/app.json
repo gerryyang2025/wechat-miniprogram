@@ -19,6 +19,7 @@
     "pages/product-management/product-management",
     "pages/course-edit/course-edit",
     "pages/live-management/live-management",
+    "pages/live-edit/live-edit",
     "pages/user-management/user-management",
     "pages/content-ops/content-ops"
   ],

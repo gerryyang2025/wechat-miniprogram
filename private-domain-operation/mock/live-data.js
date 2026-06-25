@@ -266,6 +266,16 @@ const liveRoomCatalog = {
   }
 };
 
+const liveCatalogIdAliases = {
+  "merchant-live-qa": "live-private-domain-qa",
+  "merchant-live-clinic": "live-content-clinic",
+  "merchant-live-review": "live-bootcamp-review"
+};
+
+function resolveLiveCatalogId(liveId = "") {
+  return liveCatalogIdAliases[liveId] || liveId;
+}
+
 function normalizeLiveDurationLabel(duration = "") {
   const matched = String(duration || "").match(/(\d+)\s*分钟/);
   return matched ? `${matched[1]} 分钟` : String(duration || "").trim();
@@ -306,7 +316,8 @@ function getLiveSummary(liveId = "live-private-domain-qa", mode = "upcoming") {
 }
 
 function getLiveDetail(liveId = "live-private-domain-qa") {
-  return clone(liveCatalog[liveId] || liveCatalog["live-private-domain-qa"]);
+  const catalogId = resolveLiveCatalogId(liveId);
+  return clone(liveCatalog[catalogId] || liveCatalog["live-private-domain-qa"]);
 }
 
 function getLiveListTabs() {
@@ -372,34 +383,44 @@ function getLiveListPageData(activeTab = "all") {
 }
 
 function getLiveRoom(liveId = "live-private-domain-qa") {
-  return clone(liveRoomCatalog[liveId] || liveRoomCatalog["live-private-domain-qa"]);
+  const catalogId = resolveLiveCatalogId(liveId);
+  return clone(liveRoomCatalog[catalogId] || liveRoomCatalog["live-private-domain-qa"]);
 }
 
 function getLiveDetailPageData(liveId = "live-private-domain-qa", mode = "upcoming") {
   const live = getLiveDetail(liveId);
   const isReplay = mode === "replay";
   const isLive = mode === "live";
+  const isEnded = mode === "ended";
   const roomMode = isReplay ? "replay" : "live";
 
   return {
     live,
     mode,
     isReplay,
-    statusText: isReplay ? live.replayStatus : isLive ? live.liveStatus || "正在直播中" : live.upcomingStatus,
-    navSubtitle: isReplay ? "回放说明与复盘重点" : "观看条件与直播看点",
-    statusPanelTitle: isReplay ? "回放状态" : isLive ? "直播提醒" : "开播提醒",
-    statusPanelTag: isReplay ? "支持反复观看" : isLive ? "互动进行中" : "建议提前进入",
+    statusText: isReplay
+      ? live.replayStatus
+      : isLive
+        ? live.liveStatus || "正在直播中"
+        : isEnded
+          ? "直播已结束"
+          : live.upcomingStatus,
+    navSubtitle: isReplay ? "回放说明与复盘重点" : isEnded ? "直播结束与回放准备" : "观看条件与直播看点",
+    statusPanelTitle: isReplay ? "回放状态" : isLive ? "直播提醒" : isEnded ? "结束状态" : "开播提醒",
+    statusPanelTag: isReplay ? "支持反复观看" : isLive ? "互动进行中" : isEnded ? "等待回放整理" : "建议提前进入",
     statusPanelSummary: isReplay
       ? "本场直播已经整理为回放内容，适合按重点片段复看并同步记录复盘笔记。"
       : isLive
         ? "当前为直播中状态，适合直接进入直播间观看并参与互动。"
-        : "建议在开播前 5 分钟进入直播间，提前确认观看环境与互动节奏。",
-    statusPanelItems: isReplay ? live.replaySupport || [] : live.accessRules,
-    sectionIntroTitle: isReplay ? "回放说明" : "准入说明",
-    sectionHighlightTitle: isReplay ? "回放重点" : "本场看点",
-    primaryActionText: isReplay ? "查看回放" : "进入直播间",
+        : isEnded
+          ? "本场直播已经结束，回放开放后可按重点片段继续复盘。"
+          : "建议在开播前 5 分钟进入直播间，提前确认观看环境与互动节奏。",
+    statusPanelItems: isReplay || isEnded ? live.replaySupport || [] : live.accessRules,
+    sectionIntroTitle: isReplay || isEnded ? "回放说明" : "准入说明",
+    sectionHighlightTitle: isReplay || isEnded ? "回放重点" : "本场看点",
+    primaryActionText: isReplay ? "查看回放" : isEnded ? "咨询回放" : "进入直播间",
     secondaryActionText: isReplay ? "咨询回放" : "咨询直播",
-    primaryFeedback: isReplay ? "查看回放" : "进入直播间",
+    primaryFeedback: isReplay ? "查看回放" : isEnded ? "咨询回放" : "进入直播间",
     secondaryFeedback: isReplay ? "咨询回放" : "咨询直播",
     posterActionText: "保存海报",
     posterSavingText: "保存中",
@@ -409,7 +430,9 @@ function getLiveDetailPageData(liveId = "live-private-domain-qa", mode = "upcomi
       successTitle: "海报已保存",
       failureTitle: "海报保存失败"
     },
-    primaryEntry: buildPageEntry(toLiveRoom(live.id, roomMode, live.title)),
+    primaryEntry: isEnded
+      ? buildPageEntry(toConsultation("live", live.title))
+      : buildPageEntry(toLiveRoom(live.id, roomMode, live.title)),
     secondaryEntry: buildPageEntry(toConsultation("live", live.title))
   };
 }
@@ -438,7 +461,8 @@ function getLiveRoomPageData(liveId = "live-private-domain-qa", mode = "live", t
 }
 
 function getLiveEditPageData(liveId = "") {
-  const source = liveCatalog[liveId] || {};
+  const catalogId = resolveLiveCatalogId(liveId);
+  const source = liveCatalog[catalogId] || {};
   return {
     id: liveId,
     title: source.title || "",
