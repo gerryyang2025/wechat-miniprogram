@@ -1,5 +1,5 @@
 const PRODUCT_CATEGORY_KEYS = ["all", "course", "camp", "member"];
-const LIVE_MODE_KEYS = ["upcoming", "live", "replay"];
+const LIVE_MODE_KEYS = ["upcoming", "live", "replay", "ended"];
 const CONSULTATION_SCENES = ["profile", "course", "live", "member"];
 
 function decodeValue(value = "") {
@@ -154,6 +154,19 @@ function toLiveRoom(liveId = "live-private-domain-qa", mode = "live", title = ""
   });
 }
 
+function toLiveEdit(liveId = "") {
+  return buildPageUrl("/pages/live-edit/live-edit", {
+    liveId: decodeValue(liveId)
+  });
+}
+
+function toWebViewer(url = "", title = "") {
+  return buildPageUrl("/pages/web-viewer/web-viewer", {
+    url: decodeValue(url),
+    title: decodeValue(title)
+  });
+}
+
 function toMemberRights(source = "") {
   return buildPageUrl("/pages/member-rights/member-rights", {
     source: decodeValue(source)
@@ -242,6 +255,8 @@ module.exports = {
   toLiveList,
   toLiveDetail,
   toLiveRoom,
+  toLiveEdit,
+  toWebViewer,
   toMemberRights,
   toConsultation,
   toNotifications,

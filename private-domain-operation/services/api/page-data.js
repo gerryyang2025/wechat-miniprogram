@@ -192,6 +192,51 @@ function fetchLiveManagementPageData(activeTab = "all") {
   });
 }
 
+function fetchLiveEditPageData(liveId = "") {
+  if (!liveId) {
+    return Promise.resolve(null);
+  }
+
+  return apiRequest({
+    path: `/api/v1/merchant/live-events/${liveId}/edit`,
+    fallback: () => liveData.getLiveEditPageData(liveId)
+  });
+}
+
+function fetchLiveAccessOptions() {
+  return apiRequest({
+    path: "/api/v1/merchant/access-options",
+    fallback: () => liveData.getLiveAccessOptions()
+  });
+}
+
+function createLiveEvent(payload = {}) {
+  return apiRequest({
+    path: "/api/v1/merchant/live-events",
+    method: "POST",
+    data: payload,
+    fallback: () => liveData.saveLiveEdit("", payload)
+  });
+}
+
+function saveLiveEvent(liveId = "", payload = {}) {
+  return apiRequest({
+    path: `/api/v1/merchant/live-events/${liveId}`,
+    method: "PUT",
+    data: payload,
+    fallback: () => liveData.saveLiveEdit(liveId, payload)
+  });
+}
+
+function checkLiveAccess(liveId = "", mode = "live") {
+  return apiRequest({
+    path: `/api/v1/live-events/${liveId}/access-check`,
+    method: "POST",
+    data: { mode },
+    fallback: () => liveData.checkLiveAccess(liveId, mode)
+  });
+}
+
 function fetchUserManagementPageData(activeTab = "all") {
   return apiRequest({
     path: "/api/v1/merchant/users",
@@ -209,13 +254,17 @@ function fetchContentOpsPageData() {
 
 module.exports = {
   fetchBootcampDetailPageData,
+  checkLiveAccess,
+  createLiveEvent,
   fetchConsultationPageData,
   fetchContentOpsPageData,
   fetchCourseAnalytics,
   fetchCourseEditPageData,
   fetchHomePageData,
   fetchLearningPageData,
+  fetchLiveAccessOptions,
   fetchLiveDetailPageData,
+  fetchLiveEditPageData,
   fetchLiveListPageData,
   fetchLiveManagementPageData,
   fetchLiveRoomPageData,
@@ -231,5 +280,6 @@ module.exports = {
   fetchSettingsPageData,
   fetchUserManagementPageData,
   saveCourseEdit,
+  saveLiveEvent,
   updateCourseProgress
 };

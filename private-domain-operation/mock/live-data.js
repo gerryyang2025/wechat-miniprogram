@@ -437,14 +437,65 @@ function getLiveRoomPageData(liveId = "live-private-domain-qa", mode = "live", t
   };
 }
 
+function getLiveEditPageData(liveId = "") {
+  const source = liveCatalog[liveId] || {};
+  return {
+    id: liveId,
+    title: source.title || "",
+    summary: source.intro || "",
+    speaker: source.speaker || "Gerry",
+    coverUrl: "",
+    startAt: "2026-06-25T20:00:00+08:00",
+    endAt: "2026-06-25T21:00:00+08:00",
+    statusOverride: "",
+    liveUrl: "https://media.example.com/live/private-domain-qa.m3u8",
+    replayUrl: "https://media.example.com/replay/private-domain-qa.mp4",
+    visibility: "course",
+    visibilityRefId: 1,
+    replayEnabled: true
+  };
+}
+
+function getLiveAccessOptions() {
+  return {
+    courses: [{ type: "course", id: 1, title: "AIGC 视频制作" }],
+    bootcamps: [{ type: "bootcamp", id: 1, title: "7 天私域增长训练营" }],
+    members: [{ type: "member", id: 1, title: "年度会员计划" }]
+  };
+}
+
+function saveLiveEdit(liveId = "", payload = {}) {
+  return {
+    ...payload,
+    id: liveId || Date.now()
+  };
+}
+
+function checkLiveAccess(liveId = "", mode = "live") {
+  return {
+    allowed: true,
+    mode,
+    targetUrl:
+      mode === "replay"
+        ? "https://media.example.com/replay/private-domain-qa.mp4"
+        : "https://media.example.com/live/private-domain-qa.m3u8",
+    openMethod: "web_view",
+    fallbackAction: "copy_link"
+  };
+}
+
 module.exports = {
+  checkLiveAccess,
   compactReplayProgress,
+  getLiveAccessOptions,
   getLiveDetail,
+  getLiveEditPageData,
   getLiveSummary,
   getLiveListTabs,
   getLiveList,
   getLiveListPageData,
   getLiveRoom,
   getLiveDetailPageData,
-  getLiveRoomPageData
+  getLiveRoomPageData,
+  saveLiveEdit
 };

@@ -1,4 +1,5 @@
 const { fetchLiveManagementPageData } = require("../../services/api/page-data");
+const { openPageEntry, toLiveEdit } = require("../../utils/navigation");
 
 Page({
   data: {
@@ -23,21 +24,11 @@ Page({
   },
 
   onActionTap(event) {
-    const { title, action } = event.currentTarget.dataset;
-    const targetItem = this.data.liveList.find(
-      (item) => item.title === title && item.actionText === action
-    );
-
-    wx.showToast({
-      title: targetItem ? targetItem.actionFeedback : `${action} · ${title}`,
-      icon: "none"
-    });
+    const { liveId } = event.currentTarget.dataset;
+    openPageEntry({ url: toLiveEdit(liveId), method: "navigateTo" }, "编辑直播");
   },
 
   onCreateTap() {
-    wx.showToast({
-      title: this.data.createFeedback,
-      icon: "none"
-    });
+    openPageEntry({ url: toLiveEdit(""), method: "navigateTo" }, "新建直播");
   }
 });

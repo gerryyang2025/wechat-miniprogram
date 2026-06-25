@@ -38,7 +38,7 @@
           <text class="live-card-audience">{{item.audience}}</text>
           <view class="live-card-foot">
             <text class="live-card-meta">直播管理项</text>
-            <view class="live-card-action" data-title="{{item.title}}" data-action="{{item.actionText}}" bindtap="onActionTap">{{item.actionText}}</view>
+            <view class="live-card-action" data-live-id="{{item.id}}" bindtap="onActionTap">{{item.actionText || '编辑'}}</view>
           </view>
         </view>
       </view>
