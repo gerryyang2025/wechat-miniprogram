@@ -107,9 +107,9 @@ func TestSeedMinimalCreatesLiveEventsAndAccessGrants(t *testing.T) {
 	}
 
 	assertLiveEventSeed(t, ctx, conn, 1, "course", sql.NullInt64{Int64: 1, Valid: true}, "upcoming", "", 1, true, true)
-	assertLiveEventSeed(t, ctx, conn, 2, "member", sql.NullInt64{Int64: 1, Valid: true}, "live", "live", 0, false, false)
-	assertLiveEventSeed(t, ctx, conn, 3, "bootcamp", sql.NullInt64{Int64: 1, Valid: true}, "ended", "replay", 1, false, true)
-	assertLiveEventSeed(t, ctx, conn, 4, "all", sql.NullInt64{}, "upcoming", "", 0, false, false)
+	assertLiveEventSeed(t, ctx, conn, 2, "member", sql.NullInt64{Int64: 1, Valid: true}, "live", "live", 0, true, false)
+	assertLiveEventSeed(t, ctx, conn, 3, "bootcamp", sql.NullInt64{Int64: 1, Valid: true}, "ended", "replay", 1, true, true)
+	assertLiveEventSeed(t, ctx, conn, 4, "all", sql.NullInt64{}, "upcoming", "", 0, true, false)
 
 	var courseGrantCount int
 	if err := conn.QueryRowContext(ctx, `
