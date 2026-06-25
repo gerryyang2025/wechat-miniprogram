@@ -473,7 +473,7 @@ func TestLiveServiceDelegatesEditAndAccessOptions(t *testing.T) {
 		t.Fatalf("create payloads = %#v", store.createPayloads)
 	}
 
-	updated, err := service.UpdateLiveEvent(ctx, 32, payload)
+	updated, err := service.UpdateLiveEvent(ctx, 32, 3, payload)
 	if err != nil {
 		t.Fatalf("UpdateLiveEvent returned error: %v", err)
 	}
@@ -515,7 +515,7 @@ func TestLiveServiceDelegatesEditAndAccessOptions(t *testing.T) {
 	if _, err := nilService.CreateLiveEvent(ctx, 1, payload); !errors.Is(err, ErrLiveStoreRequired) {
 		t.Fatalf("CreateLiveEvent nil error = %v, want ErrLiveStoreRequired", err)
 	}
-	if _, err := nilService.UpdateLiveEvent(ctx, 1, payload); !errors.Is(err, ErrLiveStoreRequired) {
+	if _, err := nilService.UpdateLiveEvent(ctx, 1, 1, payload); !errors.Is(err, ErrLiveStoreRequired) {
 		t.Fatalf("UpdateLiveEvent nil error = %v, want ErrLiveStoreRequired", err)
 	}
 	if _, err := nilService.GetAccessOptions(ctx, 1); !errors.Is(err, ErrLiveStoreRequired) {
@@ -523,6 +523,46 @@ func TestLiveServiceDelegatesEditAndAccessOptions(t *testing.T) {
 	}
 	if _, err := nilService.CheckAccess(ctx, 1, 1, "live"); !errors.Is(err, ErrLiveStoreRequired) {
 		t.Fatalf("CheckAccess nil error = %v, want ErrLiveStoreRequired", err)
+	}
+}
+
+func TestLiveServiceValidatesVisibilityOwnershipBeforeSaving(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	payload := validLiveEditPayload()
+	payload.Visibility = "course"
+	payload.VisibilityRefID = 20
+
+	store := &fakeLiveStore{
+		visibilityOwned: false,
+		createResult:    withLiveEditID(payload, 31),
+		updateResult:    withLiveEditID(payload, 32),
+	}
+	service := NewLiveService(store)
+
+	if _, err := service.CreateLiveEvent(ctx, 3, payload); !errors.Is(err, ErrLiveValidation) {
+		t.Fatalf("CreateLiveEvent foreign ref error = %v, want ErrLiveValidation", err)
+	}
+	if len(store.createPayloads) != 0 {
+		t.Fatalf("foreign ref create delegated, create payloads = %#v", store.createPayloads)
+	}
+	if _, err := service.UpdateLiveEvent(ctx, 32, 3, payload); !errors.Is(err, ErrLiveValidation) {
+		t.Fatalf("UpdateLiveEvent foreign ref error = %v, want ErrLiveValidation", err)
+	}
+	if len(store.updatePayloads) != 0 {
+		t.Fatalf("foreign ref update delegated, update payloads = %#v", store.updatePayloads)
+	}
+
+	store.visibilityOwned = true
+	if _, err := service.CreateLiveEvent(ctx, 3, payload); err != nil {
+		t.Fatalf("CreateLiveEvent owned ref returned error: %v", err)
+	}
+	if _, err := service.UpdateLiveEvent(ctx, 32, 3, payload); err != nil {
+		t.Fatalf("UpdateLiveEvent owned ref returned error: %v", err)
+	}
+	if len(store.visibilityChecks) != 4 {
+		t.Fatalf("visibility checks = %#v, want 4 calls", store.visibilityChecks)
 	}
 }
 
@@ -577,6 +617,10 @@ type fakeLiveStore struct {
 	grantErr     error
 	grantCalls   []fakeLiveGrantCall
 
+	visibilityOwned  bool
+	visibilityErr    error
+	visibilityChecks []fakeLiveVisibilityCheck
+
 	options            domain.LiveAccessOptions
 	optionsErr         error
 	optionsMerchantIDs []int64
@@ -590,6 +634,12 @@ type fakeLiveGrantCall struct {
 	userID      int64
 	accessType  string
 	accessRefID int64
+}
+
+type fakeLiveVisibilityCheck struct {
+	merchantID int64
+	visibility string
+	refID      int64
 }
 
 func (s *fakeLiveStore) ListLiveEvents(ctx context.Context, filter domain.LiveListFilter) ([]domain.LiveEvent, error) {
@@ -632,6 +682,18 @@ func (s *fakeLiveStore) UpdateLiveEvent(ctx context.Context, liveID int64, paylo
 		return domain.LiveEditPayload{}, s.updateErr
 	}
 	return s.updateResult, nil
+}
+
+func (s *fakeLiveStore) VisibilityRefBelongsToMerchant(ctx context.Context, merchantID int64, visibility string, refID int64) (bool, error) {
+	s.visibilityChecks = append(s.visibilityChecks, fakeLiveVisibilityCheck{
+		merchantID: merchantID,
+		visibility: visibility,
+		refID:      refID,
+	})
+	if s.visibilityErr != nil {
+		return false, s.visibilityErr
+	}
+	return s.visibilityOwned, nil
 }
 
 func (s *fakeLiveStore) HasActiveGrant(ctx context.Context, userID int64, accessType string, accessRefID int64) (bool, error) {

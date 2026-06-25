@@ -22,6 +22,7 @@ type LiveStore interface {
 	GetLiveEdit(ctx context.Context, liveID int64) (domain.LiveEditPayload, error)
 	CreateLiveEvent(ctx context.Context, merchantID int64, payload domain.LiveEditPayload) (domain.LiveEditPayload, error)
 	UpdateLiveEvent(ctx context.Context, liveID int64, payload domain.LiveEditPayload) (domain.LiveEditPayload, error)
+	VisibilityRefBelongsToMerchant(ctx context.Context, merchantID int64, visibility string, refID int64) (bool, error)
 	HasActiveGrant(ctx context.Context, userID int64, accessType string, accessRefID int64) (bool, error)
 	GetAccessOptions(ctx context.Context, merchantID int64) (domain.LiveAccessOptions, error)
 	MerchantIDForUser(ctx context.Context, userID int64) (int64, error)
@@ -88,14 +89,20 @@ func (s *LiveService) CreateLiveEvent(ctx context.Context, merchantID int64, pay
 	if err := validateLiveEdit(payload); err != nil {
 		return domain.LiveEditPayload{}, err
 	}
+	if err := s.validateVisibilityOwnership(ctx, merchantID, payload); err != nil {
+		return domain.LiveEditPayload{}, err
+	}
 	return s.lives.CreateLiveEvent(ctx, merchantID, payload)
 }
 
-func (s *LiveService) UpdateLiveEvent(ctx context.Context, liveID int64, payload domain.LiveEditPayload) (domain.LiveEditPayload, error) {
+func (s *LiveService) UpdateLiveEvent(ctx context.Context, liveID int64, merchantID int64, payload domain.LiveEditPayload) (domain.LiveEditPayload, error) {
 	if s.lives == nil {
 		return domain.LiveEditPayload{}, ErrLiveStoreRequired
 	}
 	if err := validateLiveEdit(payload); err != nil {
+		return domain.LiveEditPayload{}, err
+	}
+	if err := s.validateVisibilityOwnership(ctx, merchantID, payload); err != nil {
 		return domain.LiveEditPayload{}, err
 	}
 	return s.lives.UpdateLiveEvent(ctx, liveID, payload)
@@ -219,6 +226,22 @@ func validateLiveEdit(payload domain.LiveEditPayload) error {
 		return fmt.Errorf("%w: visibility ref id is required", ErrLiveValidation)
 	}
 
+	return nil
+}
+
+func (s *LiveService) validateVisibilityOwnership(ctx context.Context, merchantID int64, payload domain.LiveEditPayload) error {
+	visibility := payload.Visibility
+	if visibility == "all" || visibility == "member" {
+		return nil
+	}
+
+	owned, err := s.lives.VisibilityRefBelongsToMerchant(ctx, merchantID, visibility, payload.VisibilityRefID)
+	if err != nil {
+		return err
+	}
+	if !owned {
+		return fmt.Errorf("%w: visibility ref does not belong to merchant", ErrLiveValidation)
+	}
 	return nil
 }
 

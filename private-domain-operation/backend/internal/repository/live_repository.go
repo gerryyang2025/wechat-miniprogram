@@ -185,6 +185,24 @@ func (r *LiveRepository) UpdateLiveEvent(ctx context.Context, liveID int64, payl
 	return r.GetLiveEdit(ctx, liveID)
 }
 
+func (r *LiveRepository) VisibilityRefBelongsToMerchant(ctx context.Context, merchantID int64, visibility string, refID int64) (bool, error) {
+	var query string
+	switch strings.TrimSpace(visibility) {
+	case "course":
+		query = `SELECT COUNT(*) FROM courses WHERE id = ? AND merchant_id = ?`
+	case "bootcamp":
+		query = `SELECT COUNT(*) FROM bootcamps WHERE id = ? AND merchant_id = ?`
+	default:
+		return true, nil
+	}
+
+	var count int
+	if err := r.db.QueryRowContext(ctx, query, refID, merchantID).Scan(&count); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (r *LiveRepository) HasActiveGrant(ctx context.Context, userID int64, accessType string, accessRefID int64) (bool, error) {
 	var count int
 	err := r.db.QueryRowContext(ctx, `

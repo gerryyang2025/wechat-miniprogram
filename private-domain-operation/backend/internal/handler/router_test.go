@@ -680,7 +680,7 @@ func TestMerchantLiveCreateUsesAuthenticatedMerchantMapping(t *testing.T) {
 		Nickname: "Merchant Two",
 		Roles:    []string{"merchant"},
 	})
-	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(liveCreateJSON("商家二直播")))
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(liveVisibilityJSON("商家二直播", "all", 0)))
 	create.Header.Set("Authorization", "Bearer "+token)
 	create.Header.Set("Content-Type", "application/json")
 	createResp := httptest.NewRecorder()
@@ -944,6 +944,72 @@ func TestMerchantLiveAccessOptionsAreScoped(t *testing.T) {
 	}
 }
 
+func TestMerchantLiveCreateAndUpdateRejectForeignVisibilityRefs(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+	insertOtherMerchantAccessContent(t, conn)
+
+	token := testMerchantToken(t)
+	for _, tc := range []struct {
+		name       string
+		visibility string
+		refID      int64
+	}{
+		{name: "course", visibility: "course", refID: 20},
+		{name: "bootcamp", visibility: "bootcamp", refID: 20},
+	} {
+		t.Run("create "+tc.name, func(t *testing.T) {
+			create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(liveVisibilityJSON("跨商家权限创建", tc.visibility, tc.refID)))
+			create.Header.Set("Authorization", "Bearer "+token)
+			create.Header.Set("Content-Type", "application/json")
+			createResp := httptest.NewRecorder()
+
+			router.ServeHTTP(createResp, create)
+
+			assertErrorCode(t, createResp, http.StatusBadRequest, 40004)
+		})
+	}
+
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(liveCreateJSON("合法直播用于更新校验")))
+	create.Header.Set("Authorization", "Bearer "+token)
+	create.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, create)
+
+	if createResp.Code != http.StatusOK {
+		t.Fatalf("POST valid create status = %d body = %s", createResp.Code, createResp.Body.String())
+	}
+	var created struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("valid create JSON decode failed: %v body = %s", err, createResp.Body.String())
+	}
+
+	for _, tc := range []struct {
+		name       string
+		visibility string
+		refID      int64
+	}{
+		{name: "course", visibility: "course", refID: 20},
+		{name: "bootcamp", visibility: "bootcamp", refID: 20},
+	} {
+		t.Run("update "+tc.name, func(t *testing.T) {
+			update := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/merchant/live-events/%d", created.Data.ID), strings.NewReader(liveVisibilityJSON("跨商家权限更新", tc.visibility, tc.refID)))
+			update.Header.Set("Authorization", "Bearer "+token)
+			update.Header.Set("Content-Type", "application/json")
+			updateResp := httptest.NewRecorder()
+
+			router.ServeHTTP(updateResp, update)
+
+			assertErrorCode(t, updateResp, http.StatusBadRequest, 40004)
+		})
+	}
+}
+
 func TestLiveDetailEscapesTitleInGeneratedEntries(t *testing.T) {
 	t.Parallel()
 
@@ -1130,6 +1196,10 @@ func assertLiveResponseOmitsStreams(t *testing.T, data json.RawMessage) {
 }
 
 func liveCreateJSON(title string) string {
+	return liveVisibilityJSON(title, "course", 1)
+}
+
+func liveVisibilityJSON(title string, visibility string, visibilityRefID int64) string {
 	return fmt.Sprintf(`{
 		"title":%q,
 		"summary":"复盘私域转化关键动作。",
@@ -1140,10 +1210,10 @@ func liveCreateJSON(title string) string {
 		"statusOverride":"upcoming",
 		"liveUrl":"https://media.example.com/live/new-session.m3u8",
 		"replayUrl":"https://media.example.com/replay/new-session.mp4",
-		"visibility":"course",
-		"visibilityRefId":1,
+		"visibility":%q,
+		"visibilityRefId":%d,
 		"replayEnabled":true
-	}`, title)
+	}`, title, visibility, visibilityRefID)
 }
 
 func insertMerchantMapping(t *testing.T, conn *sql.DB, merchantID int64, userID int64) {

@@ -256,6 +256,43 @@ func TestLiveRepositoryAccessOptionsIncludeSeedContent(t *testing.T) {
 	}
 }
 
+func TestLiveRepositoryChecksVisibilityRefMerchantOwnership(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	conn := testLiveDB(t, ctx)
+	defer conn.Close()
+	insertOtherMerchantAccessContent(t, ctx, conn)
+
+	repo := NewLiveRepository(conn)
+	tests := []struct {
+		name       string
+		merchantID int64
+		visibility string
+		refID      int64
+		wantOwned  bool
+	}{
+		{name: "seed course", merchantID: 1, visibility: "course", refID: 1, wantOwned: true},
+		{name: "foreign course", merchantID: 1, visibility: "course", refID: 20, wantOwned: false},
+		{name: "missing course", merchantID: 1, visibility: "course", refID: 999, wantOwned: false},
+		{name: "foreign bootcamp", merchantID: 1, visibility: "bootcamp", refID: 20, wantOwned: false},
+		{name: "global member", merchantID: 1, visibility: "member", refID: 20, wantOwned: true},
+		{name: "global all", merchantID: 1, visibility: "all", refID: 0, wantOwned: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			owned, err := repo.VisibilityRefBelongsToMerchant(ctx, tt.merchantID, tt.visibility, tt.refID)
+			if err != nil {
+				t.Fatalf("VisibilityRefBelongsToMerchant returned error: %v", err)
+			}
+			if owned != tt.wantOwned {
+				t.Fatalf("owned = %v, want %v", owned, tt.wantOwned)
+			}
+		})
+	}
+}
+
 func TestLiveRepositoryFindsMerchantIDForUser(t *testing.T) {
 	t.Parallel()
 

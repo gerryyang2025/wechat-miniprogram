@@ -340,7 +340,7 @@ func handleMerchantLiveUpdate(deps Dependencies) gin.HandlerFunc {
 		}
 		payload.ID = liveID
 
-		saved, err := lives.UpdateLiveEvent(c.Request.Context(), liveID, payload)
+		saved, err := lives.UpdateLiveEvent(c.Request.Context(), liveID, merchantID, payload)
 		if err != nil {
 			writeLiveSaveError(c, err)
 			return
