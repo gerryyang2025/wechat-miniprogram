@@ -1,0 +1,66 @@
+.web-viewer-shell {
+  min-height: 100vh;
+  padding: calc(108rpx + env(safe-area-inset-top)) 28rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.web-viewer-nav {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-bottom: 28rpx;
+}
+
+.web-viewer-back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 44rpx;
+  line-height: 72rpx;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.web-viewer-nav-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.web-viewer-nav-title {
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.web-viewer-nav-subtitle {
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: rgba(241, 244, 255, 0.82);
+}
+
+.web-viewer-placeholder {
+  margin-top: 24rpx;
+  padding: 34rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.web-viewer-placeholder-title {
+  font-size: 34rpx;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #222946;
+}
+
+.web-viewer-placeholder-desc {
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #697394;
+}

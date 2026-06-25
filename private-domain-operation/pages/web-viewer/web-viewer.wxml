@@ -1,0 +1,16 @@
+<view class="page-shell">
+  <view class="web-viewer-shell">
+    <view class="web-viewer-nav">
+      <view class="web-viewer-back" bindtap="onBackTap">‹</view>
+      <view class="web-viewer-nav-copy">
+        <text class="web-viewer-nav-title">直播链接</text>
+        <text class="web-viewer-nav-subtitle">待接入</text>
+      </view>
+    </view>
+
+    <view class="web-viewer-placeholder card-surface">
+      <text class="web-viewer-placeholder-title">加载中</text>
+      <text class="web-viewer-placeholder-desc">待接入</text>
+    </view>
+  </view>
+</view>
