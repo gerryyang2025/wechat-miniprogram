@@ -281,3 +281,19 @@
   justify-content: center;
   box-sizing: border-box;
 }
+
+.live-room-copy {
+  align-self: flex-start;
+  min-width: 160rpx;
+  height: 64rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  background: rgba(92, 108, 255, 0.1);
+  color: #5a6efa;
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}

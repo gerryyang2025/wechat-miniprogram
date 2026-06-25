@@ -8,6 +8,27 @@
       </view>
     </view>
 
+    <view wx:if="{{checkingAccess}}" class="live-room-section card-surface">
+      <text class="live-room-section-title">正在校验观看权限</text>
+      <text class="live-room-notice">请稍候</text>
+    </view>
+
+    <view wx:elif="{{accessDenied}}" class="live-room-section card-surface">
+      <text class="live-room-section-title">暂不能观看</text>
+      <text class="live-room-notice">{{accessReason}}</text>
+      <view wx:if="{{requiredAccess && requiredAccess.title}}" class="related-card">
+        <text class="related-tag">需要权限</text>
+        <text class="related-title">{{requiredAccess.title}}</text>
+        <text class="related-desc">请先完成对应课程、训练营或会员开通。</text>
+      </view>
+    </view>
+
+    <view wx:elif="{{accessAllowed && targetUrl}}" class="live-room-section card-surface">
+      <text class="live-room-section-title">已通过观看校验</text>
+      <text class="live-room-notice">已尝试打开直播链接，如未打开可复制链接到浏览器。</text>
+      <view class="live-room-copy" bindtap="onCopyTap">复制链接</view>
+    </view>
+
     <view class="live-room-stage card-surface">
       <view class="live-room-video">
         <view class="live-room-status live-room-status--{{statusTheme}}">{{statusText}}</view>
