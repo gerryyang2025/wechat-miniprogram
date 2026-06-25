@@ -106,6 +106,27 @@ func TestSeedMinimalCreatesLiveEventsAndAccessGrants(t *testing.T) {
 		t.Fatalf("live count = %d, want 4", liveCount)
 	}
 
+	assertQueryCount(t, ctx, conn, "course live fixture", 1, `
+		SELECT COUNT(*)
+		FROM live_events
+		WHERE visibility = 'course' AND visibility_ref_id = 1 AND replay_enabled = 1
+	`)
+	assertQueryCount(t, ctx, conn, "member live fixture", 1, `
+		SELECT COUNT(*)
+		FROM live_events
+		WHERE visibility = 'member' AND visibility_ref_id = 1 AND status_override = 'live'
+	`)
+	assertQueryCount(t, ctx, conn, "bootcamp replay live fixture", 1, `
+		SELECT COUNT(*)
+		FROM live_events
+		WHERE visibility = 'bootcamp' AND visibility_ref_id = 1 AND status_override = 'replay' AND replay_enabled = 1
+	`)
+	assertQueryCount(t, ctx, conn, "public live fixture", 1, `
+		SELECT COUNT(*)
+		FROM live_events
+		WHERE visibility = 'all' AND visibility_ref_id IS NULL
+	`)
+
 	var courseGrantCount int
 	if err := conn.QueryRowContext(ctx, `
 		SELECT COUNT(*)
@@ -118,6 +139,18 @@ func TestSeedMinimalCreatesLiveEventsAndAccessGrants(t *testing.T) {
 		t.Fatalf("course grant count = %d, want 1", courseGrantCount)
 	}
 
+	var bootcampGrantCount int
+	if err := conn.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM content_access_grants
+		WHERE user_id = 2 AND access_type = 'bootcamp' AND access_ref_id = 1 AND status = 'active'
+	`).Scan(&bootcampGrantCount); err != nil {
+		t.Fatalf("bootcamp grant count failed: %v", err)
+	}
+	if bootcampGrantCount != 1 {
+		t.Fatalf("bootcamp grant count = %d, want 1", bootcampGrantCount)
+	}
+
 	var memberGrantCount int
 	if err := conn.QueryRowContext(ctx, `
 		SELECT COUNT(*)
@@ -128,6 +161,18 @@ func TestSeedMinimalCreatesLiveEventsAndAccessGrants(t *testing.T) {
 	}
 	if memberGrantCount != 1 {
 		t.Fatalf("member grant count = %d, want 1", memberGrantCount)
+	}
+
+	var activeGrantCount int
+	if err := conn.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM content_access_grants
+		WHERE user_id = 2 AND status = 'active'
+	`).Scan(&activeGrantCount); err != nil {
+		t.Fatalf("active grant count failed: %v", err)
+	}
+	if activeGrantCount != 3 {
+		t.Fatalf("active grant count = %d, want 3", activeGrantCount)
 	}
 }
 
@@ -237,5 +282,17 @@ func assertSeedUser(t *testing.T, conn *sql.DB, id int, wantOpenID string, wantN
 	}
 	if status != wantStatus {
 		t.Fatalf("seed user %d status = %q", id, status)
+	}
+}
+
+func assertQueryCount(t *testing.T, ctx context.Context, conn *sql.DB, label string, want int, query string) {
+	t.Helper()
+
+	var got int
+	if err := conn.QueryRowContext(ctx, query).Scan(&got); err != nil {
+		t.Fatalf("%s count failed: %v", label, err)
+	}
+	if got != want {
+		t.Fatalf("%s count = %d, want %d", label, got, want)
 	}
 }

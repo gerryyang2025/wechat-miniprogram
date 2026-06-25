@@ -39,6 +39,11 @@ func TestOpenAndMigrateCreatesCoreTables(t *testing.T) {
 	assertColumnExists(t, conn, "live_events", "visibility")
 	assertColumnExists(t, conn, "live_events", "visibility_ref_id")
 	assertColumnExists(t, conn, "live_events", "replay_enabled")
+	assertIndexExists(t, conn, "idx_live_events_visibility")
+	assertIndexExists(t, conn, "idx_live_events_status_override")
+	assertIndexExists(t, conn, "uk_content_access_grants_unique")
+	assertIndexExists(t, conn, "idx_content_access_grants_lookup")
+	assertIndexExists(t, conn, "idx_content_access_grants_source")
 	assertMigrationRecorded(t, conn, "000001_p0_schema.up.sql")
 }
 
@@ -123,6 +128,19 @@ func assertColumnExists(t *testing.T, conn *sql.DB, table string, column string)
 		t.Fatalf("table_info rows for %s failed: %v", table, err)
 	}
 	t.Fatalf("column %s.%s does not exist", table, column)
+}
+
+func assertIndexExists(t *testing.T, conn *sql.DB, name string) {
+	t.Helper()
+
+	var count int
+	err := conn.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?", name).Scan(&count)
+	if err != nil {
+		t.Fatalf("index check for %s failed: %v", name, err)
+	}
+	if count != 1 {
+		t.Fatalf("index %s does not exist", name)
+	}
 }
 
 func assertMigrationRecorded(t *testing.T, conn *sql.DB, name string) {
