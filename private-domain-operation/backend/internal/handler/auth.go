@@ -18,6 +18,7 @@ import (
 type Dependencies struct {
 	Auth     *service.AuthService
 	Courses  *service.CourseService
+	Live     *service.LiveService
 	Progress *service.ProgressService
 }
 

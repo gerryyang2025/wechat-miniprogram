@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -501,6 +502,183 @@ func TestMerchantCourseInvalidAndMissingIDsUseBusinessCodes(t *testing.T) {
 	assertErrorCode(t, missingResp, http.StatusNotFound, 40404)
 }
 
+func TestLiveAPIsUseSQLiteAndAccessChecks(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	list := httptest.NewRequest(http.MethodGet, "/api/v1/live-events?status=all", nil)
+	listResp := httptest.NewRecorder()
+
+	router.ServeHTTP(listResp, list)
+
+	if listResp.Code != http.StatusOK {
+		t.Fatalf("GET list status = %d body = %s", listResp.Code, listResp.Body.String())
+	}
+	if !strings.Contains(listResp.Body.String(), "私域运营直播答疑") {
+		t.Fatalf("GET list body does not include seed live: %s", listResp.Body.String())
+	}
+
+	check := httptest.NewRequest(http.MethodPost, "/api/v1/live-events/2/access-check", strings.NewReader(`{"mode":"live"}`))
+	check.Header.Set("Authorization", "Bearer "+testStudentToken(t))
+	check.Header.Set("Content-Type", "application/json")
+	checkResp := httptest.NewRecorder()
+
+	router.ServeHTTP(checkResp, check)
+
+	if checkResp.Code != http.StatusOK {
+		t.Fatalf("POST access-check status = %d body = %s", checkResp.Code, checkResp.Body.String())
+	}
+
+	var body struct {
+		Data struct {
+			Allowed   bool   `json:"allowed"`
+			TargetURL string `json:"targetUrl"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(checkResp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("access-check JSON decode failed: %v body = %s", err, checkResp.Body.String())
+	}
+	if !body.Data.Allowed {
+		t.Fatalf("access-check allowed = false; body = %s", checkResp.Body.String())
+	}
+	if body.Data.TargetURL != "https://media.example.com/live/content-clinic.m3u8" {
+		t.Fatalf("targetUrl = %q", body.Data.TargetURL)
+	}
+}
+
+func TestLiveAccessCheckRequiresLogin(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/live-events/2/access-check", strings.NewReader(`{"mode":"live"}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	assertErrorCode(t, resp, http.StatusUnauthorized, 40101)
+}
+
+func TestMerchantLiveCreateEditAndValidation(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testMerchantToken(t)
+	createBody := `{
+		"title":"新增直播：私域转化复盘",
+		"summary":"复盘私域转化关键动作。",
+		"speaker":"Gerry",
+		"coverUrl":"https://media.example.com/covers/live/new-session.jpg",
+		"startAt":"2026-06-28T20:00:00+08:00",
+		"endAt":"2026-06-28T21:00:00+08:00",
+		"statusOverride":"upcoming",
+		"liveUrl":"https://media.example.com/live/new-session.m3u8",
+		"replayUrl":"https://media.example.com/replay/new-session.mp4",
+		"visibility":"course",
+		"visibilityRefId":1,
+		"replayEnabled":true
+	}`
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(createBody))
+	create.Header.Set("Authorization", "Bearer "+token)
+	create.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, create)
+
+	if createResp.Code != http.StatusOK {
+		t.Fatalf("POST create status = %d body = %s", createResp.Code, createResp.Body.String())
+	}
+
+	var createdBody struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(createResp.Body.Bytes(), &createdBody); err != nil {
+		t.Fatalf("create JSON decode failed: %v body = %s", err, createResp.Body.String())
+	}
+	if createdBody.Data.ID == 0 {
+		t.Fatalf("created live ID = 0; body = %s", createResp.Body.String())
+	}
+
+	getEdit := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/merchant/live-events/%d/edit", createdBody.Data.ID), nil)
+	getEdit.Header.Set("Authorization", "Bearer "+token)
+	getEditResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getEditResp, getEdit)
+
+	if getEditResp.Code != http.StatusOK {
+		t.Fatalf("GET edit status = %d body = %s", getEditResp.Code, getEditResp.Body.String())
+	}
+
+	var editBody struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(getEditResp.Body.Bytes(), &editBody); err != nil {
+		t.Fatalf("edit JSON decode failed: %v body = %s", err, getEditResp.Body.String())
+	}
+	if editBody.Data.Title != "新增直播：私域转化复盘" {
+		t.Fatalf("edit title = %q", editBody.Data.Title)
+	}
+
+	invalidUpdate := `{
+		"title":"新增直播：私域转化复盘",
+		"summary":"复盘私域转化关键动作。",
+		"speaker":"Gerry",
+		"coverUrl":"https://media.example.com/covers/live/new-session.jpg",
+		"startAt":"2026-06-28T20:00:00+08:00",
+		"endAt":"2026-06-28T21:00:00+08:00",
+		"statusOverride":"upcoming",
+		"liveUrl":"http://media.example.com/live/new-session.m3u8",
+		"replayUrl":"https://media.example.com/replay/new-session.mp4",
+		"visibility":"course",
+		"visibilityRefId":1,
+		"replayEnabled":true
+	}`
+	put := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/merchant/live-events/%d", createdBody.Data.ID), strings.NewReader(invalidUpdate))
+	put.Header.Set("Authorization", "Bearer "+token)
+	put.Header.Set("Content-Type", "application/json")
+	putResp := httptest.NewRecorder()
+
+	router.ServeHTTP(putResp, put)
+
+	assertErrorCode(t, putResp, http.StatusBadRequest, 40004)
+}
+
+func TestLiveAPIErrorBusinessCodes(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	invalid := httptest.NewRequest(http.MethodGet, "/api/v1/live-events/not-a-number", nil)
+	invalidResp := httptest.NewRecorder()
+
+	router.ServeHTTP(invalidResp, invalid)
+
+	assertErrorCode(t, invalidResp, http.StatusBadRequest, 40003)
+
+	missing := httptest.NewRequest(http.MethodGet, "/api/v1/live-events/999", nil)
+	missingResp := httptest.NewRecorder()
+
+	router.ServeHTTP(missingResp, missing)
+
+	assertErrorCode(t, missingResp, http.StatusNotFound, 40404)
+
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(`{"title":"学生不能创建"}`))
+	create.Header.Set("Authorization", "Bearer "+testStudentToken(t))
+	create.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, create)
+
+	assertErrorCode(t, createResp, http.StatusForbidden, 40301)
+}
+
 func testStudentToken(t *testing.T) string {
 	t.Helper()
 
@@ -600,6 +778,7 @@ func testRouter(t *testing.T) (*gin.Engine, *sql.DB) {
 	deps := Dependencies{
 		Auth:     auth,
 		Courses:  service.NewCourseService(repository.NewCourseRepository(conn)),
+		Live:     service.NewLiveService(repository.NewLiveRepository(conn)),
 		Progress: service.NewProgressService(repository.NewProgressRepository(conn)),
 	}
 

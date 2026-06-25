@@ -25,6 +25,7 @@ func main() {
 
 	users := repository.NewUserRepository(conn)
 	courses := repository.NewCourseRepository(conn)
+	lives := repository.NewLiveRepository(conn)
 	progress := repository.NewProgressRepository(conn)
 
 	authService := service.NewAuthService(service.AuthConfig{
@@ -39,6 +40,7 @@ func main() {
 	router := handler.NewRouterWithDependencies(handler.Dependencies{
 		Auth:     authService,
 		Courses:  service.NewCourseService(courses),
+		Live:     service.NewLiveService(lives),
 		Progress: service.NewProgressService(progress),
 	})
 
