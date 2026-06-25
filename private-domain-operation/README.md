@@ -143,3 +143,31 @@
 2. 先完成核心需求相关的页面原型和交互走查。
 3. 再基于页面 `IA` 和技术文档输出接口清单、表结构草案和模块接入顺序。
 4. 最后进入微信小程序与后端工程的实际搭建。
+
+### Live Management And Access
+
+Live events use ordinary HTTPS links in the first implementation. The backend stores live and replay links in SQLite and validates access before the mini program opens a link.
+
+User APIs:
+
+- `GET /api/v1/live-events?status=all|upcoming|live|replay`
+- `GET /api/v1/live-events/:live_id`
+- `GET /api/v1/live-events/:live_id/room`
+- `POST /api/v1/live-events/:live_id/access-check`
+
+Merchant APIs:
+
+- `GET /api/v1/merchant/live-events?status=all|upcoming|live|ended|replay`
+- `POST /api/v1/merchant/live-events`
+- `GET /api/v1/merchant/live-events/:live_id/edit`
+- `PUT /api/v1/merchant/live-events/:live_id`
+- `GET /api/v1/merchant/access-options`
+
+Local verification:
+
+```bash
+cd private-domain-operation/backend
+./scripts/optools test
+./scripts/optools restart
+./scripts/optools status
+```
