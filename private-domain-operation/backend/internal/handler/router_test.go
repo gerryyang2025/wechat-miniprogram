@@ -768,6 +768,73 @@ func TestMerchantLiveCreateEditAndValidation(t *testing.T) {
 		t.Fatalf("edit title = %q", editBody.Data.Title)
 	}
 
+	validUpdate := `{
+		"title":"新增直播：私域转化复盘 - 更新",
+		"summary":"更新后的直播复盘说明。",
+		"speaker":"Gerry",
+		"coverUrl":"https://media.example.com/covers/live/new-session-updated.jpg",
+		"startAt":"2026-06-28T20:30:00+08:00",
+		"endAt":"2026-06-28T21:30:00+08:00",
+		"statusOverride":"upcoming",
+		"liveUrl":"https://media.example.com/live/new-session-updated.m3u8",
+		"replayUrl":"https://media.example.com/replay/new-session-updated.mp4",
+		"visibility":"all",
+		"visibilityRefId":0,
+		"replayEnabled":false
+	}`
+	validPut := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/merchant/live-events/%d", createdBody.Data.ID), strings.NewReader(validUpdate))
+	validPut.Header.Set("Authorization", "Bearer "+token)
+	validPut.Header.Set("Content-Type", "application/json")
+	validPutResp := httptest.NewRecorder()
+
+	router.ServeHTTP(validPutResp, validPut)
+
+	if validPutResp.Code != http.StatusOK {
+		t.Fatalf("valid PUT status = %d body = %s", validPutResp.Code, validPutResp.Body.String())
+	}
+
+	var validUpdateBody struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(validPutResp.Body.Bytes(), &validUpdateBody); err != nil {
+		t.Fatalf("valid PUT JSON decode failed: %v body = %s", err, validPutResp.Body.String())
+	}
+	if validUpdateBody.Data.ID != createdBody.Data.ID {
+		t.Fatalf("valid PUT id = %d, want %d", validUpdateBody.Data.ID, createdBody.Data.ID)
+	}
+	if validUpdateBody.Data.Title != "新增直播：私域转化复盘 - 更新" {
+		t.Fatalf("valid PUT title = %q", validUpdateBody.Data.Title)
+	}
+	if validUpdateBody.Data.Visibility != "all" || validUpdateBody.Data.VisibilityRefID != 0 {
+		t.Fatalf("valid PUT visibility = %q ref = %d", validUpdateBody.Data.Visibility, validUpdateBody.Data.VisibilityRefID)
+	}
+
+	getUpdated := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/merchant/live-events/%d/edit", createdBody.Data.ID), nil)
+	getUpdated.Header.Set("Authorization", "Bearer "+token)
+	getUpdatedResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getUpdatedResp, getUpdated)
+
+	if getUpdatedResp.Code != http.StatusOK {
+		t.Fatalf("GET updated edit status = %d body = %s", getUpdatedResp.Code, getUpdatedResp.Body.String())
+	}
+
+	var updatedEditBody struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(getUpdatedResp.Body.Bytes(), &updatedEditBody); err != nil {
+		t.Fatalf("GET updated edit JSON decode failed: %v body = %s", err, getUpdatedResp.Body.String())
+	}
+	if updatedEditBody.Data.Title != "新增直播：私域转化复盘 - 更新" {
+		t.Fatalf("updated edit title = %q", updatedEditBody.Data.Title)
+	}
+	if updatedEditBody.Data.LiveURL != "https://media.example.com/live/new-session-updated.m3u8" {
+		t.Fatalf("updated edit live URL = %q", updatedEditBody.Data.LiveURL)
+	}
+	if updatedEditBody.Data.ReplayEnabled {
+		t.Fatalf("updated edit replayEnabled = true, want false")
+	}
+
 	invalidUpdate := `{
 		"title":"新增直播：私域转化复盘",
 		"summary":"复盘私域转化关键动作。",
