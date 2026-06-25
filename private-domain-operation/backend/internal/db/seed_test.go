@@ -106,26 +106,10 @@ func TestSeedMinimalCreatesLiveEventsAndAccessGrants(t *testing.T) {
 		t.Fatalf("live count = %d, want 4", liveCount)
 	}
 
-	assertQueryCount(t, ctx, conn, "course live fixture", 1, `
-		SELECT COUNT(*)
-		FROM live_events
-		WHERE visibility = 'course' AND visibility_ref_id = 1 AND replay_enabled = 1
-	`)
-	assertQueryCount(t, ctx, conn, "member live fixture", 1, `
-		SELECT COUNT(*)
-		FROM live_events
-		WHERE visibility = 'member' AND visibility_ref_id = 1 AND status_override = 'live'
-	`)
-	assertQueryCount(t, ctx, conn, "bootcamp replay live fixture", 1, `
-		SELECT COUNT(*)
-		FROM live_events
-		WHERE visibility = 'bootcamp' AND visibility_ref_id = 1 AND status_override = 'replay' AND replay_enabled = 1
-	`)
-	assertQueryCount(t, ctx, conn, "public live fixture", 1, `
-		SELECT COUNT(*)
-		FROM live_events
-		WHERE visibility = 'all' AND visibility_ref_id IS NULL
-	`)
+	assertLiveEventSeed(t, ctx, conn, 1, "course", sql.NullInt64{Int64: 1, Valid: true}, "upcoming", "", 1, true, true)
+	assertLiveEventSeed(t, ctx, conn, 2, "member", sql.NullInt64{Int64: 1, Valid: true}, "live", "live", 0, false, false)
+	assertLiveEventSeed(t, ctx, conn, 3, "bootcamp", sql.NullInt64{Int64: 1, Valid: true}, "ended", "replay", 1, false, true)
+	assertLiveEventSeed(t, ctx, conn, 4, "all", sql.NullInt64{}, "upcoming", "", 0, false, false)
 
 	var courseGrantCount int
 	if err := conn.QueryRowContext(ctx, `
@@ -285,14 +269,57 @@ func assertSeedUser(t *testing.T, conn *sql.DB, id int, wantOpenID string, wantN
 	}
 }
 
-func assertQueryCount(t *testing.T, ctx context.Context, conn *sql.DB, label string, want int, query string) {
+func assertLiveEventSeed(
+	t *testing.T,
+	ctx context.Context,
+	conn *sql.DB,
+	id int,
+	wantVisibility string,
+	wantVisibilityRefID sql.NullInt64,
+	wantStatus string,
+	wantStatusOverride string,
+	wantReplayEnabled int,
+	wantLiveURLHTTPS bool,
+	wantReplayURLHTTPS bool,
+) {
 	t.Helper()
 
-	var got int
-	if err := conn.QueryRowContext(ctx, query).Scan(&got); err != nil {
-		t.Fatalf("%s count failed: %v", label, err)
+	var visibility string
+	var visibilityRefID sql.NullInt64
+	var status string
+	var statusOverride string
+	var replayEnabled int
+	var liveURL string
+	var replayURL string
+	if err := conn.QueryRowContext(ctx, `
+		SELECT visibility, visibility_ref_id, status, status_override, replay_enabled, live_url, replay_url
+		FROM live_events
+		WHERE id = ?
+	`, id).Scan(&visibility, &visibilityRefID, &status, &statusOverride, &replayEnabled, &liveURL, &replayURL); err != nil {
+		t.Fatalf("live event %d query failed: %v", id, err)
 	}
-	if got != want {
-		t.Fatalf("%s count = %d, want %d", label, got, want)
+	if visibility != wantVisibility {
+		t.Fatalf("live event %d visibility = %q, want %q", id, visibility, wantVisibility)
+	}
+	if visibilityRefID.Valid != wantVisibilityRefID.Valid {
+		t.Fatalf("live event %d visibility_ref_id valid = %t, want %t", id, visibilityRefID.Valid, wantVisibilityRefID.Valid)
+	}
+	if visibilityRefID.Valid && visibilityRefID.Int64 != wantVisibilityRefID.Int64 {
+		t.Fatalf("live event %d visibility_ref_id = %d, want %d", id, visibilityRefID.Int64, wantVisibilityRefID.Int64)
+	}
+	if status != wantStatus {
+		t.Fatalf("live event %d status = %q, want %q", id, status, wantStatus)
+	}
+	if statusOverride != wantStatusOverride {
+		t.Fatalf("live event %d status_override = %q, want %q", id, statusOverride, wantStatusOverride)
+	}
+	if replayEnabled != wantReplayEnabled {
+		t.Fatalf("live event %d replay_enabled = %d, want %d", id, replayEnabled, wantReplayEnabled)
+	}
+	if wantLiveURLHTTPS && !strings.HasPrefix(liveURL, "https://") {
+		t.Fatalf("live event %d live_url = %q, want https:// prefix", id, liveURL)
+	}
+	if wantReplayURLHTTPS && !strings.HasPrefix(replayURL, "https://") {
+		t.Fatalf("live event %d replay_url = %q, want https:// prefix", id, replayURL)
 	}
 }
