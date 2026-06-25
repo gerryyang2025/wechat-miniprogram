@@ -233,7 +233,8 @@ function checkLiveAccess(liveId = "", mode = "live") {
     path: `/api/v1/live-events/${liveId}/access-check`,
     method: "POST",
     data: { mode },
-    fallback: () => liveData.checkLiveAccess(liveId, mode)
+    fallback: () => liveData.checkLiveAccess(liveId, mode),
+    mockFallback: false
   });
 }
 

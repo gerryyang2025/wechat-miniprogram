@@ -59,11 +59,16 @@ function apiRequest(options = {}) {
     query = {},
     header = {},
     fallback = null,
-    auth = true
+    auth = true,
+    mockFallback
   } = options;
   const config = getApiConfig();
+  const allowFallback = mockFallback === undefined ? config.mockFallback : Boolean(mockFallback);
 
   if (!config.baseUrl || !canRequest()) {
+    if (!allowFallback) {
+      return Promise.reject(new Error("request unavailable"));
+    }
     return resolveFallback(fallback);
   }
 
@@ -83,7 +88,7 @@ function apiRequest(options = {}) {
       success(response) {
         const { statusCode, data: body } = response;
 
-        if (shouldUseFallback(statusCode, body) && config.mockFallback) {
+        if (shouldUseFallback(statusCode, body) && allowFallback) {
           resolveFallback(fallback).then(resolve).catch(reject);
           return;
         }
@@ -96,7 +101,7 @@ function apiRequest(options = {}) {
         resolve(normalizeResponseBody(body));
       },
       fail(error) {
-        if (config.mockFallback) {
+        if (allowFallback) {
           resolveFallback(fallback).then(resolve).catch(reject);
           return;
         }

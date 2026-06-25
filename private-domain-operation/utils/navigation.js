@@ -160,9 +160,10 @@ function toLiveEdit(liveId = "") {
   });
 }
 
-function toWebViewer(url = "", title = "") {
+function toWebViewer(liveId = "", mode = "live", title = "") {
   return buildPageUrl("/pages/web-viewer/web-viewer", {
-    url: decodeValue(url),
+    liveId: decodeValue(liveId),
+    mode: resolveLiveMode(mode || "live"),
     title: decodeValue(title)
   });
 }

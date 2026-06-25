@@ -3,15 +3,20 @@
     <view class="web-viewer-back" bindtap="onBackTap">‹</view>
     <view class="web-viewer-nav-copy">
       <text class="web-viewer-nav-title">{{title}}</text>
-      <text class="web-viewer-nav-subtitle">{{valid ? '正在打开 HTTPS 链接' : '链接不可内嵌打开'}}</text>
+      <text class="web-viewer-nav-subtitle">{{checkingAccess ? '正在校验观看权限' : valid ? '正在打开 HTTPS 链接' : '链接不可内嵌打开'}}</text>
     </view>
   </view>
 
-  <web-view wx:if="{{valid && !loadFailed}}" src="{{url}}" binderror="onWebViewError"></web-view>
+  <view wx:if="{{checkingAccess}}" class="web-viewer-fallback card-surface">
+    <text class="web-viewer-title">正在校验观看权限</text>
+    <text class="web-viewer-desc">请稍候</text>
+  </view>
 
-  <view wx:if="{{!valid || loadFailed}}" class="web-viewer-fallback card-surface">
+  <web-view wx:elif="{{valid && !loadFailed}}" src="{{url}}" binderror="onWebViewError"></web-view>
+
+  <view wx:else class="web-viewer-fallback card-surface">
     <text class="web-viewer-title">链接暂不可打开</text>
-    <text class="web-viewer-desc">小程序 web-view 仅支持符合要求的 HTTPS 业务域名链接，可先复制链接使用。</text>
-    <view class="web-viewer-copy" bindtap="onCopyTap">复制链接</view>
+    <text class="web-viewer-desc">{{accessReason || '小程序 web-view 仅支持符合要求的 HTTPS 业务域名链接，可先复制链接使用。'}}</text>
+    <view wx:if="{{url}}" class="web-viewer-copy" bindtap="onCopyTap">复制链接</view>
   </view>
 </view>

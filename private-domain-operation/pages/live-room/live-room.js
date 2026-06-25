@@ -64,7 +64,7 @@ Page({
         });
         if (canUseWebView(decision.targetUrl)) {
           openPageEntry({
-            url: toWebViewer(decision.targetUrl, this.data.title),
+            url: toWebViewer(this.data.liveId, this.data.mode, this.data.title),
             method: "navigateTo"
           }, "打开直播");
         }
