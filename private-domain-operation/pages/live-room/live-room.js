@@ -43,8 +43,11 @@ Page({
     } catch (error) {
       this.setData({
         checkingAccess: false,
+        accessAllowed: false,
         accessDenied: true,
-        accessReason: (error && error.message) || "直播间加载失败"
+        accessReason: (error && error.message) || "直播间加载失败",
+        targetUrl: "",
+        requiredAccess: null
       });
     }
   },
@@ -73,13 +76,17 @@ Page({
         accessAllowed: false,
         accessDenied: true,
         accessReason: (decision && decision.reason) || "当前账号暂无观看权限",
+        targetUrl: "",
         requiredAccess: decision && decision.requiredAccess ? decision.requiredAccess : null
       });
     } catch (error) {
       this.setData({
         checkingAccess: false,
+        accessAllowed: false,
         accessDenied: true,
-        accessReason: (error && error.message) || "观看权限校验失败"
+        accessReason: (error && error.message) || "观看权限校验失败",
+        targetUrl: "",
+        requiredAccess: null
       });
     }
   },
