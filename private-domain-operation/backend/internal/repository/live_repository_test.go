@@ -25,6 +25,13 @@ func TestLiveRepositoryListsAndLoadsSeedLiveEvents(t *testing.T) {
 	if len(events) != 4 {
 		t.Fatalf("events = %d, want 4", len(events))
 	}
+	liveStatusEvents, err := repo.ListLiveEvents(ctx, domain.LiveListFilter{Status: "live"})
+	if err != nil {
+		t.Fatalf("ListLiveEvents live filter returned error: %v", err)
+	}
+	if len(liveStatusEvents) != 4 {
+		t.Fatalf("live filter events = %d, want 4", len(liveStatusEvents))
+	}
 	if events[0].PublicID == "" {
 		t.Fatalf("first event PublicID is empty")
 	}
@@ -33,6 +40,9 @@ func TestLiveRepositoryListsAndLoadsSeedLiveEvents(t *testing.T) {
 	}
 	if events[0].Status == "" {
 		t.Fatalf("first event Status is empty")
+	}
+	for _, event := range events {
+		assertRawLiveDisplayFieldsEmpty(t, event)
 	}
 
 	detail, err := repo.GetLiveDetail(ctx, 1)
@@ -48,6 +58,7 @@ func TestLiveRepositoryListsAndLoadsSeedLiveEvents(t *testing.T) {
 	if detail.RequiredAccess.Type != "course" {
 		t.Fatalf("detail required access type = %q", detail.RequiredAccess.Type)
 	}
+	assertRawLiveDisplayFieldsEmpty(t, detail.LiveEvent)
 }
 
 func TestLiveRepositorySavesMerchantLiveEvent(t *testing.T) {
@@ -77,6 +88,24 @@ func TestLiveRepositorySavesMerchantLiveEvent(t *testing.T) {
 	}
 	if created.ID == 0 {
 		t.Fatalf("created ID = 0")
+	}
+	if created.Visibility != "all" {
+		t.Fatalf("created visibility = %q", created.Visibility)
+	}
+	if created.VisibilityRefID != 0 {
+		t.Fatalf("created visibility ref id = %d", created.VisibilityRefID)
+	}
+
+	var visibilityRefID sql.NullInt64
+	if err := conn.QueryRowContext(ctx, `
+		SELECT visibility_ref_id
+		FROM live_events
+		WHERE id = ?
+	`, created.ID).Scan(&visibilityRefID); err != nil {
+		t.Fatalf("created visibility ref query returned error: %v", err)
+	}
+	if visibilityRefID.Valid {
+		t.Fatalf("created visibility_ref_id valid = true, want NULL")
 	}
 
 	updated, err := repo.UpdateLiveEvent(ctx, created.ID, domain.LiveEditPayload{
@@ -129,6 +158,25 @@ func TestLiveRepositoryChecksContentAccessGrants(t *testing.T) {
 	}
 	if hasGrant {
 		t.Fatalf("user 999 course grant = true, want false")
+	}
+
+	if _, err := conn.ExecContext(ctx, `
+		INSERT INTO content_access_grants (
+			user_id, access_type, access_ref_id, source_type, source_id, starts_at, expires_at, status
+		)
+		VALUES (
+			2, 'course', 4, 'test', 'rfc3339-course-4',
+			'2000-01-01T00:00:00+08:00', '2999-01-01T00:00:00+08:00', 'active'
+		)
+	`); err != nil {
+		t.Fatalf("insert RFC3339 grant returned error: %v", err)
+	}
+	hasGrant, err = repo.HasActiveGrant(ctx, 2, "course", 4)
+	if err != nil {
+		t.Fatalf("HasActiveGrant RFC3339 grant returned error: %v", err)
+	}
+	if !hasGrant {
+		t.Fatalf("RFC3339 grant = false, want true")
 	}
 
 	if _, err := conn.ExecContext(ctx, `
@@ -216,6 +264,23 @@ func testLiveDB(t *testing.T, ctx context.Context) *sql.DB {
 		t.Fatalf("SeedMinimal returned error: %v", err)
 	}
 	return conn
+}
+
+func assertRawLiveDisplayFieldsEmpty(t *testing.T, event domain.LiveEvent) {
+	t.Helper()
+
+	if event.EffectiveStatus != "" {
+		t.Fatalf("event %d EffectiveStatus = %q, want empty", event.ID, event.EffectiveStatus)
+	}
+	if event.StatusLabel != "" {
+		t.Fatalf("event %d StatusLabel = %q, want empty", event.ID, event.StatusLabel)
+	}
+	if event.Schedule != "" {
+		t.Fatalf("event %d Schedule = %q, want empty", event.ID, event.Schedule)
+	}
+	if event.ActionText != "" {
+		t.Fatalf("event %d ActionText = %q, want empty", event.ID, event.ActionText)
+	}
 }
 
 func findLiveAccessOption(options []domain.LiveAccessOption, optionType string, id int64) (domain.LiveAccessOption, bool) {
