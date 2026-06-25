@@ -78,6 +78,59 @@ func TestSeedMinimalDataIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestSeedMinimalCreatesLiveEventsAndAccessGrants(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	conn, err := Open(filepath.Join(t.TempDir(), "pdo.db"))
+	if err != nil {
+		t.Fatalf("Open returned error: %v", err)
+	}
+	defer conn.Close()
+
+	if err := Migrate(ctx, conn, filepath.Join("..", "..", "migrations")); err != nil {
+		t.Fatalf("Migrate returned error: %v", err)
+	}
+	if err := SeedMinimal(ctx, conn, SeedOptions{}); err != nil {
+		t.Fatalf("first seed returned error: %v", err)
+	}
+	if err := SeedMinimal(ctx, conn, SeedOptions{}); err != nil {
+		t.Fatalf("second seed returned error: %v", err)
+	}
+
+	var liveCount int
+	if err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM live_events").Scan(&liveCount); err != nil {
+		t.Fatalf("live count failed: %v", err)
+	}
+	if liveCount != 4 {
+		t.Fatalf("live count = %d, want 4", liveCount)
+	}
+
+	var courseGrantCount int
+	if err := conn.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM content_access_grants
+		WHERE user_id = 2 AND access_type = 'course' AND access_ref_id = 1 AND status = 'active'
+	`).Scan(&courseGrantCount); err != nil {
+		t.Fatalf("course grant count failed: %v", err)
+	}
+	if courseGrantCount != 1 {
+		t.Fatalf("course grant count = %d, want 1", courseGrantCount)
+	}
+
+	var memberGrantCount int
+	if err := conn.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM content_access_grants
+		WHERE user_id = 2 AND access_type = 'member' AND access_ref_id = 1 AND status = 'active'
+	`).Scan(&memberGrantCount); err != nil {
+		t.Fatalf("member grant count failed: %v", err)
+	}
+	if memberGrantCount != 1 {
+		t.Fatalf("member grant count = %d, want 1", memberGrantCount)
+	}
+}
+
 func TestSeedMinimalRefreshesSeedUserOpenIDs(t *testing.T) {
 	t.Parallel()
 

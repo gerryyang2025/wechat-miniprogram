@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS operation_slots;
+DROP TABLE IF EXISTS content_access_grants;
 DROP TABLE IF EXISTS live_access_rules;
 DROP TABLE IF EXISTS live_events;
 DROP TABLE IF EXISTS bootcamp_tasks;

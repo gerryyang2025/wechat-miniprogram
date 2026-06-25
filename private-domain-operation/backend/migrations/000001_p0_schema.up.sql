@@ -193,11 +193,18 @@ CREATE TABLE live_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   merchant_id INTEGER NOT NULL,
   title TEXT NOT NULL,
+  summary TEXT NOT NULL DEFAULT '',
   speaker TEXT NOT NULL DEFAULT '',
   cover_url TEXT NOT NULL DEFAULT '',
   start_at TEXT,
   end_at TEXT,
   status TEXT NOT NULL DEFAULT 'upcoming',
+  status_override TEXT NOT NULL DEFAULT '',
+  live_url TEXT NOT NULL DEFAULT '',
+  replay_url TEXT NOT NULL DEFAULT '',
+  visibility TEXT NOT NULL DEFAULT 'all',
+  visibility_ref_id INTEGER,
+  replay_enabled INTEGER NOT NULL DEFAULT 0,
   replay_media_id INTEGER,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -207,6 +214,8 @@ CREATE TABLE live_events (
 
 CREATE INDEX idx_live_events_merchant_status ON live_events(merchant_id, status);
 CREATE INDEX idx_live_events_start_at ON live_events(start_at);
+CREATE INDEX idx_live_events_visibility ON live_events(visibility, visibility_ref_id);
+CREATE INDEX idx_live_events_status_override ON live_events(status_override);
 
 CREATE TABLE live_access_rules (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,6 +230,28 @@ CREATE TABLE live_access_rules (
 
 CREATE INDEX idx_live_access_rules_event_status ON live_access_rules(live_event_id, status);
 CREATE INDEX idx_live_access_rules_rule_ref ON live_access_rules(rule_type, ref_id);
+
+CREATE TABLE content_access_grants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  access_type TEXT NOT NULL,
+  access_ref_id INTEGER NOT NULL,
+  source_type TEXT NOT NULL DEFAULT 'seed',
+  source_id TEXT NOT NULL DEFAULT '',
+  starts_at TEXT,
+  expires_at TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_content_access_grants_user FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE UNIQUE INDEX uk_content_access_grants_unique
+  ON content_access_grants(user_id, access_type, access_ref_id, source_type, source_id);
+CREATE INDEX idx_content_access_grants_lookup
+  ON content_access_grants(user_id, access_type, access_ref_id, status);
+CREATE INDEX idx_content_access_grants_source
+  ON content_access_grants(source_type, source_id);
 
 CREATE TABLE operation_slots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

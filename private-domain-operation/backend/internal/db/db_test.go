@@ -31,6 +31,14 @@ func TestOpenAndMigrateCreatesCoreTables(t *testing.T) {
 	assertTableExists(t, conn, "products")
 	assertTableExists(t, conn, "course_lessons")
 	assertTableExists(t, conn, "learning_progress")
+	assertTableExists(t, conn, "content_access_grants")
+	assertColumnExists(t, conn, "live_events", "summary")
+	assertColumnExists(t, conn, "live_events", "status_override")
+	assertColumnExists(t, conn, "live_events", "live_url")
+	assertColumnExists(t, conn, "live_events", "replay_url")
+	assertColumnExists(t, conn, "live_events", "visibility")
+	assertColumnExists(t, conn, "live_events", "visibility_ref_id")
+	assertColumnExists(t, conn, "live_events", "replay_enabled")
 	assertMigrationRecorded(t, conn, "000001_p0_schema.up.sql")
 }
 
@@ -86,6 +94,35 @@ func assertTableExists(t *testing.T, conn *sql.DB, name string) {
 	if count != 1 {
 		t.Fatalf("table %s does not exist", name)
 	}
+}
+
+func assertColumnExists(t *testing.T, conn *sql.DB, table string, column string) {
+	t.Helper()
+
+	rows, err := conn.Query("PRAGMA table_info(" + table + ")")
+	if err != nil {
+		t.Fatalf("column check for %s.%s failed: %v", table, column, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name string
+		var typ string
+		var notNull int
+		var defaultValue sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &defaultValue, &pk); err != nil {
+			t.Fatalf("scan table_info for %s failed: %v", table, err)
+		}
+		if name == column {
+			return
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("table_info rows for %s failed: %v", table, err)
+	}
+	t.Fatalf("column %s.%s does not exist", table, column)
 }
 
 func assertMigrationRecorded(t *testing.T, conn *sql.DB, name string) {
