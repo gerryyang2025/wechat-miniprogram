@@ -44,7 +44,7 @@ func (s *LiveService) ListLiveEvents(ctx context.Context, status string) ([]doma
 	}
 
 	normalizedStatus := normalizeLiveStatusFilter(status)
-	events, err := s.lives.ListLiveEvents(ctx, domain.LiveListFilter{Status: normalizedStatus})
+	events, err := s.lives.ListLiveEvents(ctx, domain.LiveListFilter{Status: "all"})
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,8 @@ func (s *LiveService) CheckAccess(ctx context.Context, userID int64, liveID int6
 	if normalizedMode == "replay" {
 		targetURL = detail.ReplayURL
 	}
-	if strings.TrimSpace(targetURL) == "" {
+	targetURL = strings.TrimSpace(targetURL)
+	if targetURL == "" || !strings.HasPrefix(targetURL, "https://") {
 		return domain.LiveAccessDecision{
 			Allowed: false,
 			Mode:    normalizedMode,
@@ -187,7 +188,7 @@ func validateLiveEdit(payload domain.LiveEditPayload) error {
 		return fmt.Errorf("%w: end time must be after start time", ErrLiveValidation)
 	}
 
-	statusOverride := strings.TrimSpace(payload.StatusOverride)
+	statusOverride := payload.StatusOverride
 	if statusOverride != "" && !isValidLiveStatus(statusOverride) {
 		return fmt.Errorf("%w: status override is invalid", ErrLiveValidation)
 	}
@@ -202,7 +203,7 @@ func validateLiveEdit(payload domain.LiveEditPayload) error {
 		return fmt.Errorf("%w: replay url must use https", ErrLiveValidation)
 	}
 
-	visibility := strings.ToLower(strings.TrimSpace(payload.Visibility))
+	visibility := payload.Visibility
 	if !isValidLiveVisibility(visibility) {
 		return fmt.Errorf("%w: visibility is invalid", ErrLiveValidation)
 	}
@@ -214,7 +215,7 @@ func validateLiveEdit(payload domain.LiveEditPayload) error {
 }
 
 func effectiveLiveStatus(event domain.LiveEvent, now time.Time) string {
-	statusOverride := strings.TrimSpace(event.StatusOverride)
+	statusOverride := event.StatusOverride
 	if statusOverride != "" && isValidLiveStatus(statusOverride) {
 		return statusOverride
 	}
@@ -256,10 +257,13 @@ func (s *LiveService) currentTime() time.Time {
 
 func normalizeLiveStatusFilter(status string) string {
 	status = strings.ToLower(strings.TrimSpace(status))
-	if status == "" {
+	if status == "" || status == "all" {
 		return "all"
 	}
-	return status
+	if isValidLiveStatus(status) {
+		return status
+	}
+	return "all"
 }
 
 func normalizeLiveAccessMode(mode string, effectiveStatus string) string {

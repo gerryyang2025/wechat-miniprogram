@@ -54,6 +54,13 @@ func TestValidateLiveEditRejectsInvalidPayloads(t *testing.T) {
 			wantError: true,
 		},
 		{
+			name: "non canonical status",
+			mutate: func(payload *domain.LiveEditPayload) {
+				payload.StatusOverride = "Live "
+			},
+			wantError: true,
+		},
+		{
 			name: "http cover url",
 			mutate: func(payload *domain.LiveEditPayload) {
 				payload.CoverURL = "http://media.example.com/cover.jpg"
@@ -78,6 +85,14 @@ func TestValidateLiveEditRejectsInvalidPayloads(t *testing.T) {
 			name: "invalid visibility",
 			mutate: func(payload *domain.LiveEditPayload) {
 				payload.Visibility = "vip"
+			},
+			wantError: true,
+		},
+		{
+			name: "non canonical visibility",
+			mutate: func(payload *domain.LiveEditPayload) {
+				payload.Visibility = "Course "
+				payload.VisibilityRefID = 7
 			},
 			wantError: true,
 		},
@@ -234,8 +249,8 @@ func TestLiveServiceListDecoratesAndFiltersByEffectiveStatus(t *testing.T) {
 	if len(liveEvents) != 1 || liveEvents[0].ID != 2 {
 		t.Fatalf("live events = %#v, want only event 2", liveEvents)
 	}
-	if store.listFilters[1].Status != "live" {
-		t.Fatalf("store live filter status = %q, want live", store.listFilters[1].Status)
+	if store.listFilters[1].Status != "all" {
+		t.Fatalf("store live filter status = %q, want all", store.listFilters[1].Status)
 	}
 
 	replayEvents, err := service.ListLiveEvents(ctx, "replay")
@@ -244,6 +259,20 @@ func TestLiveServiceListDecoratesAndFiltersByEffectiveStatus(t *testing.T) {
 	}
 	if len(replayEvents) != 1 || replayEvents[0].ID != 3 {
 		t.Fatalf("replay events = %#v, want only event 3", replayEvents)
+	}
+	if store.listFilters[2].Status != "all" {
+		t.Fatalf("store replay filter status = %q, want all", store.listFilters[2].Status)
+	}
+
+	unknownEvents, err := service.ListLiveEvents(ctx, "archived")
+	if err != nil {
+		t.Fatalf("ListLiveEvents unknown returned error: %v", err)
+	}
+	if len(unknownEvents) != 3 {
+		t.Fatalf("unknown status events length = %d, want 3", len(unknownEvents))
+	}
+	if store.listFilters[3].Status != "all" {
+		t.Fatalf("store unknown filter status = %q, want all", store.listFilters[3].Status)
 	}
 }
 
@@ -314,7 +343,7 @@ func TestLiveAccessDecisionHandlesPublicReplayStateAndMissingLinks(t *testing.T)
 			Title:      "Public live",
 			StartAt:    "2026-06-25T20:00:00+08:00",
 			EndAt:      "2026-06-25T21:00:00+08:00",
-			LiveURL:    "https://media.example.com/public-live.m3u8",
+			LiveURL:    " https://media.example.com/public-live.m3u8 ",
 			Visibility: "all",
 		}},
 	}
@@ -325,6 +354,9 @@ func TestLiveAccessDecisionHandlesPublicReplayStateAndMissingLinks(t *testing.T)
 	}
 	if !decision.Allowed || decision.Mode != "live" {
 		t.Fatalf("public decision = %#v, want allowed live", decision)
+	}
+	if decision.TargetURL != "https://media.example.com/public-live.m3u8" {
+		t.Fatalf("public target url = %q, want trimmed https url", decision.TargetURL)
 	}
 	if len(publicStore.grantCalls) != 0 {
 		t.Fatalf("public grant calls = %d, want 0", len(publicStore.grantCalls))
@@ -385,6 +417,25 @@ func TestLiveAccessDecisionHandlesPublicReplayStateAndMissingLinks(t *testing.T)
 	}
 	if decision.Allowed || decision.Reason != "直播链接暂未配置" {
 		t.Fatalf("missing url decision = %#v, want link missing denial", decision)
+	}
+
+	httpURLStore := &fakeLiveStore{
+		detail: domain.LiveDetail{LiveEvent: domain.LiveEvent{
+			ID:         25,
+			Title:      "HTTP link",
+			StartAt:    "2026-06-25T20:00:00+08:00",
+			EndAt:      "2026-06-25T21:00:00+08:00",
+			LiveURL:    "http://media.example.com/live.m3u8",
+			Visibility: "all",
+		}},
+	}
+	httpURLService := liveServiceAt(t, httpURLStore, "2026-06-25T20:30:00+08:00")
+	decision, err = httpURLService.CheckAccess(ctx, 202, 25, "live")
+	if err != nil {
+		t.Fatalf("CheckAccess http url returned error: %v", err)
+	}
+	if decision.Allowed || decision.Reason != "直播链接暂未配置" {
+		t.Fatalf("http url decision = %#v, want link missing denial", decision)
 	}
 }
 
