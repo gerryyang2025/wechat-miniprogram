@@ -14,7 +14,8 @@ Page({
   data: {
     title: "直播",
     url: "",
-    valid: false
+    valid: false,
+    loadFailed: false
   },
 
   onLoad(options = {}) {
@@ -22,7 +23,14 @@ Page({
     this.setData({
       title: safeDecode(options.title) || "直播",
       url,
-      valid: isHttpsUrl(url)
+      valid: isHttpsUrl(url),
+      loadFailed: false
+    });
+  },
+
+  onWebViewError() {
+    this.setData({
+      loadFailed: true
     });
   },
 
