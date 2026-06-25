@@ -293,7 +293,7 @@ func handleHome(deps Dependencies) gin.HandlerFunc {
 			},
 			"featureCards": []gin.H{
 				{"id": "feature-1", "type": "camp", "eyebrow": "训练营推荐", "title": "7 天私域增长训练营", "desc": "每天一个内容动作，当前 Day 2 / 7 聚焦朋友圈内容拆解。", "action": "查看详情", "entry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")},
-				{"id": "feature-2", "type": "live", "eyebrow": "直播推荐", "title": "今晚 20:00 私域运营直播答疑", "desc": "90 分钟直播答疑，聚焦内容变现 / 学员转化 / 日常运营问题。", "action": "预约提醒", "entry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=upcoming")},
+				{"id": "feature-2", "type": "live", "eyebrow": "直播推荐", "title": "今晚 20:00 私域运营直播答疑", "desc": "90 分钟直播答疑，聚焦内容变现 / 学员转化 / 日常运营问题。", "action": "预约提醒", "entry": pageEntry("/pages/live-detail/live-detail?liveId=1&mode=upcoming")},
 				{"id": "feature-3", "type": "member", "eyebrow": "会员推荐", "title": "年度会员计划", "desc": "解锁录播课、训练营精选内容和直播回放权益。", "action": "了解权益", "entry": pageEntry("/pages/member-rights/member-rights?source=home")},
 			},
 		})
@@ -709,7 +709,7 @@ func handleLearning(deps Dependencies) gin.HandlerFunc {
 			learningCourse("learn-wechat-game", "微信小游戏开发", "indigo", "player-wechat-game", "course-wechat-game"),
 			learningCourse("learn-1", "个人 IP 内容变现实战课", "purple", "player-ip-course", "course-1"),
 			{"id": "learn-2", "type": "训练营", "title": "7天增长营", "progress": "Day2/7", "lastLabel": "今日任务", "lastText": "朋友圈拆解", "theme": "blue", "actionLabel": "打卡", "detailEntry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth"), "continueEntry": pageEntry("/pages/bootcamp-detail/bootcamp-detail?campId=camp-7day-growth")},
-			{"id": "learn-3", "type": "直播回放", "title": "直播答疑回放", "progress": "23:18/90:00", "lastLabel": "重点片段", "lastText": "社群转化节奏", "theme": "indigo", "actionLabel": "回看", "detailEntry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=replay"), "continueEntry": pageEntry("/pages/live-detail/live-detail?liveId=live-private-domain-qa&mode=replay")},
+			{"id": "learn-3", "type": "直播回放", "title": "直播答疑回放", "progress": "23:18/90:00", "lastLabel": "重点片段", "lastText": "社群转化节奏", "theme": "indigo", "actionLabel": "回看", "detailEntry": pageEntry("/pages/live-detail/live-detail?liveId=1&mode=replay"), "continueEntry": pageEntry("/pages/live-detail/live-detail?liveId=1&mode=replay")},
 		}
 		if course, loaded := loadSeedCourse(c, deps); loaded {
 			learningList[0] = learningCourseFromDomain(course)

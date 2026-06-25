@@ -44,6 +44,31 @@ func TestHomeUsesSeedCourse(t *testing.T) {
 	}
 }
 
+func TestHomeAndLearningUseNumericLiveEntryIDs(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	for _, path := range []string{"/api/v1/home", "/api/v1/learning"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		resp := httptest.NewRecorder()
+
+		router.ServeHTTP(resp, req)
+
+		if resp.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body = %s", path, resp.Code, resp.Body.String())
+		}
+		body := resp.Body.String()
+		if strings.Contains(body, "liveId=live-private-domain-qa") {
+			t.Fatalf("%s still contains string live ID: %s", path, body)
+		}
+		if !strings.Contains(body, "liveId=1") {
+			t.Fatalf("%s does not contain numeric seed live ID: %s", path, body)
+		}
+	}
+}
+
 func TestSeedProgressReturnsPersistedSeconds(t *testing.T) {
 	t.Parallel()
 
@@ -563,6 +588,124 @@ func TestLiveAccessCheckRequiresLogin(t *testing.T) {
 	assertErrorCode(t, resp, http.StatusUnauthorized, 40101)
 }
 
+func TestLivePublicResponsesDoNotExposeStreamURLs(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	for _, tc := range []struct {
+		name string
+		path string
+	}{
+		{name: "list", path: "/api/v1/live-events?status=all"},
+		{name: "detail", path: "/api/v1/live-events/2?mode=live"},
+		{name: "room", path: "/api/v1/live-events/2/room?mode=live"},
+	} {
+		req := httptest.NewRequest(http.MethodGet, tc.path, nil)
+		resp := httptest.NewRecorder()
+
+		router.ServeHTTP(resp, req)
+
+		if resp.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body = %s", tc.name, resp.Code, resp.Body.String())
+		}
+		assertLiveResponseOmitsStreams(t, responseDataRaw(t, resp))
+	}
+}
+
+func TestLiveAccessDeniedOmitsTargetURL(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testTokenFor(t, domain.UserSession{
+		ID:       "303",
+		OpenID:   "openid-no-live-grants",
+		Nickname: "No Grants",
+		Roles:    []string{"student"},
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/live-events/2/access-check", strings.NewReader(`{"mode":"live"}`))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", resp.Code, resp.Body.String())
+	}
+	data := responseDataRaw(t, resp)
+	if strings.Contains(string(data), "targetUrl") {
+		t.Fatalf("denied access response exposes targetUrl: %s", string(data))
+	}
+	var body struct {
+		Allowed bool `json:"allowed"`
+	}
+	if err := json.Unmarshal(data, &body); err != nil {
+		t.Fatalf("denied access data decode failed: %v data = %s", err, string(data))
+	}
+	if body.Allowed {
+		t.Fatalf("denied access allowed = true; data = %s", string(data))
+	}
+}
+
+func TestLiveRouteWithoutDependencyReturnsServiceUnavailable(t *testing.T) {
+	t.Parallel()
+
+	auth := service.NewAuthService(service.AuthConfig{
+		TokenSecret:              "test-secret",
+		AllowInsecureTokenSecret: true,
+	})
+	router := NewRouterWithDependencies(Dependencies{Auth: auth})
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/live-events", nil)
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	assertErrorCode(t, resp, http.StatusInternalServerError, 50004)
+}
+
+func TestMerchantLiveCreateUsesAuthenticatedMerchantMapping(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+	insertMerchantMapping(t, conn, 2, 3)
+
+	token := testTokenFor(t, domain.UserSession{
+		ID:       "3",
+		OpenID:   "mock-openid-merchant",
+		Nickname: "Merchant Two",
+		Roles:    []string{"merchant"},
+	})
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(liveCreateJSON("商家二直播")))
+	create.Header.Set("Authorization", "Bearer "+token)
+	create.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, create)
+
+	if createResp.Code != http.StatusOK {
+		t.Fatalf("POST create status = %d body = %s", createResp.Code, createResp.Body.String())
+	}
+	var created struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("create JSON decode failed: %v body = %s", err, createResp.Body.String())
+	}
+
+	var merchantID int64
+	if err := conn.QueryRowContext(context.Background(), `SELECT merchant_id FROM live_events WHERE id = ?`, created.Data.ID).Scan(&merchantID); err != nil {
+		t.Fatalf("created merchant query returned error: %v", err)
+	}
+	if merchantID != 2 {
+		t.Fatalf("created merchant_id = %d, want 2", merchantID)
+	}
+}
+
 func TestMerchantLiveCreateEditAndValidation(t *testing.T) {
 	t.Parallel()
 
@@ -647,6 +790,121 @@ func TestMerchantLiveCreateEditAndValidation(t *testing.T) {
 	router.ServeHTTP(putResp, put)
 
 	assertErrorCode(t, putResp, http.StatusBadRequest, 40004)
+}
+
+func TestMerchantLiveListEditAndUpdateAreScoped(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+	otherLiveID := insertOtherMerchantLiveEvent(t, conn)
+
+	token := testMerchantToken(t)
+	list := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/live-events?status=all", nil)
+	list.Header.Set("Authorization", "Bearer "+token)
+	listResp := httptest.NewRecorder()
+
+	router.ServeHTTP(listResp, list)
+
+	if listResp.Code != http.StatusOK {
+		t.Fatalf("GET list status = %d body = %s", listResp.Code, listResp.Body.String())
+	}
+	if strings.Contains(listResp.Body.String(), "其他商家直播") {
+		t.Fatalf("merchant list leaked other merchant live: %s", listResp.Body.String())
+	}
+
+	getEdit := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/merchant/live-events/%d/edit", otherLiveID), nil)
+	getEdit.Header.Set("Authorization", "Bearer "+token)
+	getEditResp := httptest.NewRecorder()
+
+	router.ServeHTTP(getEditResp, getEdit)
+
+	assertErrorCode(t, getEditResp, http.StatusNotFound, 40404)
+
+	put := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/merchant/live-events/%d", otherLiveID), strings.NewReader(liveCreateJSON("尝试更新其他商家直播")))
+	put.Header.Set("Authorization", "Bearer "+token)
+	put.Header.Set("Content-Type", "application/json")
+	putResp := httptest.NewRecorder()
+
+	router.ServeHTTP(putResp, put)
+
+	assertErrorCode(t, putResp, http.StatusNotFound, 40404)
+}
+
+func TestMerchantLiveRoutesRequireMerchantMapping(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	token := testTokenFor(t, domain.UserSession{
+		ID:       "303",
+		OpenID:   "mock-openid-merchant",
+		Nickname: "No Mapping",
+		Roles:    []string{"merchant"},
+	})
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/access-options", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	assertErrorCode(t, resp, http.StatusForbidden, 40301)
+}
+
+func TestLiveDetailEscapesTitleInGeneratedEntries(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+
+	title := "直播标题 A&B?x=1"
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/merchant/live-events", strings.NewReader(liveCreateJSON(title)))
+	create.Header.Set("Authorization", "Bearer "+testMerchantToken(t))
+	create.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, create)
+
+	if createResp.Code != http.StatusOK {
+		t.Fatalf("POST create status = %d body = %s", createResp.Code, createResp.Body.String())
+	}
+	var created struct {
+		Data domain.LiveEditPayload `json:"data"`
+	}
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("create JSON decode failed: %v body = %s", err, createResp.Body.String())
+	}
+
+	detail := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/live-events/%d?mode=live", created.Data.ID), nil)
+	detailResp := httptest.NewRecorder()
+
+	router.ServeHTTP(detailResp, detail)
+
+	if detailResp.Code != http.StatusOK {
+		t.Fatalf("GET detail status = %d body = %s", detailResp.Code, detailResp.Body.String())
+	}
+	var body struct {
+		Data struct {
+			PrimaryEntry struct {
+				URL string `json:"url"`
+			} `json:"primaryEntry"`
+			SecondaryEntry struct {
+				URL string `json:"url"`
+			} `json:"secondaryEntry"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(detailResp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("detail JSON decode failed: %v body = %s", err, detailResp.Body.String())
+	}
+	for _, gotURL := range []string{body.Data.PrimaryEntry.URL, body.Data.SecondaryEntry.URL} {
+		if strings.Contains(gotURL, "title="+title) {
+			t.Fatalf("entry URL contains raw title delimiters: %s", gotURL)
+		}
+		if !strings.Contains(gotURL, "title=%E7%9B%B4%E6%92%AD%E6%A0%87%E9%A2%98+A%26B%3Fx%3D1") {
+			t.Fatalf("entry URL does not contain escaped title: %s", gotURL)
+		}
+	}
 }
 
 func TestLiveAPIErrorBusinessCodes(t *testing.T) {
@@ -747,6 +1005,100 @@ func assertErrorCode(t *testing.T, resp *httptest.ResponseRecorder, status int, 
 	if body.Code != code {
 		t.Fatalf("code = %d, want %d; body = %s", body.Code, code, resp.Body.String())
 	}
+}
+
+func responseDataRaw(t *testing.T, resp *httptest.ResponseRecorder) json.RawMessage {
+	t.Helper()
+
+	var body struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("response JSON decode failed: %v body = %s", err, resp.Body.String())
+	}
+	return body.Data
+}
+
+func assertLiveResponseOmitsStreams(t *testing.T, data json.RawMessage) {
+	t.Helper()
+
+	raw := string(data)
+	for _, forbidden := range []string{
+		"targetUrl",
+		"https://media.example.com/live/private-domain-qa.m3u8",
+		"https://media.example.com/live/content-clinic.m3u8",
+		"https://media.example.com/live/bootcamp-review.m3u8",
+		"https://media.example.com/replay/private-domain-qa.mp4",
+		"https://media.example.com/replay/bootcamp-review.mp4",
+	} {
+		if strings.Contains(raw, forbidden) {
+			t.Fatalf("public live response exposes %q: %s", forbidden, raw)
+		}
+	}
+}
+
+func liveCreateJSON(title string) string {
+	return fmt.Sprintf(`{
+		"title":%q,
+		"summary":"复盘私域转化关键动作。",
+		"speaker":"Gerry",
+		"coverUrl":"https://media.example.com/covers/live/new-session.jpg",
+		"startAt":"2026-06-28T20:00:00+08:00",
+		"endAt":"2026-06-28T21:00:00+08:00",
+		"statusOverride":"upcoming",
+		"liveUrl":"https://media.example.com/live/new-session.m3u8",
+		"replayUrl":"https://media.example.com/replay/new-session.mp4",
+		"visibility":"course",
+		"visibilityRefId":1,
+		"replayEnabled":true
+	}`, title)
+}
+
+func insertMerchantMapping(t *testing.T, conn *sql.DB, merchantID int64, userID int64) {
+	t.Helper()
+
+	ctx := context.Background()
+	if _, err := conn.ExecContext(ctx, `INSERT INTO merchants (id, name, intro, status) VALUES (?, ?, ?, 'active')`, merchantID, fmt.Sprintf("商家 %d", merchantID), "测试商家"); err != nil {
+		t.Fatalf("insert merchant returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO users (id, openid, nickname, status) VALUES (?, ?, ?, 'active')`, userID, fmt.Sprintf("openid-merchant-%d", userID), fmt.Sprintf("商家用户 %d", userID)); err != nil {
+		t.Fatalf("insert merchant user returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO merchant_users (merchant_id, user_id, role_key, status) VALUES (?, ?, 'owner', 'active')`, merchantID, userID); err != nil {
+		t.Fatalf("insert merchant mapping returned error: %v", err)
+	}
+}
+
+func insertOtherMerchantLiveEvent(t *testing.T, conn *sql.DB) int64 {
+	t.Helper()
+
+	ctx := context.Background()
+	if _, err := conn.ExecContext(ctx, `INSERT INTO merchants (id, name, intro, status) VALUES (2, '其他商家', '测试隔离商家', 'active')`); err != nil {
+		t.Fatalf("insert other merchant returned error: %v", err)
+	}
+	result, err := conn.ExecContext(ctx, `
+		INSERT INTO live_events (
+			merchant_id, title, summary, speaker, cover_url, start_at, end_at,
+			status, status_override, live_url, replay_url, visibility, visibility_ref_id, replay_enabled
+		)
+		VALUES (
+			2, '其他商家直播', '不应出现在种子商家列表。', 'Other',
+			'https://media.example.com/covers/live/other.jpg',
+			'2026-06-29T20:00:00+08:00',
+			'2026-06-29T21:00:00+08:00',
+			'upcoming', 'upcoming',
+			'https://media.example.com/live/other.m3u8',
+			'', 'all', NULL, 0
+		)
+	`)
+	if err != nil {
+		t.Fatalf("insert other merchant live returned error: %v", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		t.Fatalf("other merchant live id returned error: %v", err)
+	}
+	return id
 }
 
 func testRouter(t *testing.T) (*gin.Engine, *sql.DB) {

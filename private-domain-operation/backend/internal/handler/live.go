@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -70,6 +71,7 @@ func handleLiveDetail(deps Dependencies) gin.HandlerFunc {
 		if isReplay {
 			roomMode = "replay"
 		}
+		escapedTitle := url.QueryEscape(detail.Title)
 
 		ok(c, gin.H{
 			"live":                  publicLiveDetail(detail),
@@ -87,8 +89,8 @@ func handleLiveDetail(deps Dependencies) gin.HandlerFunc {
 			"posterActionText":      "保存海报",
 			"posterSavingText":      "保存中",
 			"posterMessages":        gin.H{"generatingTitle": "海报生成中", "savingTitle": "正在保存", "successTitle": "海报已保存", "failureTitle": "海报保存失败"},
-			"primaryEntry":          pageEntry("/pages/live-room/live-room?liveId=" + strconv.FormatInt(liveID, 10) + "&mode=" + roomMode + "&title=" + detail.Title),
-			"secondaryEntry":        pageEntry("/pages/consultation/consultation?scene=live&title=" + detail.Title),
+			"primaryEntry":          pageEntry("/pages/live-room/live-room?liveId=" + strconv.FormatInt(liveID, 10) + "&mode=" + roomMode + "&title=" + escapedTitle),
+			"secondaryEntry":        pageEntry("/pages/consultation/consultation?scene=live&title=" + escapedTitle),
 		})
 	}
 }
@@ -223,6 +225,11 @@ func handleMerchantLiveEvents(deps Dependencies) gin.HandlerFunc {
 			return
 		}
 
+		merchantID, scoped := merchantIDForLiveRequest(c, lives)
+		if !scoped {
+			return
+		}
+
 		status := c.DefaultQuery("status", "all")
 		events, err := lives.ListLiveEvents(c.Request.Context(), status)
 		if err != nil {
@@ -232,6 +239,9 @@ func handleMerchantLiveEvents(deps Dependencies) gin.HandlerFunc {
 
 		items := make([]gin.H, 0, len(events))
 		for _, event := range events {
+			if event.MerchantID != merchantID {
+				continue
+			}
 			items = append(items, merchantLiveListItem(event))
 		}
 
@@ -252,13 +262,18 @@ func handleMerchantLiveCreate(deps Dependencies) gin.HandlerFunc {
 			return
 		}
 
+		merchantID, scoped := merchantIDForLiveRequest(c, lives)
+		if !scoped {
+			return
+		}
+
 		var payload domain.LiveEditPayload
 		if err := c.ShouldBindJSON(&payload); err != nil {
 			errorJSON(c, http.StatusBadRequest, 40002, "invalid live edit request")
 			return
 		}
 
-		saved, err := lives.CreateLiveEvent(c.Request.Context(), 1, payload)
+		saved, err := lives.CreateLiveEvent(c.Request.Context(), merchantID, payload)
 		if err != nil {
 			writeLiveSaveError(c, err)
 			return
@@ -277,6 +292,14 @@ func handleMerchantLiveEdit(deps Dependencies) gin.HandlerFunc {
 
 		liveID, valid := parseLiveIDParam(c)
 		if !valid {
+			return
+		}
+
+		merchantID, scoped := merchantIDForLiveRequest(c, lives)
+		if !scoped {
+			return
+		}
+		if _, owned := loadMerchantLiveDetail(c, lives, liveID, merchantID); !owned {
 			return
 		}
 
@@ -299,6 +322,14 @@ func handleMerchantLiveUpdate(deps Dependencies) gin.HandlerFunc {
 
 		liveID, valid := parseLiveIDParam(c)
 		if !valid {
+			return
+		}
+
+		merchantID, scoped := merchantIDForLiveRequest(c, lives)
+		if !scoped {
+			return
+		}
+		if _, owned := loadMerchantLiveDetail(c, lives, liveID, merchantID); !owned {
 			return
 		}
 
@@ -326,6 +357,10 @@ func handleMerchantAccessOptions(deps Dependencies) gin.HandlerFunc {
 			return
 		}
 
+		if _, scoped := merchantIDForLiveRequest(c, lives); !scoped {
+			return
+		}
+
 		options, err := lives.GetAccessOptions(c.Request.Context())
 		if err != nil {
 			writeLiveLoadError(c, err)
@@ -342,6 +377,33 @@ func liveServiceOrError(c *gin.Context, deps Dependencies) (*service.LiveService
 		return nil, false
 	}
 	return deps.Live, true
+}
+
+func merchantIDForLiveRequest(c *gin.Context, lives *service.LiveService) (int64, bool) {
+	userID, ok := currentDBUserID(c)
+	if !ok {
+		return 0, false
+	}
+
+	merchantID, err := lives.MerchantIDForUser(c.Request.Context(), userID)
+	if err != nil {
+		writeMerchantLiveScopeError(c, err)
+		return 0, false
+	}
+	return merchantID, true
+}
+
+func loadMerchantLiveDetail(c *gin.Context, lives *service.LiveService, liveID int64, merchantID int64) (domain.LiveDetail, bool) {
+	detail, err := lives.GetLiveDetail(c.Request.Context(), liveID)
+	if err != nil {
+		writeLiveLoadError(c, err)
+		return domain.LiveDetail{}, false
+	}
+	if detail.MerchantID != merchantID {
+		errorJSON(c, http.StatusNotFound, 40404, "live not found")
+		return domain.LiveDetail{}, false
+	}
+	return detail, true
 }
 
 func parseLiveIDParam(c *gin.Context) (int64, bool) {
@@ -362,6 +424,14 @@ func writeLiveLoadError(c *gin.Context, err error) {
 	default:
 		errorJSON(c, http.StatusInternalServerError, 50004, "live service unavailable")
 	}
+}
+
+func writeMerchantLiveScopeError(c *gin.Context, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		errorJSON(c, http.StatusForbidden, 40301, "merchant role required")
+		return
+	}
+	errorJSON(c, http.StatusInternalServerError, 50004, "live service unavailable")
 }
 
 func writeLiveSaveError(c *gin.Context, err error) {

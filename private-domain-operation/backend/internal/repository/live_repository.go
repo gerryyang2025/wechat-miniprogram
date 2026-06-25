@@ -233,6 +233,21 @@ func (r *LiveRepository) GetAccessOptions(ctx context.Context) (domain.LiveAcces
 	}, nil
 }
 
+func (r *LiveRepository) MerchantIDForUser(ctx context.Context, userID int64) (int64, error) {
+	var merchantID int64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT merchant_id
+		FROM merchant_users
+		WHERE user_id = ? AND status = 'active'
+		ORDER BY id
+		LIMIT 1
+	`, userID).Scan(&merchantID)
+	if err != nil {
+		return 0, err
+	}
+	return merchantID, nil
+}
+
 func (r *LiveRepository) getLiveEvent(ctx context.Context, liveID int64) (domain.LiveEvent, error) {
 	return scanLiveEvent(r.db.QueryRowContext(ctx, `
 		SELECT

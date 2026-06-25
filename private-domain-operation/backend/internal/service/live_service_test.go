@@ -523,6 +523,30 @@ func TestLiveServiceDelegatesEditAndAccessOptions(t *testing.T) {
 	}
 }
 
+func TestLiveServiceMerchantIDForUserDelegatesAndRequiresStore(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	store := &fakeLiveStore{merchantID: 42}
+	service := NewLiveService(store)
+
+	merchantID, err := service.MerchantIDForUser(ctx, 101)
+	if err != nil {
+		t.Fatalf("MerchantIDForUser returned error: %v", err)
+	}
+	if merchantID != 42 {
+		t.Fatalf("merchantID = %d, want 42", merchantID)
+	}
+	if len(store.merchantUserIDs) != 1 || store.merchantUserIDs[0] != 101 {
+		t.Fatalf("merchant user IDs = %#v, want [101]", store.merchantUserIDs)
+	}
+
+	nilService := NewLiveService(nil)
+	if _, err := nilService.MerchantIDForUser(ctx, 101); !errors.Is(err, ErrLiveStoreRequired) {
+		t.Fatalf("MerchantIDForUser nil error = %v, want ErrLiveStoreRequired", err)
+	}
+}
+
 type fakeLiveStore struct {
 	listEvents  []domain.LiveEvent
 	listErr     error
@@ -552,6 +576,10 @@ type fakeLiveStore struct {
 
 	options    domain.LiveAccessOptions
 	optionsErr error
+
+	merchantID      int64
+	merchantIDErr   error
+	merchantUserIDs []int64
 }
 
 type fakeLiveGrantCall struct {
@@ -619,6 +647,14 @@ func (s *fakeLiveStore) GetAccessOptions(ctx context.Context) (domain.LiveAccess
 		return domain.LiveAccessOptions{}, s.optionsErr
 	}
 	return s.options, nil
+}
+
+func (s *fakeLiveStore) MerchantIDForUser(ctx context.Context, userID int64) (int64, error) {
+	s.merchantUserIDs = append(s.merchantUserIDs, userID)
+	if s.merchantIDErr != nil {
+		return 0, s.merchantIDErr
+	}
+	return s.merchantID, nil
 }
 
 func validLiveEditPayload() domain.LiveEditPayload {

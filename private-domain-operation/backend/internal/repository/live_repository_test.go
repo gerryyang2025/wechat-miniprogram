@@ -249,6 +249,28 @@ func TestLiveRepositoryAccessOptionsIncludeSeedContent(t *testing.T) {
 	}
 }
 
+func TestLiveRepositoryFindsMerchantIDForUser(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	conn := testLiveDB(t, ctx)
+	defer conn.Close()
+
+	repo := NewLiveRepository(conn)
+	merchantID, err := repo.MerchantIDForUser(ctx, 1)
+	if err != nil {
+		t.Fatalf("MerchantIDForUser seed merchant returned error: %v", err)
+	}
+	if merchantID != 1 {
+		t.Fatalf("seed merchant ID = %d, want 1", merchantID)
+	}
+
+	_, err = repo.MerchantIDForUser(ctx, 2)
+	if err != sql.ErrNoRows {
+		t.Fatalf("MerchantIDForUser student error = %v, want sql.ErrNoRows", err)
+	}
+}
+
 func testLiveDB(t *testing.T, ctx context.Context) *sql.DB {
 	t.Helper()
 
