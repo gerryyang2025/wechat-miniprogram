@@ -33,6 +33,13 @@ func TestValidateLiveEditRejectsInvalidPayloads(t *testing.T) {
 			wantError: true,
 		},
 		{
+			name: "bad end time",
+			mutate: func(payload *domain.LiveEditPayload) {
+				payload.EndAt = "bad-time"
+			},
+			wantError: true,
+		},
+		{
 			name: "end before start",
 			mutate: func(payload *domain.LiveEditPayload) {
 				payload.EndAt = "2026-06-25T19:00:00+08:00"
