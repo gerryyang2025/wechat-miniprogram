@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"path/filepath"
 	"testing"
+	"time"
 
 	appdb "private-domain-operation/backend/internal/db"
 	"private-domain-operation/backend/internal/domain"
@@ -160,15 +161,15 @@ func TestLiveRepositoryChecksContentAccessGrants(t *testing.T) {
 		t.Fatalf("user 999 course grant = true, want false")
 	}
 
+	now := time.Now().UTC()
+	sameDayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	nextDayExpires := now.Add(24 * time.Hour).Format(time.RFC3339)
 	if _, err := conn.ExecContext(ctx, `
 		INSERT INTO content_access_grants (
 			user_id, access_type, access_ref_id, source_type, source_id, starts_at, expires_at, status
 		)
-		VALUES (
-			2, 'course', 4, 'test', 'rfc3339-course-4',
-			'2000-01-01T00:00:00+08:00', '2999-01-01T00:00:00+08:00', 'active'
-		)
-	`); err != nil {
+		VALUES (2, 'course', 4, 'test', 'rfc3339-course-4', ?, ?, 'active')
+	`, sameDayStart, nextDayExpires); err != nil {
 		t.Fatalf("insert RFC3339 grant returned error: %v", err)
 	}
 	hasGrant, err = repo.HasActiveGrant(ctx, 2, "course", 4)
