@@ -203,12 +203,13 @@ func (r *LiveRepository) HasActiveGrant(ctx context.Context, userID int64, acces
 	return count > 0, nil
 }
 
-func (r *LiveRepository) GetAccessOptions(ctx context.Context) (domain.LiveAccessOptions, error) {
+func (r *LiveRepository) GetAccessOptions(ctx context.Context, merchantID int64) (domain.LiveAccessOptions, error) {
 	courses, err := r.queryAccessOptions(ctx, "course", `
 		SELECT id, title
 		FROM courses
+		WHERE merchant_id = ?
 		ORDER BY id
-	`)
+	`, merchantID)
 	if err != nil {
 		return domain.LiveAccessOptions{}, err
 	}
@@ -216,8 +217,9 @@ func (r *LiveRepository) GetAccessOptions(ctx context.Context) (domain.LiveAcces
 	bootcamps, err := r.queryAccessOptions(ctx, "bootcamp", `
 		SELECT id, title
 		FROM bootcamps
+		WHERE merchant_id = ?
 		ORDER BY id
-	`)
+	`, merchantID)
 	if err != nil {
 		return domain.LiveAccessOptions{}, err
 	}
@@ -272,8 +274,8 @@ func (r *LiveRepository) getLiveEvent(ctx context.Context, liveID int64) (domain
 	`, liveID))
 }
 
-func (r *LiveRepository) queryAccessOptions(ctx context.Context, optionType string, query string) ([]domain.LiveAccessOption, error) {
-	rows, err := r.db.QueryContext(ctx, query)
+func (r *LiveRepository) queryAccessOptions(ctx context.Context, optionType string, query string, args ...any) ([]domain.LiveAccessOption, error) {
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

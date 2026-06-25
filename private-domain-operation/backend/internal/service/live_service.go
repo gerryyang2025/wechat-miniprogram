@@ -23,7 +23,7 @@ type LiveStore interface {
 	CreateLiveEvent(ctx context.Context, merchantID int64, payload domain.LiveEditPayload) (domain.LiveEditPayload, error)
 	UpdateLiveEvent(ctx context.Context, liveID int64, payload domain.LiveEditPayload) (domain.LiveEditPayload, error)
 	HasActiveGrant(ctx context.Context, userID int64, accessType string, accessRefID int64) (bool, error)
-	GetAccessOptions(ctx context.Context) (domain.LiveAccessOptions, error)
+	GetAccessOptions(ctx context.Context, merchantID int64) (domain.LiveAccessOptions, error)
 	MerchantIDForUser(ctx context.Context, userID int64) (int64, error)
 }
 
@@ -101,11 +101,11 @@ func (s *LiveService) UpdateLiveEvent(ctx context.Context, liveID int64, payload
 	return s.lives.UpdateLiveEvent(ctx, liveID, payload)
 }
 
-func (s *LiveService) GetAccessOptions(ctx context.Context) (domain.LiveAccessOptions, error) {
+func (s *LiveService) GetAccessOptions(ctx context.Context, merchantID int64) (domain.LiveAccessOptions, error) {
 	if s.lives == nil {
 		return domain.LiveAccessOptions{}, ErrLiveStoreRequired
 	}
-	return s.lives.GetAccessOptions(ctx)
+	return s.lives.GetAccessOptions(ctx, merchantID)
 }
 
 func (s *LiveService) MerchantIDForUser(ctx context.Context, userID int64) (int64, error) {

@@ -357,11 +357,12 @@ func handleMerchantAccessOptions(deps Dependencies) gin.HandlerFunc {
 			return
 		}
 
-		if _, scoped := merchantIDForLiveRequest(c, lives); !scoped {
+		merchantID, scoped := merchantIDForLiveRequest(c, lives)
+		if !scoped {
 			return
 		}
 
-		options, err := lives.GetAccessOptions(c.Request.Context())
+		options, err := lives.GetAccessOptions(c.Request.Context(), merchantID)
 		if err != nil {
 			writeLiveLoadError(c, err)
 			return

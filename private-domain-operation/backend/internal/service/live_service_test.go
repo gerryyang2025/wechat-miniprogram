@@ -481,12 +481,15 @@ func TestLiveServiceDelegatesEditAndAccessOptions(t *testing.T) {
 		t.Fatalf("updated = %#v, update IDs = %#v", updated, store.updateIDs)
 	}
 
-	options, err := service.GetAccessOptions(ctx)
+	options, err := service.GetAccessOptions(ctx, 7)
 	if err != nil {
 		t.Fatalf("GetAccessOptions returned error: %v", err)
 	}
 	if len(options.Courses) != 1 || options.Courses[0].ID != 1 {
 		t.Fatalf("options = %#v", options)
+	}
+	if len(store.optionsMerchantIDs) != 1 || store.optionsMerchantIDs[0] != 7 {
+		t.Fatalf("options merchant IDs = %#v, want [7]", store.optionsMerchantIDs)
 	}
 
 	invalidPayload := payload
@@ -515,7 +518,7 @@ func TestLiveServiceDelegatesEditAndAccessOptions(t *testing.T) {
 	if _, err := nilService.UpdateLiveEvent(ctx, 1, payload); !errors.Is(err, ErrLiveStoreRequired) {
 		t.Fatalf("UpdateLiveEvent nil error = %v, want ErrLiveStoreRequired", err)
 	}
-	if _, err := nilService.GetAccessOptions(ctx); !errors.Is(err, ErrLiveStoreRequired) {
+	if _, err := nilService.GetAccessOptions(ctx, 1); !errors.Is(err, ErrLiveStoreRequired) {
 		t.Fatalf("GetAccessOptions nil error = %v, want ErrLiveStoreRequired", err)
 	}
 	if _, err := nilService.CheckAccess(ctx, 1, 1, "live"); !errors.Is(err, ErrLiveStoreRequired) {
@@ -574,8 +577,9 @@ type fakeLiveStore struct {
 	grantErr     error
 	grantCalls   []fakeLiveGrantCall
 
-	options    domain.LiveAccessOptions
-	optionsErr error
+	options            domain.LiveAccessOptions
+	optionsErr         error
+	optionsMerchantIDs []int64
 
 	merchantID      int64
 	merchantIDErr   error
@@ -642,7 +646,8 @@ func (s *fakeLiveStore) HasActiveGrant(ctx context.Context, userID int64, access
 	return s.grantAllowed, nil
 }
 
-func (s *fakeLiveStore) GetAccessOptions(ctx context.Context) (domain.LiveAccessOptions, error) {
+func (s *fakeLiveStore) GetAccessOptions(ctx context.Context, merchantID int64) (domain.LiveAccessOptions, error) {
+	s.optionsMerchantIDs = append(s.optionsMerchantIDs, merchantID)
 	if s.optionsErr != nil {
 		return domain.LiveAccessOptions{}, s.optionsErr
 	}

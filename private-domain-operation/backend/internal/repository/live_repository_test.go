@@ -219,9 +219,10 @@ func TestLiveRepositoryAccessOptionsIncludeSeedContent(t *testing.T) {
 	ctx := context.Background()
 	conn := testLiveDB(t, ctx)
 	defer conn.Close()
+	insertOtherMerchantAccessContent(t, ctx, conn)
 
 	repo := NewLiveRepository(conn)
-	options, err := repo.GetAccessOptions(ctx)
+	options, err := repo.GetAccessOptions(ctx, 1)
 	if err != nil {
 		t.Fatalf("GetAccessOptions returned error: %v", err)
 	}
@@ -233,11 +234,17 @@ func TestLiveRepositoryAccessOptionsIncludeSeedContent(t *testing.T) {
 	if course.Title != "AIGC 视频制作" {
 		t.Fatalf("course option title = %q", course.Title)
 	}
+	if otherCourse, ok := findLiveAccessOption(options.Courses, "course", 20); ok {
+		t.Fatalf("other merchant course leaked into options: %#v", otherCourse)
+	}
 
 	for _, bootcamp := range options.Bootcamps {
 		if bootcamp.Type != "bootcamp" {
 			t.Fatalf("bootcamp option type = %q", bootcamp.Type)
 		}
+	}
+	if otherBootcamp, ok := findLiveAccessOption(options.Bootcamps, "bootcamp", 20); ok {
+		t.Fatalf("other merchant bootcamp leaked into options: %#v", otherBootcamp)
 	}
 
 	member, ok := findLiveAccessOption(options.Members, "member", 1)
@@ -287,6 +294,26 @@ func testLiveDB(t *testing.T, ctx context.Context) *sql.DB {
 		t.Fatalf("SeedMinimal returned error: %v", err)
 	}
 	return conn
+}
+
+func insertOtherMerchantAccessContent(t *testing.T, ctx context.Context, conn *sql.DB) {
+	t.Helper()
+
+	if _, err := conn.ExecContext(ctx, `INSERT INTO merchants (id, name, intro, status) VALUES (20, '其他商家', '测试隔离商家', 'active')`); err != nil {
+		t.Fatalf("insert other merchant returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO products (id, merchant_id, product_type, title, status) VALUES (20, 20, 'course', '其他商家课程商品', 'published')`); err != nil {
+		t.Fatalf("insert other merchant course product returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO courses (id, product_id, merchant_id, title, description, status) VALUES (20, 20, 20, '其他商家课程', '不应泄漏到商家 1。', 'published')`); err != nil {
+		t.Fatalf("insert other merchant course returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO products (id, merchant_id, product_type, title, status) VALUES (21, 20, 'bootcamp', '其他商家训练营商品', 'published')`); err != nil {
+		t.Fatalf("insert other merchant bootcamp product returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO bootcamps (id, product_id, merchant_id, title, subtitle, total_days, status) VALUES (20, 21, 20, '其他商家训练营', '不应泄漏到商家 1。', 7, 'active')`); err != nil {
+		t.Fatalf("insert other merchant bootcamp returned error: %v", err)
+	}
 }
 
 func assertRawLiveDisplayFieldsEmpty(t *testing.T, event domain.LiveEvent) {

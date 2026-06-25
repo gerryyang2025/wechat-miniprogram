@@ -852,6 +852,31 @@ func TestMerchantLiveRoutesRequireMerchantMapping(t *testing.T) {
 	assertErrorCode(t, resp, http.StatusForbidden, 40301)
 }
 
+func TestMerchantLiveAccessOptionsAreScoped(t *testing.T) {
+	t.Parallel()
+
+	router, conn := testRouter(t)
+	defer conn.Close()
+	insertOtherMerchantAccessContent(t, conn)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/merchant/access-options", nil)
+	req.Header.Set("Authorization", "Bearer "+testMerchantToken(t))
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", resp.Code, resp.Body.String())
+	}
+	body := resp.Body.String()
+	if !strings.Contains(body, "AIGC 视频制作") {
+		t.Fatalf("access options missing seed course: %s", body)
+	}
+	if strings.Contains(body, "其他商家课程") || strings.Contains(body, "其他商家训练营") {
+		t.Fatalf("access options leaked other merchant content: %s", body)
+	}
+}
+
 func TestLiveDetailEscapesTitleInGeneratedEntries(t *testing.T) {
 	t.Parallel()
 
@@ -1099,6 +1124,27 @@ func insertOtherMerchantLiveEvent(t *testing.T, conn *sql.DB) int64 {
 		t.Fatalf("other merchant live id returned error: %v", err)
 	}
 	return id
+}
+
+func insertOtherMerchantAccessContent(t *testing.T, conn *sql.DB) {
+	t.Helper()
+
+	ctx := context.Background()
+	if _, err := conn.ExecContext(ctx, `INSERT INTO merchants (id, name, intro, status) VALUES (20, '其他商家', '测试隔离商家', 'active')`); err != nil {
+		t.Fatalf("insert other merchant returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO products (id, merchant_id, product_type, title, status) VALUES (20, 20, 'course', '其他商家课程商品', 'published')`); err != nil {
+		t.Fatalf("insert other merchant course product returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO courses (id, product_id, merchant_id, title, description, status) VALUES (20, 20, 20, '其他商家课程', '不应泄漏到商家 1。', 'published')`); err != nil {
+		t.Fatalf("insert other merchant course returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO products (id, merchant_id, product_type, title, status) VALUES (21, 20, 'bootcamp', '其他商家训练营商品', 'published')`); err != nil {
+		t.Fatalf("insert other merchant bootcamp product returned error: %v", err)
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO bootcamps (id, product_id, merchant_id, title, subtitle, total_days, status) VALUES (20, 21, 20, '其他商家训练营', '不应泄漏到商家 1。', 7, 'active')`); err != nil {
+		t.Fatalf("insert other merchant bootcamp returned error: %v", err)
+	}
 }
 
 func testRouter(t *testing.T) (*gin.Engine, *sql.DB) {
