@@ -166,8 +166,10 @@ Merchant APIs:
 Local verification:
 
 ```bash
-cd private-domain-operation/backend
-./scripts/optools test
-./scripts/optools restart
-./scripts/optools status
+cd private-domain-operation
+./optools.sh init
+./optools.sh test
+./optools.sh restart
+./optools.sh status
+./optools.sh logs -f
 ```
